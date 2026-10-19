@@ -110,7 +110,7 @@ does what. A daily Lambda reads Fresha's public booking data and regenerates
 not a direct commit, so the change is recorded and the tests run against it.
 Hand-written facts live in `salon.auto.tfvars` and are never regenerated.
 Consequence: nobody edits the menu in git; they fix it in Fresha and the PR
-follows within two hours (or on demand).
+follows within the hour (or on demand).
 
 Amended 2026-10-19 (evening): the PR is merged automatically. The user's
 call: this is a hands-off deployment, and a PR waiting for a person is not.

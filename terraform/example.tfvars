@@ -17,7 +17,7 @@ escalation_sms_numbers = [] # e.g. ["+447512574127"]
 # Infrastructure alarms and monitor findings go here, not to Jess.
 ops_alert_emails = ["you@example.com"]
 monitor_schedule = "rate(1 hour)"
-# menu_sync_schedule = "cron(0 7-22/2 * * ? *)" # London time, see menu_sync_timezone
+# menu_sync_schedule = "cron(0 7-22 * * ? *)" # hourly 07:00 to 22:00 London time, see menu_sync_timezone
 
 # Menu sync. The PAT comes from the GitHub environment secret in the pipeline;
 # for a laptop apply, export TF_VAR_github_pat rather than writing it here.

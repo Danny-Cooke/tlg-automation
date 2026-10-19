@@ -106,7 +106,7 @@ That is a later phase.
 
 ### Menu sync (`src/menu_sync/`)
 
-Lambda `tlg-<env>-menu-sync`, run every two hours from 07:00 to 21:00 London time by
+Lambda `tlg-<env>-menu-sync`, run every hour from 07:00 to 22:00 London time by
 EventBridge Scheduler, and on demand. It keeps the bot's menu equal to Fresha's:
 
 1. Reads the team (name, Fresha employee id, job title) from the public venue

@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 # Menu sync: keep staff, services and who-does-what in step with Fresha.
 #
-# Every two hours in salon hours, and on demand. Reads Fresha's public booking
+# Every hour from 07:00 to 22:00 London time, and on demand. Reads Fresha's public booking
 # data (no login), compares with terraform/fresha-menu.auto.tfvars.json on the
 # base branch, and when they differ pushes the new file to a "menu-sync"
 # branch and opens a pull request with the GitHub token from Parameter Store.
@@ -149,7 +149,7 @@ resource "aws_lambda_function" "menu_sync" {
 
 # ---------------------------------------------------------------------------
 # Schedule. EventBridge Scheduler rather than a plain rule so the schedule can
-# be in London time: every two hours from 07:00 to 22:00, whatever the clocks do.
+# be in London time: every hour from 07:00 to 22:00, whatever the clocks do.
 # ---------------------------------------------------------------------------
 
 data "aws_iam_policy_document" "scheduler_assume" {
@@ -182,7 +182,7 @@ resource "aws_iam_role_policy" "menu_sync_scheduler" {
 
 resource "aws_scheduler_schedule" "menu_sync" {
   name                         = "${local.name}-menu-sync"
-  description                  = "Fresha menu sync, every two hours 07:00 to 22:00 London time"
+  description                  = "Fresha menu sync, every hour 07:00 to 22:00 London time"
   schedule_expression          = var.menu_sync_schedule
   schedule_expression_timezone = var.menu_sync_timezone
 

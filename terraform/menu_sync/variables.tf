@@ -56,7 +56,7 @@ variable "github_pat" {
 variable "menu_sync_schedule" {
   description = "EventBridge Scheduler cron for the Fresha menu sync, in menu_sync_timezone."
   type        = string
-  default     = "cron(0 7-22/2 * * ? *)" # 07:00, 09:00, ... 21:00
+  default     = "cron(0 7-22 * * ? *)" # on the hour, 07:00 to 22:00
 }
 
 variable "menu_sync_timezone" {

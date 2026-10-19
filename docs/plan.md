@@ -47,7 +47,7 @@ GitHub Actions on merge to `main`, environment `prod`: OIDC into an AWS role,
 
 ### 2. Menu sync Lambda: `tlg-prod-menu-sync` (LIVE 2026-10-19; stack `terraform/menu_sync`)
 
-Every two hours 07:00 to 22:00 London time (EventBridge Scheduler) and on demand (invoke). Reads Fresha's public booking
+Every hour 07:00 to 22:00 London time (EventBridge Scheduler, changed from two-hourly 2026-10-19 evening) and on demand (invoke). Reads Fresha's public booking
 data (no login): team list from the venue page, services with category,
 price, duration and bookable staff from the booking flow. Builds what the
 Terraform variables should say, compares with the repo, and when different
