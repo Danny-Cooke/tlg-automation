@@ -139,3 +139,17 @@ used by the other repos; the only manual step was creating the state
 bucket). The role trusts `repo:Danny-Cooke/*` and has AdministratorAccess,
 checked live 2026-10-19. The stack's own deploy role and OIDC provider were
 removed before anything was applied.
+
+## 2026-10-19: GitHub immutable subject claims broke the OIDC trust
+
+The first pipeline runs failed at the assume-role step with "Not authorized
+to perform sts:AssumeRoleWithWebIdentity" although the role's trust policy
+allowed `repo:Danny-Cooke/*`. Cause: this repo has GitHub's immutable
+subject claims on (`use_immutable_subject: true`, the default for newer
+repos), so its token's subject is
+`repo:Danny-Cooke@50141838/tlg-automation@1422584660:environment:prod`.
+The `@<user id>` after the owner name does not match the old wildcard. Fix:
+a second trust entry, `repo:Danny-Cooke@50141838/*`, pinned to the user id
+so a renamed or re-registered account can never match. The older repos keep
+presenting the plain form and are unaffected. Applied by hand to the shared
+`github-oidc` role 2026-10-19; the role is not under Terraform anywhere.

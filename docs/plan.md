@@ -45,7 +45,7 @@ GitHub Actions on merge to `main`, environment `prod`: OIDC into an AWS role,
 - The repo pushed to the remote (one commit on `main` as of 2026-10-19; the
   stack split is uncommitted).
 
-### 2. Menu sync Lambda: `tlg-prod-menu-sync` (built 2026-10-19, uncommitted; stack `terraform/menu_sync`)
+### 2. Menu sync Lambda: `tlg-prod-menu-sync` (LIVE 2026-10-19; stack `terraform/menu_sync`)
 
 Every two hours 07:00 to 22:00 London time (EventBridge Scheduler) and on demand (invoke). Reads Fresha's public booking
 data (no login): team list from the venue page, services with category,
@@ -64,6 +64,9 @@ Decisions taken while building:
 - Public booking flow request format captured and replayed from plain HTTP;
   details in `knowledge/fresha.md`.
 - Apply after merge is job 1.
+- Deployed by the pipeline 2026-10-19 18:25 UTC (run 39301305817, 10
+  resources). Proven with a dry-run invoke: 8 staff, 166 services,
+  unchanged against the repo. Schedule enabled, London time.
 
 ### 3. Monitor Lambda: `tlg-prod-monitor`
 
