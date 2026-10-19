@@ -71,19 +71,34 @@ def subscribe_app(app_id: str, app_token: str, obj: str, fields: list[str], call
     _check(r, f"subscribe app to {obj} webhooks at {callback}")
 
 
+def token_page(page_token: str, app_secret: str) -> dict:
+    """Which Page the token belongs to. A Page token addresses its own Page as
+    "me", which is more reliable than naming the id."""
+    r = requests.get(
+        f"{GRAPH}/me",
+        params={"access_token": page_token, "appsecret_proof": appsecret_proof(page_token, app_secret), "fields": "id,name"},
+        timeout=30,
+    )
+    _check(r, "read the token's Page")
+    return r.json()
+
+
 def subscribe_page(page_id: str, page_token: str, app_secret: str, fields: list[str]) -> None:
+    me = token_page(page_token, app_secret)
+    if str(me.get("id")) != str(page_id):
+        print(f"warning: the token is for Page {me.get('id')} ({me.get('name')}), not {page_id}; subscribing the token's Page")
     r = requests.post(
-        f"{GRAPH}/{page_id}/subscribed_apps",
+        f"{GRAPH}/me/subscribed_apps",
         params={"access_token": page_token, "appsecret_proof": appsecret_proof(page_token, app_secret)},
         data={"subscribed_fields": ",".join(fields)},
         timeout=30,
     )
-    _check(r, "subscribe page to app")
+    _check(r, f"subscribe Page {me.get('name')} to app")
 
 
 def linked_instagram(page_id: str, page_token: str, app_secret: str) -> str | None:
     r = requests.get(
-        f"{GRAPH}/{page_id}",
+        f"{GRAPH}/me",
         params={
             "access_token": page_token,
             "appsecret_proof": appsecret_proof(page_token, app_secret),
