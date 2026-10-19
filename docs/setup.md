@@ -118,11 +118,11 @@ repeat steps 3 and 4 for each extra number.
    python -c "import boto3; print(boto3.client('pinpoint-sms-voice-v2', region_name='eu-west-2').request_sender_id(SenderId='TLGWatch', IsoCountryCode='GB', MessageTypes=['TRANSACTIONAL']))"
    ```
 
-2. **Make it the SNS default** so every text from the account uses it:
-
-   ```
-   aws sns set-sms-attributes --region eu-west-2 --attributes DefaultSenderID=TLGWATCH,DefaultSMSType=Transactional
-   ```
+2. **The Lambda sends through End User Messaging, not SNS.** With the sender
+   ID in place SNS still accepted texts and dropped them without an error;
+   `pinpoint-sms-voice-v2` SendTextMessage from TLGWATCH delivered. The
+   sender ID name is `sms_sender_id` in the Fresha watch stack. (The SNS
+   default sender was also set to TLGWATCH; harmless, not relied on.)
 
 3. **Verify the number.** The account is in the SMS sandbox, which only
    delivers to verified numbers. The SNS sandbox call registers the number

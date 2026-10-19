@@ -99,13 +99,21 @@ class FakeSsm:
 
 
 class FakeSns:
+    """Stands in for both clients: publish() is the SNS email, send_text_message()
+    is End User Messaging. Texts are recorded with a PhoneNumber key so tests
+    can tell them apart."""
+
     def __init__(self):
         self.published = []
 
     def publish(self, **kw):
-        if kw.get("PhoneNumber") == "+440000000000":
-            raise RuntimeError("sandbox: number not verified")
+        assert "PhoneNumber" not in kw, "texts must not go through SNS"
         self.published.append(kw)
+
+    def send_text_message(self, **kw):
+        if kw["DestinationPhoneNumber"] == "+440000000000":
+            raise RuntimeError("sandbox: number not verified")
+        self.published.append({"PhoneNumber": kw["DestinationPhoneNumber"], "Message": kw["MessageBody"], **kw})
 
 
 @pytest.fixture
@@ -117,6 +125,7 @@ def env():
         "STATE_PARAMETER": "/tlg/prod/fresha-watch/state",
         "OPS_TOPIC_ARN": "arn:aws:sns:eu-west-2:1:ops",
         "ALERT_PHONE_NUMBERS": "+447700900123, +447700900456",
+        "SMS_SENDER_ID": "TLGWATCH",
     }
 
 
@@ -124,7 +133,7 @@ def settle(fresha, env, ssm=None, sns=None):
     """One run that establishes the baseline state."""
     ssm = ssm or FakeSsm()
     sns = sns or FakeSns()
-    out = handler.run(http=fresha, ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=fresha, ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     return out, ssm, sns
 
 
@@ -232,7 +241,7 @@ def test_first_run_saves_state_and_sends_nothing(env):
 
 def test_unchanged_pages_stay_quiet(env):
     _, ssm, sns = settle(Fresha(), env)
-    out = handler.run(http=Fresha(), ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=Fresha(), ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     assert out["alerts"] == [] and sns.published == []
 
 
@@ -244,7 +253,7 @@ def test_changed_shape_texts_and_emails_once(env):
             it["pricing"] = it.pop("price")  # Fresha renames a field
     f.extra_location = {"openingHours": []}  # and adds a section to the venue page
 
-    out = handler.run(http=f, ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=f, ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     kinds = {(a["check"], a["kind"]) for a in out["alerts"]}
     assert kinds == {("venue_page", "changed"), ("booking_flow", "changed")}
     flow = next(a for a in out["alerts"] if a["check"] == "booking_flow")
@@ -258,14 +267,14 @@ def test_changed_shape_texts_and_emails_once(env):
         "tlg-fresha-watch: something has changed in Fresha's public pages about staff, "
         "calendars or services. Details in the ops email."
     )
-    assert texts[0]["MessageAttributes"]["AWS.SNS.SMS.SMSType"]["StringValue"] == "Transactional"
+    assert texts[0]["MessageType"] == "TRANSACTIONAL" and texts[0]["OriginationIdentity"] == "TLGWATCH"
     assert len(emails) == 1 and emails[0]["Subject"] == "[TLG Fresha watch] CHANGED: booking_flow, venue_page"
     assert "removed bookingFlowInitialize" in emails[0]["Message"]
     assert out["sms_sent_to"] == ["+447700900123", "+447700900456"]
 
     # the new shape is now the baseline: the next run is quiet
     sns.published.clear()
-    out = handler.run(http=f, ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=f, ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     assert out["alerts"] == [] and sns.published == []
 
 
@@ -275,7 +284,7 @@ def test_content_changes_are_not_structural(env):
     f.team.append(("5394887", "Amber", "Lash tech"))
     f.full[0]["items"].append(item("Gel polish toes", "45 mins", "£28", description="toes"))
     f.full[0]["items"][0]["price"]["formatted"] = "£99"
-    out = handler.run(http=f, ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=f, ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     assert out["alerts"] == [] and sns.published == []
 
 
@@ -284,7 +293,7 @@ def test_broken_then_recovered_alerts_once_each(env):
     broken = Fresha()
     broken.flow_response = Resp(200, body={"errors": [{"message": "PersistedQueryNotFound"}]})
 
-    out = handler.run(http=broken, ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=broken, ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     assert [(a["check"], a["kind"]) for a in out["alerts"]] == [("booking_flow", "failed")]
     assert sns.published[0]["Message"] == (
         "tlg-fresha-watch: Fresha's public pages about staff, calendars or services are not "
@@ -294,10 +303,10 @@ def test_broken_then_recovered_alerts_once_each(env):
     assert handler.decode_state(ssm.value)["failing"] == ["booking_flow"]
 
     sns.published.clear()
-    out = handler.run(http=broken, ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=broken, ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     assert out["alerts"] == [] and sns.published == []  # still broken, already told
 
-    out = handler.run(http=Fresha(), ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=Fresha(), ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     assert [(a["check"], a["kind"]) for a in out["alerts"]] == [("booking_flow", "recovered")]
     assert sns.published[0]["Message"].endswith("are working again. Details in the ops email.")
 
@@ -305,7 +314,7 @@ def test_broken_then_recovered_alerts_once_each(env):
 def test_venue_page_failure_skips_per_person_check(env):
     f = Fresha()
     f.venue_status = 500
-    out = handler.run(http=f, ssm=FakeSsm(), sns=FakeSns(), env=env, now=NOW)
+    out = handler.run(http=f, ssm=FakeSsm(), sns=FakeSns(), sms=FakeSns(), env=env, now=NOW)
     names = [c["name"] for c in out["checks"]]
     assert "booking_flow_per_person" not in names and not out["ok"]
     assert [(a["check"], a["kind"]) for a in out["alerts"]] == [("venue_page", "failed")]
@@ -315,7 +324,7 @@ def test_dry_run_saves_and_sends_nothing(env):
     ssm, sns = FakeSsm(), FakeSns()
     f = Fresha()
     f.venue_status = 500
-    out = handler.run(http=f, ssm=ssm, sns=sns, env=env, dry_run=True, now=NOW)
+    out = handler.run(http=f, ssm=ssm, sns=sns, sms=sns, env=env, dry_run=True, now=NOW)
     assert out["dry_run"] and out["alerts"]
     assert ssm.puts == [] and sns.published == []
 
@@ -325,7 +334,7 @@ def test_sms_failure_does_not_stop_the_email(env):
     _, ssm, sns = settle(Fresha(), env)
     f = Fresha()
     f.venue_status = 500
-    out = handler.run(http=f, ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=f, ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     assert out["sms_sent_to"] == []
     assert [p for p in sns.published if "TopicArn" in p]
 
@@ -335,7 +344,7 @@ def test_no_numbers_means_email_only(env):
     _, ssm, sns = settle(Fresha(), env)
     f = Fresha()
     f.venue_status = 500
-    out = handler.run(http=f, ssm=ssm, sns=sns, env=env, now=NOW)
+    out = handler.run(http=f, ssm=ssm, sns=sns, sms=sns, env=env, now=NOW)
     assert out["sms_sent_to"] == [] and len(sns.published) == 1 and "TopicArn" in sns.published[0]
 
 
@@ -348,9 +357,9 @@ def test_sms_names_the_function_and_stays_short():
 
 def test_test_sms_sends_through_the_real_path(env):
     sns = FakeSns()
-    out = handler.test_sms(sns=sns, env={**env, "AWS_LAMBDA_FUNCTION_NAME": "tlg-prod-fresha-watch"})
+    out = handler.test_sms(sms=sns, env={**env, "AWS_LAMBDA_FUNCTION_NAME": "tlg-prod-fresha-watch"})
     assert out["sms_sent_to"] == ["+447700900123", "+447700900456"]
     assert sns.published[0]["Message"].startswith("tlg-prod-fresha-watch: test message.")
     assert not any("TopicArn" in p for p in sns.published)  # no email for a test
-    out = handler.test_sms(sns=FakeSns(), env={**env, "ALERT_PHONE_NUMBERS": ""})
+    out = handler.test_sms(sms=FakeSns(), env={**env, "ALERT_PHONE_NUMBERS": ""})
     assert out["sms_sent_to"] == [] and "empty" in out["error"]

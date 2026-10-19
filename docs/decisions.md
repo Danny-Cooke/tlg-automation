@@ -122,7 +122,9 @@ the human's notice that the menu changed.
 ## 2026-10-19: Fresha watch texts by SMS now, WhatsApp later
 
 The user wants a text or WhatsApp when Fresha's public pages change shape.
-SMS through SNS is one API call and needs only a verified number. WhatsApp
+SMS is one API call and needs only a verified number (through AWS End User
+Messaging with a sender ID: SNS's SMS path turned out to drop texts from this
+account without an error, End User Messaging delivered). WhatsApp
 through AWS End User Messaging Social needs Meta Business verification, a
 WhatsApp Business account and a registered sender number, which is days of
 setup for the same message. So: SMS now, behind one function, WhatsApp when

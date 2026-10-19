@@ -38,6 +38,18 @@ variable "alert_phone_numbers" {
   }
 }
 
+variable "sms_sender_id" {
+  description = "End User Messaging alphanumeric sender ID the texts come from. Requested by hand once (docs/setup.md); UK needs no registration."
+  type        = string
+  default     = "TLGWATCH"
+}
+
+variable "sms_sender_country" {
+  description = "ISO country code the sender ID was requested for."
+  type        = string
+  default     = "GB"
+}
+
 # ---------------------------------------------------------------------------
 # Schedule
 # ---------------------------------------------------------------------------

@@ -158,7 +158,8 @@ A shape (`shape.py`) is the sorted list of leaf paths with a coarse kind
 so content changes are invisible; only keys and nesting count. The previous
 run lives in `/tlg/<env>/fresha-watch/state` (SSM). On a transition (a check
 fails, recovers, or its shape differs) the Lambda texts `alert_phone_numbers`
-through SNS and emails the ops topic with the added and removed paths. Nothing
+through AWS End User Messaging from the sender ID TLGWATCH, and emails the
+ops topic through SNS with the added and removed paths. Nothing
 is sent when nothing moved. The Lambda error alarm goes to the ops topic.
 
 Run the checks without saving or sending: invoke with `{"dry_run": true}`.

@@ -13,10 +13,15 @@ Environment:
     STATE_PARAMETER       SSM parameter holding the previous run
     OPS_TOPIC_ARN         SNS topic for the email (optional)
     ALERT_PHONE_NUMBERS   comma-separated E.164 numbers for the text (optional)
+    SMS_SENDER_ID         the End User Messaging sender ID the text comes from
+
+Texts go through AWS End User Messaging (pinpoint-sms-voice-v2), not SNS:
+SNS accepted texts from this account and silently dropped them, End User
+Messaging with the sender ID delivered (2026-10-19). SNS is only the email.
 
 Invoke with {"dry_run": true} to run the checks and see the diff without
 saving state or sending anything. Invoke with {"test_sms": true} to send a
-test text to the configured numbers through the real SNS path.
+test text to the configured numbers through the real path.
 """
 from __future__ import annotations
 
@@ -43,18 +48,20 @@ SUBJECT = "Fresha's public pages about staff, calendars or services"
 def lambda_handler(event: dict, context=None) -> dict:
     event = event or {}
     if event.get("test_sms"):
-        return test_sms(sns=_sns(), env=dict(os.environ))
-    return run(http=_http(), ssm=_ssm(), sns=_sns(), env=dict(os.environ), dry_run=bool(event.get("dry_run")))
+        return test_sms(sms=_sms(), env=dict(os.environ))
+    return run(
+        http=_http(), ssm=_ssm(), sns=_sns(), sms=_sms(), env=dict(os.environ), dry_run=bool(event.get("dry_run"))
+    )
 
 
-def test_sms(*, sns, env: dict) -> dict:
+def test_sms(*, sms, env: dict) -> dict:
     """Send one test text so the number, the sandbox and the IAM are proven
     before Fresha ever changes."""
     numbers = env.get("ALERT_PHONE_NUMBERS", "")
     if not numbers.strip():
         return {"test": True, "sms_sent_to": [], "error": "ALERT_PHONE_NUMBERS is empty; nothing to text"}
     text = f"{function_name(env)}: test message. A real one says: something has changed in {SUBJECT}."
-    sent_to = send_sms(sns, numbers, text)
+    sent_to = send_sms(sms, numbers, text, env.get("SMS_SENDER_ID", ""))
     return {"test": True, "sms_sent_to": sent_to, "message": text}
 
 
@@ -62,7 +69,7 @@ def function_name(env: dict) -> str:
     return env.get("AWS_LAMBDA_FUNCTION_NAME") or DEFAULT_FUNCTION_NAME
 
 
-def run(*, http, ssm, sns, env: dict, dry_run: bool = False, now: datetime | None = None) -> dict:
+def run(*, http, ssm, sns, sms, env: dict, dry_run: bool = False, now: datetime | None = None) -> dict:
     now = now or datetime.now(timezone.utc)
     results = run_checks(http, env)
     previous = load_state(ssm, env["STATE_PARAMETER"])
@@ -82,7 +89,7 @@ def run(*, http, ssm, sns, env: dict, dry_run: bool = False, now: datetime | Non
     if alerts:
         subject, body = format_email(alerts, results, now)
         text = format_sms(alerts, function_name(env))
-        sent_to = send_sms(sns, env.get("ALERT_PHONE_NUMBERS", ""), text)
+        sent_to = send_sms(sms, env.get("ALERT_PHONE_NUMBERS", ""), text, env.get("SMS_SENDER_ID", ""))
         topic = env.get("OPS_TOPIC_ARN")
         if topic:
             sns.publish(TopicArn=topic, Subject=subject[:100], Message=body)
@@ -230,15 +237,16 @@ def format_email(alerts: list[dict], results: list[CheckResult], now: datetime) 
     return subject, "\n".join(lines)
 
 
-def send_sms(sns, numbers: str, text: str) -> list[str]:
+def send_sms(sms, numbers: str, text: str, sender_id: str) -> list[str]:
+    """One text per number through End User Messaging, from the sender ID.
+    A failure is logged and skipped so the other numbers and the email still go."""
     sent: list[str] = []
     for number in [n.strip() for n in numbers.split(",") if n.strip()]:
         try:
-            sns.publish(
-                PhoneNumber=number,
-                Message=text,
-                MessageAttributes={"AWS.SNS.SMS.SMSType": {"DataType": "String", "StringValue": "Transactional"}},
-            )
+            kwargs = {"DestinationPhoneNumber": number, "MessageBody": text, "MessageType": "TRANSACTIONAL"}
+            if sender_id:
+                kwargs["OriginationIdentity"] = sender_id
+            sms.send_text_message(**kwargs)
             sent.append(number)
         except Exception as exc:  # noqa: BLE001 - the email still goes; log and carry on
             log.error("SMS to %s failed: %s", number[-4:], exc)
@@ -269,3 +277,10 @@ def _sns():
     import boto3
 
     return boto3.client("sns")
+
+
+@lru_cache(maxsize=1)
+def _sms():
+    import boto3
+
+    return boto3.client("pinpoint-sms-voice-v2")

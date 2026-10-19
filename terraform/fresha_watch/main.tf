@@ -92,16 +92,18 @@ data "aws_iam_policy_document" "fresha_watch" {
     resources = [local.ops_topic_arn]
   }
 
-  # Texting a phone number directly has no ARN to scope to, so SNS requires
-  # "*" here (and there is no condition key that narrows Publish to SMS).
-  # It means this role could publish to any topic in the account; the only
-  # code it runs is in this repo.
+  # Texts go through End User Messaging from the sender ID, not SNS: SNS
+  # accepted texts from this account and silently dropped them. The sender
+  # ID was requested by hand (docs/setup.md); the provider has no resource
+  # for it. Scoped to that one origination identity.
   statement {
     sid       = "Text"
-    actions   = ["sns:Publish"]
-    resources = ["*"]
+    actions   = ["sms-voice:SendTextMessage"]
+    resources = ["arn:aws:sms-voice:${var.aws_region}:${data.aws_caller_identity.current.account_id}:sender-id/${var.sms_sender_id}/${var.sms_sender_country}"]
   }
 }
+
+data "aws_caller_identity" "current" {}
 
 resource "aws_iam_role_policy" "fresha_watch" {
   name   = "fresha-watch"
@@ -134,6 +136,7 @@ resource "aws_lambda_function" "fresha_watch" {
       STATE_PARAMETER     = aws_ssm_parameter.state.name
       OPS_TOPIC_ARN       = local.ops_topic_arn
       ALERT_PHONE_NUMBERS = join(",", var.alert_phone_numbers)
+      SMS_SENDER_ID       = var.sms_sender_id
       LOG_LEVEL           = "INFO"
     }
   }

@@ -99,8 +99,8 @@ or WhatsApp when something structural changes. Every hour at half past,
 the booking flow the same way the menu sync does, records the shape of the
 parts the sync reads (keys and nesting, not values), and compares with the
 previous run kept in Parameter Store. A failed page, a recovered page or a
-changed shape sends an SMS through SNS to `alert_phone_numbers` and a fuller
-email to the ops topic. Steady state is quiet. `{"dry_run": true}` shows
+changed shape sends an SMS through AWS End User Messaging (sender ID
+TLGWATCH) to `alert_phone_numbers` and a fuller email to the ops topic. Steady state is quiet. `{"dry_run": true}` shows
 the result without saving or sending.
 
 Decisions taken while building:
@@ -109,9 +109,11 @@ Decisions taken while building:
   Messaging Social) needs a Meta Business verification, a WhatsApp Business
   account and a registered sender number; the text is one SNS call. The
   channel is one function (`send_sms`) so WhatsApp can replace it.
-- The account is probably in the SNS SMS sandbox: the destination number
-  must be verified in the SNS console (eu-west-2) before any text arrives.
-  See `docs/setup.md`.
+- SNS's own SMS path accepted texts from this account and silently
+  dropped them, even after a sender ID and a verified number; End User
+  Messaging with the sender ID delivered. So the Lambda texts through
+  `pinpoint-sms-voice-v2` and SNS is only the email. The account is in the
+  SMS sandbox: each number must be verified first. See `docs/setup.md`.
 - Phone numbers come from the GitHub `prod` environment secret
   `ALERT_PHONE_NUMBERS` (JSON list, E.164), so they are not in the repo.
 - Shapes merge list elements and treat every scalar as "value", so a new
