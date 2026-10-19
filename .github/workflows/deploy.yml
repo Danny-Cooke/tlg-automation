@@ -1,0 +1,102 @@
+name: Deploy
+
+# Plans on every push to main and applies when the environment holds the
+# secrets the stack needs. Assumes the deploy role by OIDC; no AWS keys here.
+#
+# GitHub environment "prod":
+#   variables: AWS_ROLE_ARN (from `terraform output deploy_role_arn`)
+#   secrets:   gh_pat (menu sync PAT), and once the Meta app exists:
+#              ANTHROPIC_AWS_WORKSPACE_ID, META_PAGE_ID, META_APP_SECRET, META_PAGE_TOKEN
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r src/requirements.txt -r requirements-dev.txt -r requirements-mcp.txt
+      - run: python -m pytest -q
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AWS_REGION: eu-west-2
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "0"
+      TF_VAR_environment: prod
+      TF_VAR_github_repo: ${{ github.repository }}
+      TF_VAR_github_pat: ${{ secrets.gh_pat }}
+      TF_VAR_anthropic_aws_workspace_id: ${{ secrets.ANTHROPIC_AWS_WORKSPACE_ID }}
+      TF_VAR_meta_page_id: ${{ secrets.META_PAGE_ID }}
+      TF_VAR_meta_app_secret: ${{ secrets.META_APP_SECRET }}
+      TF_VAR_meta_page_token: ${{ secrets.META_PAGE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build Lambda bundle
+        run: bash scripts/build_lambda.sh
+
+      - name: Decide whether the stack can be applied
+        id: gate
+        run: |
+          missing=""
+          for v in TF_VAR_github_pat TF_VAR_anthropic_aws_workspace_id TF_VAR_meta_page_id TF_VAR_meta_app_secret TF_VAR_meta_page_token; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "apply=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Plan only. Missing environment secrets for:$missing"
+          else
+            echo "apply=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform plan
+        working-directory: terraform
+        env:
+          # Placeholders keep the plan readable while the bot's secrets are not yet set.
+          TF_VAR_anthropic_aws_workspace_id: ${{ secrets.ANTHROPIC_AWS_WORKSPACE_ID || 'unset' }}
+          TF_VAR_meta_page_id: ${{ secrets.META_PAGE_ID || '0' }}
+          TF_VAR_meta_app_secret: ${{ secrets.META_APP_SECRET || 'unset' }}
+          TF_VAR_meta_page_token: ${{ secrets.META_PAGE_TOKEN || 'unset' }}
+          TF_VAR_github_pat: ${{ secrets.gh_pat || 'unset' }}
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Terraform apply
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform
+        run: terraform apply -no-color -auto-approve tfplan

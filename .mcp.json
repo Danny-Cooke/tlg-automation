@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "tlg-knowledge": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "knowledge_mcp"],
+      "env": { "PYTHONUTF8": "1" }
+    }
+  }
+}

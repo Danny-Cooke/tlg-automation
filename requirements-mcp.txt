@@ -1,0 +1,4 @@
+# Local knowledge MCP server (dev-time only, not deployed).
+mcp>=2,<3
+rank-bm25>=0.2
+python-hcl2>=4.3,<5

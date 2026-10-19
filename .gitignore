@@ -1,0 +1,29 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.example.tfvars
+!salon.auto.tfvars
+.terraform.lock.hcl
+crash.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+
+# Local secrets / env
+.env
+.env.*
+
+# Build artefacts
+lambda.zip
+
+# Committed Terraform inputs (the ignore above is for terraform.tfvars and friends)
+!example.tfvars
+!fresha-menu.auto.tfvars.json
