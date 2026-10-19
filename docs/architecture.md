@@ -17,13 +17,15 @@
 ## Components
 
 ```
-Client (Messenger / Instagram DM)
-        |
-        v
-Meta Platform  --webhook POST-->  API Gateway (HTTP API)
-                                        |
-                                        v
-                               Lambda: webhook handler
+Client (Messenger DM)                     Client (Instagram DM)
+        |                                         |
+        v                                         v
+Meta app Tlg-app1 --webhook POST-->  API Gateway (HTTP API)  <--webhook POST-- Meta app Tlg-app2
+                        /webhook/messenger   |   /webhook/instagram
+                                             v
+                     Lambda per channel: tlg-prod-messenger-bot, tlg-prod-instagram-bot
+                               (same code, CHANNEL env var; BOT_MODE simple | shadow | live;
+                                MESSAGE_TEST_MODE gates replies behind a trigger word)
                                  - verify X-Hub-Signature-256
                                  - dedupe message id (DynamoDB)
                                  - load conversation history (DynamoDB)
@@ -37,12 +39,27 @@ Meta Platform  --webhook POST-->  API Gateway (HTTP API)
                               Secrets Manager: Meta page token, app secret
 ```
 
-### Webhook handler (`src/bot/`)
+### Webhook handlers (`src/bot/`)
 
-One Lambda behind an HTTP API. Two routes:
+Two Lambdas from one package behind one HTTP API, one per Meta app (the
+user's call, 2026-10-19: each channel goes live, gets reviewed and is
+debugged on its own). Per channel:
 
-- `GET /webhook` answers Meta's verification challenge.
-- `POST /webhook` receives message events for both Messenger and Instagram.
+- `GET /webhook/<channel>` answers Meta's verification challenge.
+- `POST /webhook/<channel>` receives that channel's message events, signed
+  with that app's secret. Meta sends it the moment a message arrives.
+
+While `MESSAGE_TEST_MODE` is true a message is answered only if it starts
+with the trigger word (default "bootycall"), which is stripped before the
+bot reads it; everything else is stored and logged, never answered, in every
+mode. This is the user's guardrail for testing against the live Page.
+
+`BOT_MODE` says how a message is answered. `simple`: a plain acknowledgement
+naming the channel and echoing the text, no Claude, no persona, and an email
+to the ops topic with the message and the reply (the first stage; the user
+adds the framework and persona later). `shadow`: draft a reply with Claude
+and email it to Jess. `live`: reply with Claude. Every Graph call carries an
+appsecret_proof, so the apps' "Require app secret" setting is on.
 
 The handler is deliberately thin. All salon knowledge lives in `persona/jess.md`
 and in Terraform variables (services, staff, opening hours, booking links), which

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from functools import lru_cache
 
 from .state import Conversation
@@ -56,6 +57,35 @@ def notify(convo: Conversation, reason: str, last_user_text: str, *, sns=None) -
         },
     )
     log.info("Escalated %s", json.dumps({"sender_id": convo.sender_id, "reason": reason}))
+
+
+def notify_new_message(convo: Conversation, text: str, timestamp_ms: int = 0, *, reply: str | None = None, sns=None) -> None:
+    """Simple mode: tell the ops topic (you, not Jess) what arrived and what went back."""
+    topic_arn = os.environ.get("OPS_TOPIC_ARN")
+    page_id = os.environ.get("META_PAGE_ID", "")
+    when = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(timestamp_ms / 1000)) if timestamp_ms else "unknown time"
+    subject = f"[TLG bot] New {convo.channel} message from {convo.sender_id}"
+    body = "\n".join(
+        [
+            f"Channel: {convo.channel}",
+            f"Sender: {convo.sender_id}",
+            f"Received: {when}",
+            f"Open inbox: {business_suite_link(convo.channel, page_id)}",
+            "",
+            "Message:",
+            text,
+            "",
+            "Reply sent:" if reply else "Reply: none sent (no page token configured).",
+            *( [reply] if reply else [] ),
+            "",
+            f"Thread so far: {len(convo.history)} message(s) stored.",
+        ]
+    )
+    if not topic_arn:
+        log.warning("OPS_TOPIC_ARN not set; would have sent: %s", subject)
+        return
+    (sns or _sns()).publish(TopicArn=topic_arn, Subject=subject[:100], Message=body)
+    log.info("Listen notice sent for %s", convo.sender_id)
 
 
 @lru_cache(maxsize=1)

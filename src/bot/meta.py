@@ -74,14 +74,24 @@ def parse_events(body: dict) -> list[InboundMessage]:
     return out
 
 
-def send_text(recipient_id: str, text: str, page_token: str, *, session=None) -> dict:
+def appsecret_proof(access_token: str, app_secret: str) -> str:
+    """HMAC the token with the app secret. Meta's "Require app secret" setting
+    rejects token calls that lack this, and it stops a leaked token being
+    usable without the secret."""
+    return hmac.new(app_secret.encode(), access_token.encode(), hashlib.sha256).hexdigest()
+
+
+def send_text(recipient_id: str, text: str, page_token: str, *, app_secret: str | None = None, session=None) -> dict:
     """Send a plain text reply. Same endpoint serves Messenger and Instagram."""
     import requests  # local import keeps unit tests free of network deps
 
     http = session or requests
+    params = {"access_token": page_token}
+    if app_secret:
+        params["appsecret_proof"] = appsecret_proof(page_token, app_secret)
     resp = http.post(
         f"{GRAPH_BASE}/me/messages",
-        params={"access_token": page_token},
+        params=params,
         json={
             "recipient": {"id": recipient_id},
             "messaging_type": "RESPONSE",

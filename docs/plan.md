@@ -70,7 +70,7 @@ Decisions taken while building:
   resources). Proven with a dry-run invoke: 8 staff, 166 services,
   unchanged against the repo. Schedule enabled, London time.
 
-### 3. Monitor Lambda: `tlg-prod-monitor`
+### 3. Monitor Lambda: `tlg-prod-monitor` (parked in `terraform/parked/`)
 
 Hourly health and drift checks: our webhook handshake, Meta token and
 subscription, Fresha booking links, Fresha dashboard, and a fingerprint of
@@ -120,34 +120,37 @@ Decisions taken while building:
   person, a new service or a null description is not a change. Only keys
   appearing, disappearing or changing kind (value, object, list) count.
 
-### 6. Meta webhook: hear every Messenger and Instagram message as it arrives (PROPOSED 2026-10-19, not built)
+### 6. Meta webhooks: a bot per channel, invoked on every message (BUILT 2026-10-19 evening, simple stage; stack `terraform/`)
 
-The user's ask: event driven. Meta delivers each message to our HTTPS
-endpoint within seconds; the code for this is already in `src/bot/` and
-`terraform/` (API Gateway HTTP API, webhook Lambda, DynamoDB conversation
-table, escalation topic), never deployed. Proposed sequence, each step
-proven before the next:
+The user's ask: event driven, and a Facebook bot and an Instagram bot
+separately. Meta delivers each message to our HTTPS endpoint within
+seconds. Two Meta apps (Tlg-app1 Messenger, Tlg-app2 Instagram), two
+Lambdas from the same code (`tlg-prod-messenger-bot`,
+`tlg-prod-instagram-bot`), one HTTP API with a route each, one conversation
+table. The parked monitor moved to `terraform/parked/` so the bot stack
+applies without it. Sequence, each step proven before the next:
 
-1. **Listen.** Add a `listen` mode to the bot (alongside `shadow` and
-   live): store the message, log it, email the ops topic "new message on
-   <channel> from <id>: <text>". No Claude call, no reply, so it needs only
-   the Meta app secret and page id. Deploy the bot stack through the
-   pipeline (third stack, after the watch). Register the webhook with
-   `scripts/meta_setup.py`. Send a DM from a test account and see the email.
-2. **Shadow.** Needs the Claude Platform on AWS workspace id and the Page
-   token. Every message gets a drafted reply emailed to Jess; nothing goes
-   to the client. Run for a week.
-3. **Live.** `shadow_mode = false`. Needs Meta app review of
-   `pages_messaging` and `instagram_manage_messages` to message anyone who
-   is not an app tester.
+1. **Simple.** `bot_mode = simple`: reply with a plain acknowledgement
+   ("Hi, this is the TLG messenger test bot. I received ..."), store the
+   thread, email the ops topic the message and the reply. No Claude, no
+   persona; the user adds the framework and persona later. Deployed by the
+   pipeline as the third stack, which also registers the webhooks with
+   Meta. Guardrail (user, 2026-10-19): GitHub variable `MESSAGE_TEST_MODE`;
+   while true only messages starting with "bootycall" are answered, so only
+   the user hears from the bots on the live Page; false answers everyone.
+   Secrets are named `TLG_APP1_*` (Messenger) and `TLG_APP2_*`
+   (Instagram); `TLG_PAGE_TOKEN` is needed before anything can be sent.
+2. **Shadow.** `bot_mode = shadow`. Needs the Claude Platform on AWS
+   workspace id and the Page token. Every message gets a drafted reply
+   emailed to Jess; nothing goes to the client. Run for a week.
+3. **Live.** `bot_mode = live`. Needs Meta app review of `pages_messaging`
+   and `instagram_manage_messages` to message anyone who is not a tester.
 
-Only the user can do, in the Meta developer console: create the Business
-app, add Messenger and Instagram, link the salon's Instagram account to the
-Page, generate a System User page token, read the app secret. Steps in
-`docs/setup.md` section 1. Secrets go on the GitHub `prod` environment
-(META_PAGE_ID, META_APP_SECRET, META_PAGE_TOKEN, later
-ANTHROPIC_AWS_WORKSPACE_ID) and into Secrets Manager by Terraform, as the
-PAT does.
+Only the user can do, in the Meta developer console: the two apps (done),
+"Require app secret" on each, link the salon's Instagram account to the
+Page, generate a page token, add testers, submit for review. Steps in
+`docs/setup.md`. Secrets go on the GitHub `prod` environment and into
+Secrets Manager by Terraform, one secret per channel, as the PAT does.
 
 ## Open questions for the user
 

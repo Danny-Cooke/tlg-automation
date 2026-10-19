@@ -42,3 +42,6 @@ salon = {
 # Google account each person links Fresha to, keyed by the staff slug from
 # fresha-menu.auto.tfvars.json. Leave empty while the repo is public.
 calendar_emails = {}
+
+# The Facebook Page the bots answer for. Public, not a secret.
+meta_page_id = "61577501519464"

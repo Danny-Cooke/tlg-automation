@@ -1,30 +1,30 @@
-output "webhook_url" {
-  description = "Paste this as the Callback URL in the Meta app's Webhooks settings."
-  value       = "${aws_apigatewayv2_api.webhook.api_endpoint}/webhook"
+output "webhook_urls" {
+  description = "Callback URL per channel. Register each with its Meta app (scripts/meta_setup.py) once the Lambdas are deployed."
+  value       = { for c in local.channels : c => "${aws_apigatewayv2_api.webhook.api_endpoint}/webhook/${c}" }
 }
 
-output "webhook_verify_token" {
-  description = "Paste this as the Verify Token in the Meta app's Webhooks settings."
-  value       = random_password.verify_token.result
+output "webhook_verify_tokens" {
+  description = "Verify token per channel, for the same registration."
+  value       = { for c in local.channels : c => random_password.verify_token[c].result }
   sensitive   = true
+}
+
+output "bot_function_names" {
+  value = { for c in local.channels : c => aws_lambda_function.bot[c].function_name }
+}
+
+output "meta_page_id" {
+  description = "The Facebook Page the bots answer for; the pipeline uses it to subscribe the Page to each app."
+  value       = var.meta_page_id
 }
 
 output "escalation_topic_arn" {
   value = aws_sns_topic.escalations.arn
 }
 
-output "lambda_function_name" {
-  value = aws_lambda_function.bot.function_name
-}
-
 output "ops_topic_arn" {
-  description = "Infrastructure alarms and monitor findings. Confirm the email subscription after the first apply."
+  description = "Infrastructure alarms and listen-mode notices. Owned by the menu sync stack."
   value       = local.ops_topic_arn
-}
-
-output "monitor_function_name" {
-  description = "Invoke by hand to run every check now: aws lambda invoke --function-name <this> /dev/stdout"
-  value       = aws_lambda_function.monitor.function_name
 }
 
 output "staff_onboarding" {

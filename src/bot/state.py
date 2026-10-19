@@ -27,6 +27,12 @@ class Conversation:
     def has_seen(self, message_id: str) -> bool:
         return bool(message_id) and message_id in self.seen_message_ids
 
+    def note_message(self, message_id: str, user_text: str) -> None:
+        """Listen mode: remember the message and keep it as context, no reply."""
+        if message_id:
+            self.seen_message_ids = (self.seen_message_ids + [message_id])[-SEEN_IDS_KEPT:]
+        self.history = (self.history + [{"role": "user", "content": user_text}])[-(MAX_TURNS * 2):]
+
     def record_turn(self, message_id: str, user_text: str, bot_text: str) -> None:
         if message_id:
             self.seen_message_ids = (self.seen_message_ids + [message_id])[-SEEN_IDS_KEPT:]

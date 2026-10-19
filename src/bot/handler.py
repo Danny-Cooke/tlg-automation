@@ -1,4 +1,22 @@
-"""Lambda entry point for the Meta webhook (API Gateway HTTP API, payload v2)."""
+"""Lambda entry point for one Meta channel's webhook (API Gateway HTTP API, payload v2).
+
+One deployment per channel, from the same code: CHANNEL=messenger (the
+Facebook Page, Meta app Tlg-app1) or CHANNEL=instagram (Meta app Tlg-app2).
+Each has its own Lambda, secret, logs and alarm; they share the conversation
+table. Meta invokes it the moment a message arrives, so nothing polls.
+
+MESSAGE_TEST_MODE=true: only a message whose text starts with the trigger
+word is answered; the word is stripped before the bot sees the text. Anything
+else is stored and logged, never answered. false: every message is answered.
+
+BOT_MODE decides how a message is answered:
+    simple  a plain acknowledgement, no Claude, no persona (the first stage;
+            the user adds the framework and persona later). The ops topic
+            gets an email per message so the path can be watched.
+    shadow  draft a reply with Claude and email it to Jess. Nothing reaches
+            the client.
+    live    reply with Claude; hand over to Jess when the bot says so.
+"""
 from __future__ import annotations
 
 import base64
@@ -15,13 +33,16 @@ from .state import ConversationStore
 log = logging.getLogger()
 log.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
-# Replies are drafted and escalated to Jess but never sent to the client.
-SHADOW_MODE = os.environ.get("SHADOW_MODE", "true").lower() == "true"
+MODES = ("simple", "shadow", "live")
+MODE = os.environ.get("BOT_MODE", "simple")
+CHANNEL = os.environ.get("CHANNEL", "")  # messenger | instagram; empty accepts both
+TEST_MODE = os.environ.get("MESSAGE_TEST_MODE", "true").lower() == "true"
+TEST_TRIGGER = os.environ.get("MESSAGE_TEST_TRIGGER", "bootycall")
 
 
 @lru_cache(maxsize=1)
 def secrets() -> dict:
-    """Meta app secret, page token and verify token from Secrets Manager."""
+    """This channel's Meta app secret, page token and verify token from Secrets Manager."""
     import boto3
 
     arn = os.environ["META_SECRET_ARN"]
@@ -35,6 +56,8 @@ def system_prompt() -> str:
 
 
 def lambda_handler(event: dict, context=None) -> dict:
+    if MODE not in MODES:
+        raise RuntimeError(f"BOT_MODE must be one of {MODES}, not {MODE!r}")
     method = event.get("requestContext", {}).get("http", {}).get("method", "")
     if method == "GET":
         return _handle_verify(event)
@@ -65,6 +88,9 @@ def _handle_webhook(event: dict, *, store: ConversationStore | None = None) -> d
 
     store = store or ConversationStore()
     for msg in meta.parse_events(payload):
+        if CHANNEL and msg.channel != CHANNEL:
+            log.warning("Ignoring %s message on the %s bot", msg.channel, CHANNEL)
+            continue
         try:
             process_message(msg, store)
         except Exception:  # noqa: BLE001 - one bad thread must not fail the batch
@@ -73,23 +99,51 @@ def _handle_webhook(event: dict, *, store: ConversationStore | None = None) -> d
     return _resp(200, "ok")
 
 
+def test_gate(text: str) -> tuple[bool, str]:
+    """(answer it?, text to answer). Only the trigger word opens the gate in test mode."""
+    if not TEST_MODE:
+        return True, text
+    stripped = text.strip()
+    if stripped.lower().startswith(TEST_TRIGGER.lower()):
+        return True, stripped[len(TEST_TRIGGER):].strip()
+    return False, text
+
+
 def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     convo = store.load(msg.sender_id)
     convo.channel = msg.channel
     if convo.has_seen(msg.message_id):
         log.info("Duplicate delivery %s, skipping", msg.message_id)
         return
+
+    allowed, text = test_gate(msg.text)
+    if not allowed:
+        convo.note_message(msg.message_id, msg.text or "[attachment without text]")
+        store.save(convo)
+        log.info("TEST MODE: not answering %s on %s (no trigger word)", msg.sender_id, msg.channel)
+        return
+
+    user_text = text or "[attachment without text]"
+
+    if MODE == "simple":
+        reply_text = simple_reply(msg.channel, text)
+        convo.record_turn(msg.message_id, user_text, reply_text)
+        sent = _send(msg.sender_id, reply_text)
+        escalation.notify_new_message(convo, user_text, msg.timestamp_ms, reply=reply_text if sent else None)
+        store.save(convo)
+        log.info("SIMPLE %s from %s: %r -> %r (sent=%s)", msg.channel, msg.sender_id, user_text[:200], reply_text, sent)
+        return
+
     if convo.handed_to_jess:
         log.info("Thread %s is with Jess, staying quiet", msg.sender_id)
         convo.seen_message_ids.append(msg.message_id)
         store.save(convo)
         return
-    if not msg.text:
+
+    if not text:
         # Attachment-only message: let Jess see it rather than guess.
         reply = brain.BotReply(reply=brain.SAFE_REPLY, escalate=True, escalation_reason="Non-text message")
-        user_text = "[attachment without text]"
     else:
-        user_text = msg.text
         reply = brain.ask(system_prompt(), convo.history, user_text)
 
     convo.record_turn(msg.message_id, user_text, reply.reply)
@@ -97,18 +151,35 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     if reply.escalate:
         # In shadow mode nothing reaches the client, so keep drafting instead
         # of locking the thread.
-        convo.handed_to_jess = not SHADOW_MODE
+        convo.handed_to_jess = MODE == "live"
         escalation.notify(convo, reply.escalation_reason, user_text)
 
-    if SHADOW_MODE:
+    if MODE == "shadow":
         log.info("SHADOW reply to %s: %s", msg.sender_id, reply.reply)
         if not reply.escalate:
             escalation.notify(convo, f"Shadow mode draft: {reply.reply}", user_text)
     else:
-        for chunk in meta.chunk_text(reply.reply):
-            meta.send_text(msg.sender_id, chunk, secrets()["page_token"])
+        _send(msg.sender_id, reply.reply)
 
     store.save(convo)
+
+
+def simple_reply(channel: str, text: str) -> str:
+    """The stand-in reply until the framework and persona exist."""
+    what = f'"{text}"' if text else "a message with no text"
+    return f"Hi, this is the TLG {channel} test bot. I received {what}."
+
+
+def _send(recipient_id: str, text: str) -> bool:
+    """Reply through the Graph API. Without a page token nothing can be sent;
+    say so in the log rather than fail, so the rest of the path still works."""
+    s = secrets()
+    if not s.get("page_token"):
+        log.warning("No page token configured; cannot reply to %s", recipient_id)
+        return False
+    for chunk in meta.chunk_text(text):
+        meta.send_text(recipient_id, chunk, s["page_token"], app_secret=s.get("app_secret"))
+    return True
 
 
 def _resp(status: int, body: str) -> dict:

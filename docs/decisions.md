@@ -119,6 +119,21 @@ the PAT when they pass; the merge triggers the deploy. Only that branch is
 auto-merged, so any other PR still waits for a review. The ops email remains
 the human's notice that the menu changed.
 
+## 2026-10-19: One Meta app and one bot per channel
+
+The user's call: Tlg-app1 for Messenger and Tlg-app2 for Instagram, each
+with its own Lambda, rather than one app and one Lambda for both. Meta
+registers a callback per webhook object anyway, so the cost is one more
+secret and one more function from the same code. The gain: Instagram's
+account linking, message-access toggle and app review are independent of
+Messenger's, so Facebook can go live while Instagram is still being set up,
+and a failure on one channel never touches the other. They share the
+conversation table and the escalation topic.
+
+Simple mode comes first: a plain acknowledgement with no Claude and no
+persona, behind the trigger-word guardrail (`MESSAGE_TEST_MODE`), so the
+event path and the reply path are proven before the framework exists.
+
 ## 2026-10-19: Fresha watch texts by SMS now, WhatsApp later
 
 The user wants a text or WhatsApp when Fresha's public pages change shape.

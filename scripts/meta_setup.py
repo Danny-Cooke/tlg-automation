@@ -1,37 +1,58 @@
-"""One-off Meta wiring that can be done over the Graph API, no browser needed.
+"""Register one channel's webhook with its Meta app, over the Graph API.
 
-Prerequisites you must get from the Meta developer console once (there is no
-API for these):
-  - App ID and App Secret        (App settings > Basic)
-  - A Page access token           (Messenger > API setup, or a System User
-                                   token in Business Settings)
+There are two Meta apps, one per channel, and two Lambdas behind one API:
 
-Then run:
+  Tlg-app1  messenger   object "page"       callback .../webhook/messenger
+  Tlg-app2  instagram   object "instagram"  callback .../webhook/instagram
 
-  python scripts/meta_setup.py \
-      --app-id 123 --app-secret ... --page-id 456 --page-token ... \
-      --callback-url https://xxxx.execute-api.eu-west-2.amazonaws.com/webhook \
-      --verify-token $(cd terraform && terraform output -raw webhook_verify_token)
+Run once per channel after `terraform apply` of the bot stack (Meta calls
+GET on the callback during registration, so the Lambda must exist):
+
+  cd terraform
+  python ../scripts/meta_setup.py --channel messenger \
+      --app-id <Tlg-app1 id> --app-secret <Tlg-app1 secret> \
+      --callback-url "$(terraform output -json webhook_urls | jq -r .messenger)" \
+      --verify-token "$(terraform output -json webhook_verify_tokens | jq -r .messenger)" \
+      [--page-id <page id> --page-token <page token>]
 
 What it does:
-  1. Registers the webhook callback for the "page" and "instagram" objects on
-     the app and subscribes to the messages fields. Meta calls GET on the
-     callback during this step, so the Lambda must already be deployed.
-  2. Subscribes the Page to the app so message events are delivered.
-  3. Prints the Instagram account linked to the Page, if any.
+  1. Subscribes the app to the channel's webhook object with the messages
+     fields, pointing at the callback. Uses the app access token
+     (id|secret), which needs no appsecret_proof.
+  2. With --page-id and --page-token: subscribes the Page to the app so
+     Meta actually delivers its messages, and for instagram prints the
+     linked Instagram account. Token calls carry appsecret_proof, so the
+     app's "Require app secret" setting can stay on. Without a token, do
+     this step in the console: Messenger (or Instagram) > Settings >
+     Webhooks > Add subscriptions on the Page.
+
+Prerequisites from the Meta developer console (no API for these): the App
+ID and App Secret (Settings > Basic); a Page access token (Messenger >
+API setup > Generate token, or a System User token).
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
+import hmac
 import sys
 
 import requests
 
 GRAPH = "https://graph.facebook.com/v21.0"
 
+CHANNELS = {
+    "messenger": {"object": "page", "fields": ["messages", "messaging_postbacks"]},
+    "instagram": {"object": "instagram", "fields": ["messages"]},
+}
+
 
 def app_access_token(app_id: str, app_secret: str) -> str:
     return f"{app_id}|{app_secret}"
+
+
+def appsecret_proof(token: str, app_secret: str) -> str:
+    return hmac.new(app_secret.encode(), token.encode(), hashlib.sha256).hexdigest()
 
 
 def subscribe_app(app_id: str, app_token: str, obj: str, fields: list[str], callback: str, verify: str) -> None:
@@ -47,23 +68,27 @@ def subscribe_app(app_id: str, app_token: str, obj: str, fields: list[str], call
         },
         timeout=30,
     )
-    _check(r, f"subscribe app to {obj}")
+    _check(r, f"subscribe app to {obj} webhooks at {callback}")
 
 
-def subscribe_page(page_id: str, page_token: str, fields: list[str]) -> None:
+def subscribe_page(page_id: str, page_token: str, app_secret: str, fields: list[str]) -> None:
     r = requests.post(
         f"{GRAPH}/{page_id}/subscribed_apps",
-        params={"access_token": page_token},
+        params={"access_token": page_token, "appsecret_proof": appsecret_proof(page_token, app_secret)},
         data={"subscribed_fields": ",".join(fields)},
         timeout=30,
     )
     _check(r, "subscribe page to app")
 
 
-def linked_instagram(page_id: str, page_token: str) -> str | None:
+def linked_instagram(page_id: str, page_token: str, app_secret: str) -> str | None:
     r = requests.get(
         f"{GRAPH}/{page_id}",
-        params={"access_token": page_token, "fields": "instagram_business_account{id,username}"},
+        params={
+            "access_token": page_token,
+            "appsecret_proof": appsecret_proof(page_token, app_secret),
+            "fields": "instagram_business_account{id,username}",
+        },
         timeout=30,
     )
     _check(r, "read linked Instagram account")
@@ -79,24 +104,28 @@ def _check(r: requests.Response, what: str) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--channel", required=True, choices=sorted(CHANNELS))
     p.add_argument("--app-id", required=True)
     p.add_argument("--app-secret", required=True)
-    p.add_argument("--page-id", required=True)
-    p.add_argument("--page-token", required=True)
     p.add_argument("--callback-url", required=True)
     p.add_argument("--verify-token", required=True)
+    p.add_argument("--page-id")
+    p.add_argument("--page-token")
     a = p.parse_args()
 
-    app_token = app_access_token(a.app_id, a.app_secret)
-    page_fields = ["messages", "messaging_postbacks", "message_deliveries", "message_reads"]
-    ig_fields = ["messages"]
+    spec = CHANNELS[a.channel]
+    if not a.callback_url.rstrip("/").endswith(f"/webhook/{a.channel}"):
+        sys.exit(f"callback for {a.channel} should end with /webhook/{a.channel}: {a.callback_url}")
 
-    subscribe_app(a.app_id, app_token, "page", page_fields, a.callback_url, a.verify_token)
-    subscribe_app(a.app_id, app_token, "instagram", ig_fields, a.callback_url, a.verify_token)
-    subscribe_page(a.page_id, a.page_token, page_fields)
+    subscribe_app(a.app_id, app_access_token(a.app_id, a.app_secret), spec["object"], spec["fields"], a.callback_url, a.verify_token)
 
-    ig = linked_instagram(a.page_id, a.page_token)
-    print(f"Linked Instagram: {ig or 'none. Link the IG professional account to the Page in Business Settings.'}")
+    if a.page_id and a.page_token:
+        subscribe_page(a.page_id, a.page_token, a.app_secret, spec["fields"])
+        if a.channel == "instagram":
+            ig = linked_instagram(a.page_id, a.page_token, a.app_secret)
+            print(f"Linked Instagram: {ig or 'none. Link the IG professional account to the Page in Business Settings.'}")
+    else:
+        print("No page token given: subscribe the Page to this app in the console (Webhooks > Add subscriptions).")
 
 
 if __name__ == "__main__":

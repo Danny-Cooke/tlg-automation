@@ -1,5 +1,7 @@
 terraform {
-  required_version = ">= 1.6"
+  # The S3 lockfile backend (backend.tf) needs 1.10 or later. The pipeline
+  # pins 1.10.5; local runs need the same or newer.
+  required_version = ">= 1.10"
 
   required_providers {
     aws = {
@@ -15,16 +17,6 @@ terraform {
       version = "~> 3.6"
     }
   }
-
-  # State bucket created by hand 2026-10-19. Key is <repo>/<environment>.
-  # Locking uses the S3 lockfile, which needs Terraform 1.10 or later.
-  # backend "s3" {
-  #   bucket       = "tlg-automation-terraform-state"
-  #   key          = "tlg-automation/prod/terraform.tfstate"
-  #   region       = "eu-west-2"
-  #   encrypt      = true
-  #   use_lockfile = true
-  # }
 }
 
 provider "aws" {

@@ -1,5 +1,27 @@
+# ---------------------------------------------------------------------------
+# The bot stack: one Lambda per Meta channel, invoked by Meta the moment a
+# message arrives.
+#
+#   messenger  the Facebook Page, Meta app Tlg-app1
+#   instagram  the salon's Instagram account, Meta app Tlg-app2
+#
+# Same code, separate function, secret, logs and alarm per channel, so each
+# can be switched on, reviewed by Meta and debugged on its own. One HTTP API
+# with a route per channel, one conversation table, one escalation topic.
+# What the bots do with a message is var.bot_mode: simple, shadow or live.
+# While var.message_test_mode is true only messages starting with the
+# trigger word are answered, so only the tester hears from them.
+# ---------------------------------------------------------------------------
+
 locals {
   name = "${var.name_prefix}-${var.environment}"
+
+  channels = toset(["messenger", "instagram"])
+
+  meta_app_ids = {
+    messenger = var.meta_messenger_app_id
+    instagram = var.meta_instagram_app_id
+  }
 
   # Everything the bot may quote, rendered once into one env var.
   salon_config = {
@@ -20,36 +42,59 @@ locals {
     ]
   }
 
-  # Build directory populated by scripts/build_lambda.sh before `terraform apply`.
-  lambda_build_dir = "${path.module}/../build/lambda"
+  # Populated by `scripts/build_lambda.sh bot` before terraform apply.
+  lambda_build_dir = "${path.module}/../build/bot"
 }
 
+# Ops alerts (alarms, listen-mode notices) go to the topic owned by the menu
+# sync stack, the first one deployed; read its ARN from that state.
+data "terraform_remote_state" "menu_sync" {
+  backend = "s3"
+  config = {
+    bucket = "tlg-automation-terraform-state"
+    key    = "tlg-automation/${var.environment}/menu-sync.tfstate"
+    region = var.aws_region
+  }
+}
+
+locals {
+  ops_topic_arn = data.terraform_remote_state.menu_sync.outputs.ops_topic_arn
+}
+
+data "aws_caller_identity" "current" {}
+
 # ---------------------------------------------------------------------------
-# Secrets
+# Secrets: one per channel (its app's secret, the page token, the webhook
+# verify token). Written by the deploy pipeline from GitHub environment
+# secrets, read by the Lambda at run time.
 # ---------------------------------------------------------------------------
 
 resource "random_password" "verify_token" {
-  length  = 32
-  special = false
+  for_each = local.channels
+  length   = 32
+  special  = false
 }
 
 resource "aws_secretsmanager_secret" "meta" {
-  name                    = "${local.name}/meta"
-  description             = "Meta app secret, page token and webhook verify token"
+  for_each                = local.channels
+  name                    = "${local.name}/meta/${each.key}"
+  description             = "Meta app ${local.meta_app_ids[each.key]} (${each.key}): app secret, page token, webhook verify token"
   recovery_window_in_days = 7
 }
 
 resource "aws_secretsmanager_secret_version" "meta" {
-  secret_id = aws_secretsmanager_secret.meta.id
+  for_each  = local.channels
+  secret_id = aws_secretsmanager_secret.meta[each.key].id
   secret_string = jsonencode({
-    app_secret   = var.meta_app_secret
+    app_id       = local.meta_app_ids[each.key]
+    app_secret   = each.key == "messenger" ? var.meta_messenger_app_secret : var.meta_instagram_app_secret
     page_token   = var.meta_page_token
-    verify_token = random_password.verify_token.result
+    verify_token = random_password.verify_token[each.key].result
   })
 }
 
 # ---------------------------------------------------------------------------
-# State
+# State: one table for both channels, keyed by the sender's Meta id
 # ---------------------------------------------------------------------------
 
 resource "aws_dynamodb_table" "conversations" {
@@ -73,7 +118,7 @@ resource "aws_dynamodb_table" "conversations" {
 }
 
 # ---------------------------------------------------------------------------
-# Escalation
+# Escalation: Jess, in shadow and live modes
 # ---------------------------------------------------------------------------
 
 resource "aws_sns_topic" "escalations" {
@@ -87,24 +132,15 @@ resource "aws_sns_topic_subscription" "email" {
   endpoint  = each.value
 }
 
-resource "aws_sns_topic_subscription" "sms" {
-  for_each  = toset(var.escalation_sms_numbers)
-  topic_arn = aws_sns_topic.escalations.arn
-  protocol  = "sms"
-  endpoint  = each.value
-}
-
 # ---------------------------------------------------------------------------
-# Lambda
+# Lambdas
 # ---------------------------------------------------------------------------
 
 data "archive_file" "bot" {
   type        = "zip"
   source_dir  = local.lambda_build_dir
-  output_path = "${path.module}/../build/lambda.zip"
+  output_path = "${path.module}/../build/bot.zip"
 }
-
-data "aws_caller_identity" "current" {}
 
 data "aws_iam_policy_document" "lambda_assume" {
   statement {
@@ -117,15 +153,18 @@ data "aws_iam_policy_document" "lambda_assume" {
 }
 
 resource "aws_iam_role" "bot" {
-  name               = "${local.name}-bot"
+  for_each           = local.channels
+  name               = "${local.name}-${each.key}-bot"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
 }
 
 data "aws_iam_policy_document" "bot" {
+  for_each = local.channels
+
   statement {
     sid       = "Logs"
     actions   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = ["${aws_cloudwatch_log_group.bot.arn}:*"]
+    resources = ["${aws_cloudwatch_log_group.bot[each.key].arn}:*"]
   }
 
   statement {
@@ -135,40 +174,48 @@ data "aws_iam_policy_document" "bot" {
   }
 
   statement {
-    sid       = "Escalate"
+    sid       = "Notify"
     actions   = ["sns:Publish"]
-    resources = [aws_sns_topic.escalations.arn]
+    resources = [aws_sns_topic.escalations.arn, local.ops_topic_arn]
   }
 
   statement {
     sid       = "Secrets"
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_secretsmanager_secret.meta.arn]
+    resources = [aws_secretsmanager_secret.meta[each.key].arn]
   }
 
-  # Claude Platform on AWS: POST /v1/messages on this workspace only.
+  # Claude Platform on AWS: POST /v1/messages on this workspace only. Not
+  # needed in simple mode, so only granted once the workspace id is known.
   # Reference: platform.claude.com/docs/en/api/claude-platform-on-aws-iam-actions
-  statement {
-    sid       = "Claude"
-    actions   = ["aws-external-anthropic:CreateInference"]
-    resources = ["arn:aws:aws-external-anthropic:${var.aws_region}:${data.aws_caller_identity.current.account_id}:workspace/${var.anthropic_aws_workspace_id}"]
+  dynamic "statement" {
+    for_each = var.anthropic_aws_workspace_id == "" ? [] : [1]
+    content {
+      sid       = "Claude"
+      actions   = ["aws-external-anthropic:CreateInference"]
+      resources = ["arn:aws:aws-external-anthropic:${var.aws_region}:${data.aws_caller_identity.current.account_id}:workspace/${var.anthropic_aws_workspace_id}"]
+    }
   }
 }
 
 resource "aws_iam_role_policy" "bot" {
-  name   = "bot"
-  role   = aws_iam_role.bot.id
-  policy = data.aws_iam_policy_document.bot.json
+  for_each = local.channels
+  name     = "bot"
+  role     = aws_iam_role.bot[each.key].id
+  policy   = data.aws_iam_policy_document.bot[each.key].json
 }
 
 resource "aws_cloudwatch_log_group" "bot" {
-  name              = "/aws/lambda/${local.name}-bot"
+  for_each          = local.channels
+  name              = "/aws/lambda/${local.name}-${each.key}-bot"
   retention_in_days = 30
 }
 
 resource "aws_lambda_function" "bot" {
-  function_name    = "${local.name}-bot"
-  role             = aws_iam_role.bot.arn
+  for_each         = local.channels
+  function_name    = "${local.name}-${each.key}-bot"
+  description      = "Answers ${each.key} DMs for the salon; invoked by Meta's webhook on every message (mode: ${var.bot_mode})"
+  role             = aws_iam_role.bot[each.key].arn
   runtime          = "python3.12"
   handler          = "bot.handler.lambda_handler"
   filename         = data.archive_file.bot.output_path
@@ -179,13 +226,17 @@ resource "aws_lambda_function" "bot" {
 
   environment {
     variables = {
+      CHANNEL                    = each.key
+      BOT_MODE                   = var.bot_mode
+      MESSAGE_TEST_MODE          = tostring(var.message_test_mode)
+      MESSAGE_TEST_TRIGGER       = var.message_test_trigger
       SALON_CONFIG_JSON          = jsonencode(local.salon_config)
       PERSONA_PATH               = "/var/task/bot/jess.md"
       CONVERSATIONS_TABLE        = aws_dynamodb_table.conversations.name
       ESCALATION_TOPIC_ARN       = aws_sns_topic.escalations.arn
-      META_SECRET_ARN            = aws_secretsmanager_secret.meta.arn
+      OPS_TOPIC_ARN              = local.ops_topic_arn
+      META_SECRET_ARN            = aws_secretsmanager_secret.meta[each.key].arn
       META_PAGE_ID               = var.meta_page_id
-      SHADOW_MODE                = tostring(var.shadow_mode)
       CLAUDE_MODEL               = var.claude_model
       CLAUDE_EFFORT              = var.claude_effort
       ANTHROPIC_AWS_WORKSPACE_ID = var.anthropic_aws_workspace_id
@@ -193,11 +244,17 @@ resource "aws_lambda_function" "bot" {
     }
   }
 
+  tags = {
+    Component = "${each.key}-bot"
+  }
+
   depends_on = [aws_cloudwatch_log_group.bot]
 }
 
 # ---------------------------------------------------------------------------
-# Webhook endpoint
+# Webhook endpoint: one API, one route per channel
+#   GET  /webhook/<channel>  Meta's verification handshake
+#   POST /webhook/<channel>  message events
 # ---------------------------------------------------------------------------
 
 resource "aws_apigatewayv2_api" "webhook" {
@@ -206,22 +263,25 @@ resource "aws_apigatewayv2_api" "webhook" {
 }
 
 resource "aws_apigatewayv2_integration" "bot" {
+  for_each               = local.channels
   api_id                 = aws_apigatewayv2_api.webhook.id
   integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.bot.invoke_arn
+  integration_uri        = aws_lambda_function.bot[each.key].invoke_arn
   payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "verify" {
+  for_each  = local.channels
   api_id    = aws_apigatewayv2_api.webhook.id
-  route_key = "GET /webhook"
-  target    = "integrations/${aws_apigatewayv2_integration.bot.id}"
+  route_key = "GET /webhook/${each.key}"
+  target    = "integrations/${aws_apigatewayv2_integration.bot[each.key].id}"
 }
 
 resource "aws_apigatewayv2_route" "events" {
+  for_each  = local.channels
   api_id    = aws_apigatewayv2_api.webhook.id
-  route_key = "POST /webhook"
-  target    = "integrations/${aws_apigatewayv2_integration.bot.id}"
+  route_key = "POST /webhook/${each.key}"
+  target    = "integrations/${aws_apigatewayv2_integration.bot[each.key].id}"
 }
 
 resource "aws_apigatewayv2_stage" "default" {
@@ -236,19 +296,22 @@ resource "aws_apigatewayv2_stage" "default" {
 }
 
 resource "aws_lambda_permission" "apigw" {
+  for_each      = local.channels
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.bot.function_name
+  function_name = aws_lambda_function.bot[each.key].function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.webhook.execution_arn}/*/*"
 }
 
 # ---------------------------------------------------------------------------
-# Alarm: any handler error goes to the ops topic (see monitor.tf)
+# Alarms: a handler error on either bot goes to the ops topic
 # ---------------------------------------------------------------------------
 
 resource "aws_cloudwatch_metric_alarm" "bot_errors" {
-  alarm_name          = "${local.name}-bot-errors"
+  for_each            = local.channels
+  alarm_name          = "${local.name}-${each.key}-bot-errors"
+  alarm_description   = "The ${each.key} bot failed while handling a message."
   namespace           = "AWS/Lambda"
   metric_name         = "Errors"
   statistic           = "Sum"
@@ -260,6 +323,6 @@ resource "aws_cloudwatch_metric_alarm" "bot_errors" {
   alarm_actions       = [local.ops_topic_arn]
 
   dimensions = {
-    FunctionName = aws_lambda_function.bot.function_name
+    FunctionName = aws_lambda_function.bot[each.key].function_name
   }
 }

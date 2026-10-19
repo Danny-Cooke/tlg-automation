@@ -1,23 +1,31 @@
 name: Deploy
 
-# Deploys the menu sync stack (terraform/menu_sync) and the Fresha watch
-# stack (terraform/fresha_watch), in that order: the watch reads the ops
-# topic from the menu sync state. Plans on every push to main; applies when
-# the "prod" environment holds the PAT. The bot stack (terraform/) is not
-# deployed by this workflow yet.
+# Deploys three stacks in order: terraform/menu_sync (owns the ops topic),
+# terraform/fresha_watch, then terraform/ (the two Meta bots). Plans on every
+# push to main; applies when the "prod" environment holds the secrets each
+# stack needs. After the bot stack applies, the workflow registers each
+# bot's webhook with its Meta app. The parked monitor is not deployed.
 #
-# Hands-off menu changes: the Lambda opens a pull request from branch
-# "menu-sync". This workflow runs the tests on that PR and, when they pass,
-# merges it with the PAT. The merge is a push to main by the PAT, which
+# Hands-off menu changes: the menu sync Lambda opens a pull request from
+# branch "menu-sync". This workflow runs the tests on that PR and, when they
+# pass, merges it with the PAT. The merge is a push to main by the PAT, which
 # triggers this workflow again to deploy. (A merge made with GITHUB_TOKEN
 # would not trigger anything, hence the PAT.)
 #
 # Assumes the account's existing github-oidc role (trusts every Danny-Cooke
-# repo), the same one the other repos deploy with. GitHub environment "prod":
-#   variables: AWS_ROLE_ARN (that role's ARN),
+# repo). GitHub environment "prod":
+#   variables: AWS_ROLE_ARN (that role's ARN)
 #              OPS_ALERT_EMAILS (JSON list, optional), OWNER_EMAIL (optional)
+#              MESSAGE_TEST_MODE (true: bots answer only messages that start
+#                with the trigger word, i.e. only the tester; false: everyone)
+#              BOT_MODE (simple | shadow | live; default simple)
+#              ESCALATION_EMAILS (JSON list, Jess; optional until shadow)
 #   secrets:   GH_PAT (fine-grained PAT: contents + pull requests on this repo)
 #              ALERT_PHONE_NUMBERS (JSON list of E.164 numbers, optional)
+#              TLG_APP1_ID, TLG_APP1_SECRET (Meta app for Messenger)
+#              TLG_APP2_ID, TLG_APP2_SECRET (Meta app for Instagram, optional)
+#              TLG_PAGE_TOKEN (Page access token; needed before bots can reply)
+#              ANTHROPIC_AWS_WORKSPACE_ID (optional until shadow)
 
 on:
   push:
@@ -107,13 +115,17 @@ jobs:
         run: |
           bash scripts/build_lambda.sh menu_sync
           bash scripts/build_lambda.sh fresha_watch menu_sync
+          bash scripts/build_lambda.sh bot
 
       # The secrets context is not available in a step's `if`, so a step
       # decides and the applies read its output.
-      - name: Decide whether the stacks can be applied
+      - name: Decide which stacks can be applied
         id: gate
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
+          TLG_APP1_SECRET: ${{ secrets.TLG_APP1_SECRET }}
+          TLG_APP2_SECRET: ${{ secrets.TLG_APP2_SECRET }}
+          TLG_PAGE_TOKEN: ${{ secrets.TLG_PAGE_TOKEN }}
         run: |
           if [ -z "$GH_PAT" ]; then
             echo "apply=false" >> "$GITHUB_OUTPUT"
@@ -121,6 +133,14 @@ jobs:
           else
             echo "apply=true" >> "$GITHUB_OUTPUT"
           fi
+          if [ -n "$GH_PAT" ] && [ -n "$TLG_APP1_SECRET" ]; then
+            echo "apply_bot=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "apply_bot=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Bot stack: plan only. Needs TLG_APP1_SECRET on the prod environment."
+          fi
+          [ -n "$TLG_APP2_SECRET" ] && echo "instagram=true" >> "$GITHUB_OUTPUT" || echo "instagram=false" >> "$GITHUB_OUTPUT"
+          [ -n "$TLG_PAGE_TOKEN" ] || echo "::notice::No TLG_PAGE_TOKEN yet: the bots will store and email messages but cannot reply, and the Page must be subscribed to each app in the Meta console."
 
       # ---- menu sync ------------------------------------------------------
 
@@ -158,3 +178,71 @@ jobs:
         if: steps.gate.outputs.apply == 'true'
         working-directory: terraform/fresha_watch
         run: terraform apply -no-color -auto-approve tfplan
+
+      # ---- Meta bots (reads the ops topic from the menu sync state) -------
+
+      - name: Bots - init
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform
+        run: terraform init
+
+      - name: Bots - plan
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform
+        env:
+          TF_VAR_bot_mode: ${{ vars.BOT_MODE || 'simple' }}
+          TF_VAR_message_test_mode: ${{ vars.MESSAGE_TEST_MODE || 'true' }}
+          TF_VAR_escalation_emails: ${{ vars.ESCALATION_EMAILS || '[]' }}
+          TF_VAR_meta_messenger_app_id: ${{ secrets.TLG_APP1_ID || '0' }}
+          TF_VAR_meta_messenger_app_secret: ${{ secrets.TLG_APP1_SECRET || 'unset' }}
+          TF_VAR_meta_instagram_app_id: ${{ secrets.TLG_APP2_ID || '' }}
+          TF_VAR_meta_instagram_app_secret: ${{ secrets.TLG_APP2_SECRET || '' }}
+          TF_VAR_meta_page_token: ${{ secrets.TLG_PAGE_TOKEN || '' }}
+          TF_VAR_anthropic_aws_workspace_id: ${{ secrets.ANTHROPIC_AWS_WORKSPACE_ID || '' }}
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Bots - apply
+        if: steps.gate.outputs.apply_bot == 'true'
+        working-directory: terraform
+        run: terraform apply -no-color -auto-approve tfplan
+
+      # Meta calls GET on each URL during registration, so this runs after
+      # the apply. Idempotent: every deploy re-asserts the subscription.
+      - name: Bots - register the Messenger webhook with Meta
+        if: steps.gate.outputs.apply_bot == 'true'
+        working-directory: terraform
+        env:
+          APP_ID: ${{ secrets.TLG_APP1_ID }}
+          APP_SECRET: ${{ secrets.TLG_APP1_SECRET }}
+          PAGE_ID: ${{ secrets.TLG_PAGE_ID }}
+          PAGE_TOKEN: ${{ secrets.TLG_PAGE_TOKEN }}
+        run: |
+          pip install --quiet requests
+          PAGE_ID="${PAGE_ID:-$(terraform output -raw meta_page_id)}"
+          python ../scripts/meta_setup.py --channel messenger \
+            --app-id "$APP_ID" --app-secret "$APP_SECRET" \
+            --callback-url "$(terraform output -json webhook_urls | python -c 'import sys,json; print(json.load(sys.stdin)["messenger"])')" \
+            --verify-token "$(terraform output -json webhook_verify_tokens | python -c 'import sys,json; print(json.load(sys.stdin)["messenger"])')" \
+            ${PAGE_TOKEN:+--page-id "$PAGE_ID" --page-token "$PAGE_TOKEN"}
+
+      - name: Bots - register the Instagram webhook with Meta
+        if: steps.gate.outputs.apply_bot == 'true' && steps.gate.outputs.instagram == 'true'
+        working-directory: terraform
+        env:
+          APP_ID: ${{ secrets.TLG_APP2_ID }}
+          APP_SECRET: ${{ secrets.TLG_APP2_SECRET }}
+          PAGE_ID: ${{ secrets.TLG_PAGE_ID }}
+          PAGE_TOKEN: ${{ secrets.TLG_PAGE_TOKEN }}
+        run: |
+          pip install --quiet requests
+          PAGE_ID="${PAGE_ID:-$(terraform output -raw meta_page_id)}"
+          python ../scripts/meta_setup.py --channel instagram \
+            --app-id "$APP_ID" --app-secret "$APP_SECRET" \
+            --callback-url "$(terraform output -json webhook_urls | python -c 'import sys,json; print(json.load(sys.stdin)["instagram"])')" \
+            --verify-token "$(terraform output -json webhook_verify_tokens | python -c 'import sys,json; print(json.load(sys.stdin)["instagram"])')" \
+            ${PAGE_TOKEN:+--page-id "$PAGE_ID" --page-token "$PAGE_TOKEN"}
+
+      - name: Bots - webhook URLs
+        if: steps.gate.outputs.apply_bot == 'true'
+        working-directory: terraform
+        run: terraform output -json webhook_urls

@@ -16,21 +16,10 @@ locals {
   )))
 }
 
-# Ops alerts: AWS alarms and monitor findings. The topic and its email
-# subscriptions belong to the menu sync stack (terraform/menu_sync), the first
-# one deployed; this stack reads the ARN from that stack's state.
-data "terraform_remote_state" "menu_sync" {
-  backend = "s3"
-  config = {
-    bucket = "tlg-automation-terraform-state"
-    key    = "tlg-automation/${var.environment}/menu-sync.tfstate"
-    region = var.aws_region
-  }
-}
-
-locals {
-  ops_topic_arn = data.terraform_remote_state.menu_sync.outputs.ops_topic_arn
-}
+# PARKED 2026-10-19: not loaded by Terraform (this directory is not a root).
+# To revive, move it back into terraform/, point it at
+# aws_lambda_function.bot["messenger"] and the per-channel secret, and add
+# "monitor" to the bot bundle. local.ops_topic_arn now lives in main.tf.
 
 # Previous run's findings and fingerprints. Written by the Lambda, so
 # Terraform only creates it and then leaves the value alone.
@@ -71,7 +60,7 @@ data "aws_iam_policy_document" "monitor" {
   statement {
     sid       = "Secrets"
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_secretsmanager_secret.meta.arn]
+    resources = [aws_secretsmanager_secret.meta["messenger"].arn]
   }
 
   statement {
@@ -105,12 +94,12 @@ resource "aws_lambda_function" "monitor" {
 
   environment {
     variables = {
-      WEBHOOK_URL             = "${aws_apigatewayv2_api.webhook.api_endpoint}/webhook"
-      META_SECRET_ARN         = aws_secretsmanager_secret.meta.arn
+      WEBHOOK_URL             = "${aws_apigatewayv2_api.webhook.api_endpoint}/webhook/messenger"
+      META_SECRET_ARN         = aws_secretsmanager_secret.meta["messenger"].arn
       META_PAGE_ID            = var.meta_page_id
       FRESHA_LINKS_JSON       = jsonencode(local.fresha_links)
       SALON_NAME              = var.salon.name
-      BOT_FUNCTION_NAME       = aws_lambda_function.bot.function_name
+      BOT_FUNCTION_NAME       = aws_lambda_function.bot["messenger"].function_name
       MONITOR_STATE_PARAMETER = aws_ssm_parameter.monitor_state.name
       OPS_TOPIC_ARN           = local.ops_topic_arn
       LOG_LEVEL               = "INFO"

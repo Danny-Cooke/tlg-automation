@@ -13,7 +13,7 @@ variable "name_prefix" {
 variable "environment" {
   description = "dev or prod. Only affects names and tags."
   type        = string
-  default     = "dev"
+  default     = "prod"
 }
 
 # ---------------------------------------------------------------------------
@@ -21,8 +21,9 @@ variable "environment" {
 # ---------------------------------------------------------------------------
 
 variable "anthropic_aws_workspace_id" {
-  description = "Claude Platform on AWS workspace id (ANTHROPIC_AWS_WORKSPACE_ID)."
+  description = "Claude Platform on AWS workspace id (ANTHROPIC_AWS_WORKSPACE_ID). Needed from shadow mode on; empty in simple mode."
   type        = string
+  default     = ""
 }
 
 variable "claude_model" {
@@ -41,41 +42,79 @@ variable "claude_effort" {
 # Meta
 # ---------------------------------------------------------------------------
 
+# One Meta app per channel: Tlg-app1 for Messenger, Tlg-app2 for Instagram.
+# Each app's secret verifies that channel's webhook signatures.
+
 variable "meta_page_id" {
   description = "Facebook Page id. Used for the Business Suite inbox link in alerts."
   type        = string
 }
 
-variable "meta_app_secret" {
-  description = "Meta app secret, used to verify webhook signatures."
+variable "meta_messenger_app_id" {
+  description = "App ID of the Messenger app (Tlg-app1)."
+  type        = string
+}
+
+variable "meta_messenger_app_secret" {
+  description = "App Secret of the Messenger app (Tlg-app1)."
   type        = string
   sensitive   = true
 }
 
-variable "meta_page_token" {
-  description = "Long-lived Page access token with pages_messaging and instagram_manage_messages."
+variable "meta_instagram_app_id" {
+  description = "App ID of the Instagram app (Tlg-app2). Empty until it is set up."
+  type        = string
+  default     = ""
+}
+
+variable "meta_instagram_app_secret" {
+  description = "App Secret of the Instagram app (Tlg-app2). Empty until it is set up; the Instagram bot rejects every call until then."
   type        = string
   sensitive   = true
+  default     = ""
+}
+
+variable "meta_page_token" {
+  description = "Long-lived Page access token with pages_messaging and instagram_manage_messages. Needed from shadow mode on."
+  type        = string
+  sensitive   = true
+  default     = ""
 }
 
 # ---------------------------------------------------------------------------
 # Bot behaviour
 # ---------------------------------------------------------------------------
 
-variable "shadow_mode" {
-  description = "When true the bot drafts replies and sends them to Jess only. Nothing reaches clients."
+variable "bot_mode" {
+  description = "simple: a plain acknowledgement, no Claude, no persona. shadow: draft replies with Claude and email them to Jess only. live: reply with Claude."
+  type        = string
+  default     = "simple"
+
+  validation {
+    condition     = contains(["simple", "shadow", "live"], var.bot_mode)
+    error_message = "bot_mode must be simple, shadow or live."
+  }
+
+  validation {
+    condition     = var.bot_mode == "simple" || (var.meta_page_token != "" && var.anthropic_aws_workspace_id != "")
+    error_message = "shadow and live need meta_page_token and anthropic_aws_workspace_id."
+  }
+}
+
+variable "message_test_mode" {
+  description = "true: the bots answer only messages that start with the trigger word, so only the tester gets replies. false: they answer everyone."
   type        = bool
   default     = true
 }
 
-variable "escalation_emails" {
-  description = "Email addresses that receive escalations (Jess, and anyone covering)."
-  type        = list(string)
-  default     = []
+variable "message_test_trigger" {
+  description = "The word a message must start with to be answered while message_test_mode is true. Stripped before the bot reads the text."
+  type        = string
+  default     = "bootycall"
 }
 
-variable "escalation_sms_numbers" {
-  description = "E.164 mobile numbers that receive escalations by SMS. Optional."
+variable "escalation_emails" {
+  description = "Email addresses that receive escalations (Jess, and anyone covering)."
   type        = list(string)
   default     = []
 }

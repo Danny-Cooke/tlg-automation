@@ -103,5 +103,11 @@ def test_send_text_posts_expected_payload():
     assert url.endswith("/me/messages")
     assert kw["params"] == {"access_token": "token"}
     assert kw["json"]["recipient"] == {"id": "psid1"}
+
+    # With the app secret the call carries the proof Meta's "Require app secret" setting demands.
+    meta.send_text("psid1", "Hello!", "token", app_secret="shh", session=FakeSession())
+    _, kw = calls[1]
+    assert kw["params"]["appsecret_proof"] == meta.appsecret_proof("token", "shh")
+    assert len(kw["params"]["appsecret_proof"]) == 64
     assert kw["json"]["message"] == {"text": "Hello!"}
     json.dumps(kw["json"])  # serialisable
