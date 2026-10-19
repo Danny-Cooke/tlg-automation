@@ -61,6 +61,11 @@ adds the framework and persona later). `shadow`: draft a reply with Claude
 and email it to Jess. `live`: reply with Claude. Every Graph call carries an
 appsecret_proof, so the apps' "Require app secret" setting is on.
 
+Replies are not instant: the bot shows the typing indicator, waits
+`reply_delay_seconds` (default 10, user's call: a person does not answer in
+under a second), then sends. The message is marked seen in the store before
+the wait, so a Meta retry during it is dropped as a duplicate.
+
 The handler is deliberately thin. All salon knowledge lives in `persona/jess.md`
 and in Terraform variables (services, staff, opening hours, booking links), which
 are rendered into the system prompt at deploy time.

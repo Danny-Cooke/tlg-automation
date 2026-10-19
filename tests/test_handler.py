@@ -36,6 +36,11 @@ def wired(monkeypatch):
     monkeypatch.setattr(handler, "MODE", "simple")
     monkeypatch.setattr(handler, "TEST_MODE", False)
     monkeypatch.setattr(handler, "CHANNEL", "")
+    monkeypatch.setattr(handler, "REPLY_DELAY_SECONDS", 0)
+    calls["actions"] = []
+    monkeypatch.setattr(meta, "send_action", lambda rid, action, token, **kw: calls["actions"].append((rid, action)))
+    calls["slept"] = []
+    monkeypatch.setattr(handler.time, "sleep", lambda s: calls["slept"].append(s))
 
     def fake_ask(system, history, text):
         calls["ask"].append((history, text))
@@ -84,6 +89,25 @@ def test_simple_mode_without_page_token_logs_instead_of_sending(wired, monkeypat
     assert wired["sent"] == []
     assert wired["noticed"] == [("psid1", "Hi", None)]  # notice says nothing was sent
     assert store.items["psid1"].has_seen("m1")
+
+
+def test_reply_waits_with_typing_indicator(wired, monkeypatch):
+    monkeypatch.setattr(handler, "REPLY_DELAY_SECONDS", 10)
+    store = MemoryStore()
+    handler.process_message(inbound("Hi", mid="m1"), store)
+    assert wired["actions"] == [("psid1", "typing_on")]
+    assert wired["slept"] == [10]
+    assert wired["sent"] == [("psid1", 'Hi, this is the TLG messenger test bot. I received "Hi".')]
+
+
+def test_message_is_marked_seen_before_the_wait(wired, monkeypatch):
+    """A Meta retry that lands during the pause must find the message already seen."""
+    monkeypatch.setattr(handler, "REPLY_DELAY_SECONDS", 10)
+    store = MemoryStore()
+    seen_during_sleep = []
+    monkeypatch.setattr(handler.time, "sleep", lambda s: seen_during_sleep.append(store.items["psid1"].has_seen("m1")))
+    handler.process_message(inbound("Hi", mid="m1"), store)
+    assert seen_during_sleep == [True]
 
 
 def test_duplicate_delivery_is_ignored(wired):

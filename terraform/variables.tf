@@ -107,6 +107,17 @@ variable "message_test_mode" {
   default     = true
 }
 
+variable "reply_delay_seconds" {
+  description = "Pause before each reply, with the typing indicator showing, so the bot does not answer faster than a person could. Under Meta's 20 second webhook deadline."
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.reply_delay_seconds >= 0 && var.reply_delay_seconds <= 15
+    error_message = "reply_delay_seconds must be between 0 and 15."
+  }
+}
+
 variable "message_test_trigger" {
   description = "The word a message must start with to be answered while message_test_mode is true. Stripped before the bot reads the text."
   type        = string

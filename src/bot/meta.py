@@ -105,6 +105,27 @@ def send_text(recipient_id: str, text: str, page_token: str, *, app_secret: str 
     return resp.json()
 
 
+def send_action(recipient_id: str, action: str, page_token: str, *, app_secret: str | None = None, session=None) -> None:
+    """typing_on, typing_off or mark_seen. Best effort: a failure here must not stop the reply."""
+    import requests
+
+    http = session or requests
+    params = {"access_token": page_token}
+    if app_secret:
+        params["appsecret_proof"] = appsecret_proof(page_token, app_secret)
+    try:
+        resp = http.post(
+            f"{GRAPH_BASE}/me/messages",
+            params=params,
+            json={"recipient": {"id": recipient_id}, "sender_action": action},
+            timeout=10,
+        )
+        if resp.status_code >= 400:
+            log.warning("sender_action %s failed %s: %s", action, resp.status_code, resp.text[:120])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("sender_action %s failed: %s", action, exc)
+
+
 def chunk_text(text: str, limit: int = 1000) -> Iterable[str]:
     """Messenger caps messages at 2000 chars; keep ours well under that."""
     text = text.strip()

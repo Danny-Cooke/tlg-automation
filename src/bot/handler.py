@@ -23,6 +23,7 @@ import base64
 import json
 import logging
 import os
+import time
 from functools import lru_cache
 
 from . import brain, escalation, meta
@@ -38,6 +39,10 @@ MODE = os.environ.get("BOT_MODE", "simple")
 CHANNEL = os.environ.get("CHANNEL", "")  # messenger | instagram; empty accepts both
 TEST_MODE = os.environ.get("MESSAGE_TEST_MODE", "true").lower() == "true"
 TEST_TRIGGER = os.environ.get("MESSAGE_TEST_TRIGGER", "bootycall")
+# A human does not answer in under a second. Typing indicator on, wait, reply.
+# Kept under Meta's 20 second webhook deadline; the message is marked seen in
+# the store before the wait, so a retry during it is ignored.
+REPLY_DELAY_SECONDS = float(os.environ.get("REPLY_DELAY_SECONDS", "10"))
 
 
 @lru_cache(maxsize=1)
@@ -128,6 +133,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     if MODE == "simple":
         reply_text = simple_reply(msg.channel, text)
         convo.record_turn(msg.message_id, user_text, reply_text)
+        store.save(convo)  # seen before the wait, so a Meta retry is a duplicate
         sent = _send(msg.sender_id, reply_text)
         escalation.notify_new_message(convo, user_text, msg.timestamp_ms, reply=reply_text if sent else None)
         store.save(convo)
@@ -147,6 +153,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         reply = brain.ask(system_prompt(), convo.history, user_text)
 
     convo.record_turn(msg.message_id, user_text, reply.reply)
+    store.save(convo)  # seen before the wait, so a Meta retry is a duplicate
 
     if reply.escalate:
         # In shadow mode nothing reaches the client, so keep drafting instead
@@ -171,12 +178,16 @@ def simple_reply(channel: str, text: str) -> str:
 
 
 def _send(recipient_id: str, text: str) -> bool:
-    """Reply through the Graph API. Without a page token nothing can be sent;
-    say so in the log rather than fail, so the rest of the path still works."""
+    """Reply through the Graph API after a human-length pause with the typing
+    indicator showing. Without a page token nothing can be sent; say so in the
+    log rather than fail, so the rest of the path still works."""
     s = secrets()
     if not s.get("page_token"):
         log.warning("No page token configured; cannot reply to %s", recipient_id)
         return False
+    if REPLY_DELAY_SECONDS > 0:
+        meta.send_action(recipient_id, "typing_on", s["page_token"], app_secret=s.get("app_secret"))
+        time.sleep(REPLY_DELAY_SECONDS)
     for chunk in meta.chunk_text(text):
         meta.send_text(recipient_id, chunk, s["page_token"], app_secret=s.get("app_secret"))
     return True
