@@ -1,10 +1,14 @@
-"""The knowledge index is built from the real repo files, so these tests also
-guard the salon data: counts, category spelling and who-does-what."""
+"""The knowledge index is built from the real repo files. The menu file is
+generated from Fresha and changes whenever the salon does, so these tests
+check the index against that file rather than against fixed counts."""
+import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
+MENU_FILE = ROOT / "terraform" / "fresha-menu.auto.tfvars.json"
 
 pytest.importorskip("hcl2")
 pytest.importorskip("rank_bm25")
@@ -17,22 +21,31 @@ def index() -> KnowledgeIndex:
     return KnowledgeIndex(ROOT)
 
 
-def test_indexes_every_source(index):
+@pytest.fixture(scope="module")
+def menu() -> dict:
+    return json.loads(MENU_FILE.read_text(encoding="utf-8"))
+
+
+def test_indexes_every_source(index, menu):
     stats = index.stats()
     assert "docs/decisions.md" in stats["sources"]
     assert "knowledge/fresha.md" in stats["sources"]
     assert "persona/jess.md" in stats["sources"]
     assert "terraform/fresha-menu.auto.tfvars.json" in stats["sources"]
-    assert stats["by_kind"]["service"] == 166  # Fresha snapshot 2026-10-19
-    assert stats["by_kind"]["staff"] == 8
+    assert stats["by_kind"]["service"] == len(menu["services"])
+    assert stats["by_kind"]["staff"] == len(menu["staff"])
 
 
-def test_categories_are_fresha_spelling(index):
-    cats = index.categories()
-    assert cats["Senior Nail Services - TLG"] == 19
-    assert cats["Nails by TLG"] == 6
-    assert cats["Bernadettes ReFresh aethetics"] == 60
-    assert len(cats) == 8
+def test_menu_file_is_not_empty(menu):
+    assert len(menu["staff"]) >= 1
+    assert len(menu["services"]) >= 1
+
+
+def test_categories_are_fresha_spelling(index, menu):
+    """Category names reach the index exactly as the menu file (and so Fresha)
+    spells them, with the same service count per category."""
+    expected = Counter(s["category"] for s in menu["services"])
+    assert index.categories() == dict(expected)
 
 
 def test_every_service_has_staff(index):
@@ -40,16 +53,29 @@ def test_every_service_has_staff(index):
     assert missing == []
 
 
-def test_who_does_make_up(index):
-    hits = index.who_does("Make up by the lash goblin")
-    assert hits[0]["staff"] == ["Amber", "Carmen"]
+def test_who_does_matches_menu_file(index, menu):
+    """who_does answers from the menu file's staff list for that service."""
+    multi = next(s for s in menu["services"] if len(s["staff"]) >= 2)
+    hit = index.who_does(multi["name"])[0]
+    assert hit["service"] == multi["name"]
+    assert hit["category"] == multi["category"]
+    assert hit["staff"] == multi["staff"]
 
 
-def test_carmen_does_no_lashes(index):
-    carmen = index.team_member("carmen")
-    assert carmen["booking_link"].endswith("employeeId=3440872")
-    assert not any("lash" in d.lower() and "lash goblin" not in d.lower() for d in carmen["does"])
-    assert any(d.startswith("Tattoos by Skin deep canvas") for d in carmen["does"])
+def test_team_members_match_menu_file(index, menu):
+    """Every person in the menu file is findable by slug, keeps their Fresha
+    employee id in the booking link, and 'does' only lists services whose
+    staff list names them."""
+    for slug, person in menu["staff"].items():
+        member = index.team_member(slug)
+        assert member is not None, slug
+        assert member["name"] == person["name"]
+        assert member["booking_link"].endswith(f"employeeId={person['employee_id']}")
+        expected = sorted(
+            f"{s['category']} | {s['name']}" for s in menu["services"] if person["name"] in s["staff"]
+        )
+        assert sorted(member["does"]) == expected, slug
+        assert member["service_count"] == len(expected)
 
 
 def test_search_finds_decisions_and_data(index):
