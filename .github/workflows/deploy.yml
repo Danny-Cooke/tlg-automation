@@ -6,11 +6,11 @@ name: Deploy
 # environment holds the PAT. The bot stack (terraform/) is not deployed by
 # this workflow yet.
 #
-# The first apply is run from a laptop, because the deploy role is created
-# by the stack itself (docs/setup.md). GitHub environment "prod":
-#   variables: AWS_ROLE_ARN (from `terraform output deploy_role_arn`),
+# Assumes the account's existing github-oidc role (trusts every Danny-Cooke
+# repo), the same one the other repos deploy with. GitHub environment "prod":
+#   variables: AWS_ROLE_ARN (that role's ARN),
 #              OPS_ALERT_EMAILS (JSON list, optional), OWNER_EMAIL (optional)
-#   secrets:   gh_pat (fine-grained PAT: contents + pull requests on this repo)
+#   secrets:   GH_PAT (fine-grained PAT: contents + pull requests on this repo)
 
 on:
   push:
@@ -60,6 +60,15 @@ jobs:
           terraform_version: "1.10.5"
           terraform_wrapper: false
 
+      - name: The deploy role must exist and be named in the prod environment
+        env:
+          ROLE: ${{ vars.AWS_ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE" ]; then
+            echo "::error::AWS_ROLE_ARN is not set on the prod environment: gh variable set AWS_ROLE_ARN --env prod --body arn:aws:iam::<account>:role/github-oidc"
+            exit 1
+          fi
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
@@ -77,11 +86,11 @@ jobs:
       - name: Decide whether the stack can be applied
         id: gate
         env:
-          GH_PAT: ${{ secrets.gh_pat }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           if [ -z "$GH_PAT" ]; then
             echo "apply=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Plan only. The prod environment has no gh_pat secret yet."
+            echo "::notice::Plan only. The prod environment has no GH_PAT secret yet."
           else
             echo "apply=true" >> "$GITHUB_OUTPUT"
           fi
@@ -90,7 +99,7 @@ jobs:
         working-directory: terraform/menu_sync
         env:
           # A placeholder keeps the plan readable before the secret is set.
-          TF_VAR_github_pat: ${{ secrets.gh_pat || 'unset' }}
+          TF_VAR_github_pat: ${{ secrets.GH_PAT || 'unset' }}
         run: terraform plan -no-color -var-file=../salon.auto.tfvars -out=tfplan
 
       - name: Terraform apply

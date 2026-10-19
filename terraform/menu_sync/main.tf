@@ -8,9 +8,10 @@
 # The ops topic gets a summary. Invoke with {"dry_run": true} to see the diff
 # only.
 #
-# This is the first stack deployed, so it also owns what the others share:
-# the deploy role the pipeline assumes (pipeline.tf) and the ops SNS topic.
-# The bot stack (terraform/) reads the topic ARN from this stack's state.
+# This is the first stack deployed, so it also owns the ops SNS topic the
+# others share; the bot stack (terraform/) reads the ARN from this state.
+# The pipeline assumes the account's existing github-oidc role (it trusts
+# every Danny-Cooke repo), so nothing here is bootstrapped by hand.
 # ---------------------------------------------------------------------------
 
 locals {
@@ -19,8 +20,6 @@ locals {
   # Populated by `scripts/build_lambda.sh menu_sync` before terraform apply.
   lambda_build_dir = "${path.module}/../../build/menu_sync"
 }
-
-data "aws_caller_identity" "current" {}
 
 data "archive_file" "menu_sync" {
   type        = "zip"

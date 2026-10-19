@@ -125,13 +125,17 @@ proven. So the Terraform is split into one root per deployable job, each
 with its own state key in the same bucket:
 
 - `terraform/menu_sync`: the sync Lambda, its schedule and alarm, the PAT
-  parameter, the ops SNS topic, and the deploy role and OIDC provider the
-  pipeline assumes. The deploy workflow applies only this.
+  parameter and the ops SNS topic. The deploy workflow applies only this.
 - `terraform/`: the bot and the monitor. Kept, validated, not applied by the
   pipeline yet. It reads the ops topic ARN from the menu sync stack's state
   rather than owning a second topic.
 
 The Lambda bundle is built per package (`scripts/build_lambda.sh menu_sync`)
-so the sync does not ship the bot or the persona. Consequence: the laptop
-bootstrap apply (the deploy role must exist before the workflow can assume
-it) is done once, for the menu sync stack.
+so the sync does not ship the bot or the persona.
+
+The pipeline assumes the account's existing `github-oidc` role rather than
+creating its own (the user's ruling: the OIDC route is already set up and
+used by the other repos; the only manual step was creating the state
+bucket). The role trusts `repo:Danny-Cooke/*` and has AdministratorAccess,
+checked live 2026-10-19. The stack's own deploy role and OIDC provider were
+removed before anything was applied.

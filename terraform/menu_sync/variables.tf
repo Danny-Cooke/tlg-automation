@@ -29,24 +29,12 @@ variable "ops_alert_emails" {
 }
 
 # ---------------------------------------------------------------------------
-# GitHub: the deploy role's trust and the Lambda's PR access
+# GitHub: the Lambda's PR access
 # ---------------------------------------------------------------------------
 
 variable "github_repo" {
   description = "owner/name of this repository on GitHub, where menu sync opens pull requests."
   type        = string
-}
-
-variable "github_environment" {
-  description = "GitHub environment the deploy workflow runs under; the deploy role trusts only this."
-  type        = string
-  default     = "prod"
-}
-
-variable "create_github_oidc_provider" {
-  description = "Create the GitHub OIDC identity provider. Set false if the account already has one."
-  type        = bool
-  default     = true
 }
 
 variable "github_base_branch" {

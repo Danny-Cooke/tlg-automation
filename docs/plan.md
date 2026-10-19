@@ -37,12 +37,11 @@ GitHub Actions on merge to `main`, environment `prod`: OIDC into an AWS role,
 `terraform init` against the S3 backend, `plan`, `apply`. Deploys
 `terraform/menu_sync` only for now. Needs:
 
-- The OIDC identity provider and a deploy role in AWS, trusted for this repo
-  and the `prod` environment. Defined in `terraform/menu_sync/pipeline.tf`;
-  the first apply is run by hand from a laptop because the role does not
-  exist yet (steps in `docs/setup.md`).
-- The GitHub `prod` environment with `gh_pat` (secret) and `AWS_ROLE_ARN`
-  (variable).
+- The account's existing `github-oidc` role (AdministratorAccess, trusts
+  `repo:Danny-Cooke/*`), the same one the other repos deploy with. No role
+  or provider is created here and nothing is applied by hand.
+- The GitHub `prod` environment with `GH_PAT` (secret) and `AWS_ROLE_ARN`
+  (variable, set 2026-10-19).
 - The repo pushed to the remote (one commit on `main` as of 2026-10-19; the
   stack split is uncommitted).
 
