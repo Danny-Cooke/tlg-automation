@@ -72,28 +72,41 @@ def subscribe_app(app_id: str, app_token: str, obj: str, fields: list[str], call
 
 
 def token_page(page_token: str, app_secret: str) -> dict:
-    """Which Page the token belongs to. A Page token addresses its own Page as
-    "me", which is more reliable than naming the id."""
+    """Which Page the token belongs to, if the token may say (needs
+    pages_read_engagement, which a Messenger-only token lacks). Best effort."""
     r = requests.get(
         f"{GRAPH}/me",
         params={"access_token": page_token, "appsecret_proof": appsecret_proof(page_token, app_secret), "fields": "id,name"},
         timeout=30,
     )
-    _check(r, "read the token's Page")
+    if r.status_code >= 400:
+        print(f"note: the token cannot read its Page's name ({r.json().get('error', {}).get('message', '')[:80]}); carrying on")
+        return {}
     return r.json()
 
 
-def subscribe_page(page_id: str, page_token: str, app_secret: str, fields: list[str]) -> None:
+def subscribe_page(page_id: str, page_token: str, app_secret: str, fields: list[str]) -> bool:
+    """Subscribe the token's own Page to the app. A Page token addresses its
+    Page as "me". Returns False (with a warning, not a failure) when the token
+    lacks pages_manage_metadata; the console can do it instead."""
     me = token_page(page_token, app_secret)
-    if str(me.get("id")) != str(page_id):
-        print(f"warning: the token is for Page {me.get('id')} ({me.get('name')}), not {page_id}; subscribing the token's Page")
+    if me.get("id") and str(me["id"]) != str(page_id):
+        print(f"warning: the token is for Page {me['id']} ({me.get('name')}), not {page_id}; subscribing the token's Page")
     r = requests.post(
         f"{GRAPH}/me/subscribed_apps",
         params={"access_token": page_token, "appsecret_proof": appsecret_proof(page_token, app_secret)},
         data={"subscribed_fields": ",".join(fields)},
         timeout=30,
     )
-    _check(r, f"subscribe Page {me.get('name')} to app")
+    if r.status_code >= 400:
+        print(
+            f"::warning::Could not subscribe the Page to the app with this token: {r.status_code} {r.text[:200]}. "
+            "Do it in the Meta console: the app > Messenger > Messenger API settings > Webhooks > "
+            "Add subscriptions next to the Page > tick messages. Until then Meta delivers nothing."
+        )
+        return False
+    print(f"ok: subscribe Page {me.get('name') or page_id} to app: {r.json()}")
+    return True
 
 
 def linked_instagram(page_id: str, page_token: str, app_secret: str) -> str | None:
@@ -135,8 +148,8 @@ def main() -> None:
     subscribe_app(a.app_id, app_access_token(a.app_id, a.app_secret), spec["object"], spec["fields"], a.callback_url, a.verify_token)
 
     if a.page_id and a.page_token:
-        subscribe_page(a.page_id, a.page_token, a.app_secret, spec["fields"])
-        if a.channel == "instagram":
+        subscribed = subscribe_page(a.page_id, a.page_token, a.app_secret, spec["fields"])
+        if subscribed and a.channel == "instagram":
             ig = linked_instagram(a.page_id, a.page_token, a.app_secret)
             print(f"Linked Instagram: {ig or 'none. Link the IG professional account to the Page in Business Settings.'}")
     else:
