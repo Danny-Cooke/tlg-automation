@@ -1,12 +1,16 @@
 name: Deploy
 
-# Plans on every push to main and applies when the environment holds the
-# secrets the stack needs. Assumes the deploy role by OIDC; no AWS keys here.
+# Deploys the menu sync stack (terraform/menu_sync): the Fresha menu sync
+# Lambda, its schedule and alarm, the ops topic, and the deploy role this
+# workflow assumes. Plans on every push to main; applies when the "prod"
+# environment holds the PAT. The bot stack (terraform/) is not deployed by
+# this workflow yet.
 #
-# GitHub environment "prod":
-#   variables: AWS_ROLE_ARN (from `terraform output deploy_role_arn`)
-#   secrets:   gh_pat (menu sync PAT), and once the Meta app exists:
-#              ANTHROPIC_AWS_WORKSPACE_ID, META_PAGE_ID, META_APP_SECRET, META_PAGE_TOKEN
+# The first apply is run from a laptop, because the deploy role is created
+# by the stack itself (docs/setup.md). GitHub environment "prod":
+#   variables: AWS_ROLE_ARN (from `terraform output deploy_role_arn`),
+#              OPS_ALERT_EMAILS (JSON list, optional), OWNER_EMAIL (optional)
+#   secrets:   gh_pat (fine-grained PAT: contents + pull requests on this repo)
 
 on:
   push:
@@ -42,11 +46,8 @@ jobs:
       TF_INPUT: "0"
       TF_VAR_environment: prod
       TF_VAR_github_repo: ${{ github.repository }}
-      TF_VAR_github_pat: ${{ secrets.gh_pat }}
-      TF_VAR_anthropic_aws_workspace_id: ${{ secrets.ANTHROPIC_AWS_WORKSPACE_ID }}
-      TF_VAR_meta_page_id: ${{ secrets.META_PAGE_ID }}
-      TF_VAR_meta_app_secret: ${{ secrets.META_APP_SECRET }}
-      TF_VAR_meta_page_token: ${{ secrets.META_PAGE_TOKEN }}
+      TF_VAR_ops_alert_emails: ${{ vars.OPS_ALERT_EMAILS || '[]' }}
+      TF_VAR_owner_email: ${{ vars.OWNER_EMAIL || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -64,39 +65,35 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build Lambda bundle
-        run: bash scripts/build_lambda.sh
+      - name: Build the menu sync bundle
+        run: bash scripts/build_lambda.sh menu_sync
 
+      - name: Terraform init
+        working-directory: terraform/menu_sync
+        run: terraform init
+
+      # The secrets context is not available in a step's `if`, so a step
+      # decides and the apply reads its output.
       - name: Decide whether the stack can be applied
         id: gate
+        env:
+          GH_PAT: ${{ secrets.gh_pat }}
         run: |
-          missing=""
-          for v in TF_VAR_github_pat TF_VAR_anthropic_aws_workspace_id TF_VAR_meta_page_id TF_VAR_meta_app_secret TF_VAR_meta_page_token; do
-            [ -z "${!v}" ] && missing="$missing $v"
-          done
-          if [ -n "$missing" ]; then
+          if [ -z "$GH_PAT" ]; then
             echo "apply=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Plan only. Missing environment secrets for:$missing"
+            echo "::notice::Plan only. The prod environment has no gh_pat secret yet."
           else
             echo "apply=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Terraform init
-        working-directory: terraform
-        run: terraform init
-
       - name: Terraform plan
-        working-directory: terraform
+        working-directory: terraform/menu_sync
         env:
-          # Placeholders keep the plan readable while the bot's secrets are not yet set.
-          TF_VAR_anthropic_aws_workspace_id: ${{ secrets.ANTHROPIC_AWS_WORKSPACE_ID || 'unset' }}
-          TF_VAR_meta_page_id: ${{ secrets.META_PAGE_ID || '0' }}
-          TF_VAR_meta_app_secret: ${{ secrets.META_APP_SECRET || 'unset' }}
-          TF_VAR_meta_page_token: ${{ secrets.META_PAGE_TOKEN || 'unset' }}
+          # A placeholder keeps the plan readable before the secret is set.
           TF_VAR_github_pat: ${{ secrets.gh_pat || 'unset' }}
-        run: terraform plan -no-color -out=tfplan
+        run: terraform plan -no-color -var-file=../salon.auto.tfvars -out=tfplan
 
       - name: Terraform apply
         if: steps.gate.outputs.apply == 'true'
-        working-directory: terraform
+        working-directory: terraform/menu_sync
         run: terraform apply -no-color -auto-approve tfplan

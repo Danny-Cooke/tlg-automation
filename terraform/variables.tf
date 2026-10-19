@@ -84,12 +84,6 @@ variable "escalation_sms_numbers" {
 # Operations: alarms and the scheduled monitor
 # ---------------------------------------------------------------------------
 
-variable "ops_alert_emails" {
-  description = "Email addresses for infrastructure alarms and monitor findings. You, not Jess."
-  type        = list(string)
-  default     = []
-}
-
 variable "monitor_schedule" {
   description = "EventBridge schedule expression for the monitor Lambda."
   type        = string
@@ -103,49 +97,8 @@ variable "owner_email" {
 }
 
 # ---------------------------------------------------------------------------
-# Menu sync: GitHub access for the Lambda that keeps the menu file current
+# Menu file metadata (the menu sync itself is the terraform/menu_sync stack)
 # ---------------------------------------------------------------------------
-
-variable "github_repo" {
-  description = "owner/name of this repository on GitHub, where menu sync opens pull requests."
-  type        = string
-}
-
-variable "github_environment" {
-  description = "GitHub environment the deploy workflow runs under; the deploy role trusts only this."
-  type        = string
-  default     = "prod"
-}
-
-variable "create_github_oidc_provider" {
-  description = "Create the GitHub OIDC identity provider. Set false if the account already has one."
-  type        = bool
-  default     = true
-}
-
-variable "github_base_branch" {
-  description = "Branch the menu sync compares with and targets."
-  type        = string
-  default     = "main"
-}
-
-variable "github_pat" {
-  description = "Fine-grained PAT (contents + pull requests on github_repo). Supplied by the deploy pipeline from the GitHub environment secret."
-  type        = string
-  sensitive   = true
-}
-
-variable "menu_sync_schedule" {
-  description = "EventBridge Scheduler cron for the Fresha menu sync, in menu_sync_timezone."
-  type        = string
-  default     = "cron(0 7-22/2 * * ? *)" # 07:00, 09:00, ... 21:00
-}
-
-variable "menu_sync_timezone" {
-  description = "IANA time zone the menu sync schedule is written in."
-  type        = string
-  default     = "Europe/London"
-}
 
 variable "menu_snapshot_date" {
   description = "Date the menu file was generated from Fresha. Written by menu sync; informational."

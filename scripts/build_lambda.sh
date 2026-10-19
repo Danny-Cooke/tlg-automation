@@ -1,11 +1,22 @@
 #!/usr/bin/env bash
-# Assemble build/lambda/ for Terraform's archive_file.
-# Installs deps for the Lambda target (arm64, python3.12) and copies the
-# bot package plus the persona file next to it.
+# Assemble a Lambda bundle for Terraform's archive_file.
+#
+#   scripts/build_lambda.sh              -> build/lambda     (bot, monitor, menu_sync + persona)
+#   scripts/build_lambda.sh menu_sync    -> build/menu_sync  (that package only)
+#
+# Installs deps for the Lambda target (arm64, python3.12) and copies the named
+# src/ packages next to them. The persona file ships only with the bot.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT="$ROOT/build/lambda"
+
+if [ $# -eq 0 ]; then
+  PACKAGES=(bot monitor menu_sync)
+  OUT="$ROOT/build/lambda"
+else
+  PACKAGES=("$@")
+  OUT="$ROOT/build/$(IFS=-; echo "${PACKAGES[*]}")"
+fi
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
@@ -19,10 +30,12 @@ python -m pip install \
   --python-version 3.12 \
   --only-binary=:all:
 
-cp -r "$ROOT/src/bot" "$OUT/bot"
-cp -r "$ROOT/src/monitor" "$OUT/monitor"
-cp -r "$ROOT/src/menu_sync" "$OUT/menu_sync"
-cp "$ROOT/persona/jess.md" "$OUT/bot/jess.md"
+for pkg in "${PACKAGES[@]}"; do
+  cp -r "$ROOT/src/$pkg" "$OUT/$pkg"
+done
+if [ -d "$OUT/bot" ]; then
+  cp "$ROOT/persona/jess.md" "$OUT/bot/jess.md"
+fi
 find "$OUT" -name "__pycache__" -type d -prune -exec rm -rf {} +
 
-echo "Built $OUT"
+echo "Built $OUT (${PACKAGES[*]})"

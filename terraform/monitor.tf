@@ -16,17 +16,20 @@ locals {
   )))
 }
 
-# Ops alerts: AWS alarms and monitor findings. Separate from escalations so
-# Jess never gets infrastructure email.
-resource "aws_sns_topic" "ops" {
-  name = "${local.name}-ops"
+# Ops alerts: AWS alarms and monitor findings. The topic and its email
+# subscriptions belong to the menu sync stack (terraform/menu_sync), the first
+# one deployed; this stack reads the ARN from that stack's state.
+data "terraform_remote_state" "menu_sync" {
+  backend = "s3"
+  config = {
+    bucket = "tlg-automation-terraform-state"
+    key    = "tlg-automation/${var.environment}/menu-sync.tfstate"
+    region = var.aws_region
+  }
 }
 
-resource "aws_sns_topic_subscription" "ops_email" {
-  for_each  = toset(var.ops_alert_emails)
-  topic_arn = aws_sns_topic.ops.arn
-  protocol  = "email"
-  endpoint  = each.value
+locals {
+  ops_topic_arn = data.terraform_remote_state.menu_sync.outputs.ops_topic_arn
 }
 
 # Previous run's findings and fingerprints. Written by the Lambda, so
@@ -62,7 +65,7 @@ data "aws_iam_policy_document" "monitor" {
   statement {
     sid       = "Alert"
     actions   = ["sns:Publish"]
-    resources = [aws_sns_topic.ops.arn]
+    resources = [local.ops_topic_arn]
   }
 
   statement {
@@ -109,7 +112,7 @@ resource "aws_lambda_function" "monitor" {
       SALON_NAME              = var.salon.name
       BOT_FUNCTION_NAME       = aws_lambda_function.bot.function_name
       MONITOR_STATE_PARAMETER = aws_ssm_parameter.monitor_state.name
-      OPS_TOPIC_ARN           = aws_sns_topic.ops.arn
+      OPS_TOPIC_ARN           = local.ops_topic_arn
       LOG_LEVEL               = "INFO"
     }
   }
@@ -149,7 +152,7 @@ resource "aws_cloudwatch_metric_alarm" "monitor_errors" {
   threshold           = 1
   comparison_operator = "GreaterThanOrEqualToThreshold"
   treat_missing_data  = "notBreaching"
-  alarm_actions       = [aws_sns_topic.ops.arn]
+  alarm_actions       = [local.ops_topic_arn]
 
   dimensions = {
     FunctionName = aws_lambda_function.monitor.function_name
@@ -167,8 +170,8 @@ resource "aws_cloudwatch_metric_alarm" "monitor_silent" {
   threshold           = 1
   comparison_operator = "LessThanThreshold"
   treat_missing_data  = "breaching"
-  alarm_actions       = [aws_sns_topic.ops.arn]
-  ok_actions          = [aws_sns_topic.ops.arn]
+  alarm_actions       = [local.ops_topic_arn]
+  ok_actions          = [local.ops_topic_arn]
 
   dimensions = {
     FunctionName = aws_lambda_function.monitor.function_name

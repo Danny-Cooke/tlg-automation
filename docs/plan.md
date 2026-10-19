@@ -13,9 +13,13 @@ facts in `knowledge/`.
   wanted too is still open.
 - **Terraform state:** S3 bucket `tlg-automation-terraform-state` (created by
   hand 2026-10-19: London, versioned, AES256, public access blocked, tagged
-  Project=tlg). Key is `<repo>/<environment>/terraform.tfstate`, so prod uses
-  `tlg-automation/prod/terraform.tfstate`. Locking via the S3 lockfile, which
+  Project=tlg). One key per stack, `<repo>/<environment>/<stack>.tfstate`:
+  the menu sync uses `tlg-automation/prod/menu-sync.tfstate`, the bot
+  `tlg-automation/prod/bot.tfstate`. Locking via the S3 lockfile, which
   needs Terraform 1.10 or later in the pipeline and locally (local is 1.7.5).
+- **One stack per deployable job, deployed in order.** `terraform/menu_sync`
+  goes first (decision 2026-10-19). `terraform/` holds the bot and monitor
+  and is not applied by the pipeline until the menu sync is live.
 - **Secrets path:** GitHub Actions, running under environment `prod`, passes
   the `gh_pat` environment secret to `terraform apply` as a sensitive
   variable. Terraform writes it to SSM Parameter Store as a SecureString at
@@ -30,15 +34,19 @@ facts in `knowledge/`.
 ### 1. Deploy pipeline (prerequisite for the rest)
 
 GitHub Actions on merge to `main`, environment `prod`: OIDC into an AWS role,
-`terraform init` against the S3 backend, `plan`, `apply`. Needs:
+`terraform init` against the S3 backend, `plan`, `apply`. Deploys
+`terraform/menu_sync` only for now. Needs:
 
 - The OIDC identity provider and a deploy role in AWS, trusted for this repo
-  and the `prod` environment. Terraform can define them, but the first apply
-  is run by hand from a laptop because the role does not exist yet.
-- `terraform/backend.tf` pointing at the bucket and key above.
-- The repo pushed to the remote (no commits yet as of 2026-10-19).
+  and the `prod` environment. Defined in `terraform/menu_sync/pipeline.tf`;
+  the first apply is run by hand from a laptop because the role does not
+  exist yet (steps in `docs/setup.md`).
+- The GitHub `prod` environment with `gh_pat` (secret) and `AWS_ROLE_ARN`
+  (variable).
+- The repo pushed to the remote (one commit on `main` as of 2026-10-19; the
+  stack split is uncommitted).
 
-### 2. Menu sync Lambda: `tlg-prod-menu-sync` (built 2026-10-19, uncommitted)
+### 2. Menu sync Lambda: `tlg-prod-menu-sync` (built 2026-10-19, uncommitted; stack `terraform/menu_sync`)
 
 Every two hours 07:00 to 22:00 London time (EventBridge Scheduler) and on demand (invoke). Reads Fresha's public booking
 data (no login): team list from the venue page, services with category,
@@ -65,7 +73,9 @@ subscription, Fresha booking links, Fresha dashboard, and a fingerprint of
 the dashboard code that builds the create-appointment mutation. Alerts the
 ops topic on transitions only. **Already written** (`src/monitor/`,
 `terraform/monitor.tf`, tests) before planning was finished; parked and
-uncommitted until the plan is agreed. Details in `docs/architecture.md`.
+uncommitted until the plan is agreed. Lives in the bot stack (`terraform/`),
+which the pipeline does not apply yet; it reads the ops topic from the menu
+sync stack's state. Details in `docs/architecture.md`.
 
 ### 4. Booking into Fresha (scope change, see decisions 2026-10-19)
 

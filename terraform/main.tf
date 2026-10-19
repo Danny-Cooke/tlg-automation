@@ -257,7 +257,7 @@ resource "aws_cloudwatch_metric_alarm" "bot_errors" {
   threshold           = 1
   comparison_operator = "GreaterThanOrEqualToThreshold"
   treat_missing_data  = "notBreaching"
-  alarm_actions       = [aws_sns_topic.ops.arn]
+  alarm_actions       = [local.ops_topic_arn]
 
   dimensions = {
     FunctionName = aws_lambda_function.bot.function_name

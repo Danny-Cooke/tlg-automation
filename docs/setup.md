@@ -1,5 +1,36 @@
 # Setup
 
+## 0. First deploy: the menu sync stack
+
+The deploy workflow assumes an AWS role that the stack itself creates, so the
+first apply is run from a laptop with admin credentials for the TLG account.
+Terraform 1.10 or later (the S3 lockfile). Everything after that is a push
+to `main`.
+
+```bash
+bash scripts/build_lambda.sh menu_sync
+cd terraform/menu_sync
+terraform init
+terraform apply -var-file=../salon.auto.tfvars   -var github_repo=Danny-Cooke/tlg-automation   -var github_pat=<fine-grained PAT: contents + pull requests on this repo>   -var 'ops_alert_emails=["you@example.com"]'
+terraform output deploy_role_arn
+```
+
+If the account already has the GitHub OIDC provider, add
+`-var create_github_oidc_provider=false`. Then wire GitHub:
+
+```bash
+gh api -X PUT repos/Danny-Cooke/tlg-automation/environments/prod
+gh variable set AWS_ROLE_ARN --env prod --body "$(terraform output -raw deploy_role_arn)"
+gh variable set OPS_ALERT_EMAILS --env prod --body '["you@example.com"]'
+gh secret set gh_pat --env prod        # paste the same PAT
+```
+
+Confirm the SNS subscription email, then run the sync by hand once:
+
+```bash
+aws lambda invoke --function-name tlg-prod-menu-sync --payload '{"dry_run": true}' /dev/stdout
+```
+
 The bot runs without a browser. Messages come in over Meta's webhook and go
 out over the Graph API. The browser is needed only for the one-time steps
 below that Meta does not expose through any API.
