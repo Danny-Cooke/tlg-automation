@@ -101,3 +101,25 @@ pip install -r src/requirements.txt -r requirements-dev.txt
 pytest
 cd terraform && terraform fmt -check && terraform validate
 ```
+
+## Fresha watch text messages
+
+The Fresha watch Lambda texts you through SNS when a Fresha page breaks,
+recovers or changes shape. Two things to do once:
+
+1. **Verify your number.** New accounts are in the SNS SMS sandbox, which only
+   delivers to verified numbers. In the console, region London: Amazon SNS ->
+   Text messaging (SMS) -> Sandbox destination phone numbers -> Add phone
+   number, then enter the code it texts you. Or request production access
+   on the same page to text any number.
+2. **Tell the pipeline the numbers.** On the GitHub `prod` environment add a
+   secret `ALERT_PHONE_NUMBERS` holding a JSON list in E.164 form, for
+   example `["+447700900123"]`. The deploy passes it to Terraform as
+   `alert_phone_numbers`. With no secret the watch still emails the ops
+   topic and sends no texts.
+
+Check it is wired up without waiting for Fresha to change:
+
+```
+aws lambda invoke --region eu-west-2 --function-name tlg-prod-fresha-watch --payload '{"dry_run": true}' out.json
+```

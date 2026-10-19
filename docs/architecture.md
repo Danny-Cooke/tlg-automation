@@ -140,6 +140,29 @@ Failure modes it reports: Fresha changed the venue page layout, changed or
 retired the persisted booking-flow query (`PersistedQueryNotFound`), or the
 GitHub token lost access. The Lambda error alarm pages the ops topic.
 
+### Fresha watch (`src/fresha_watch/`)
+
+Lambda `tlg-<env>-fresha-watch`, run hourly at half past from 07:30 to 22:30
+London time by EventBridge Scheduler, and on demand. It answers one question:
+have Fresha's public pages changed shape under the menu sync. Checks:
+
+| Check | What it does | Shape watched |
+|---|---|---|
+| `venue_page` | Loads the venue page, reads its Next.js data, parses the team | Top-level keys of the location record; the whole `employeeProfiles` subtree |
+| `booking_flow` | Sends the persisted booking-flow query, parses the menu | Top of `bookingFlowInitialize`; the `categories[].items[]` subtree |
+| `booking_flow_per_person` | Same query filtered to the first listed person | None; works or not |
+| `general_link` | Loads the general booking link and expects the salon's name | None; works or not |
+
+A shape (`shape.py`) is the sorted list of leaf paths with a coarse kind
+(value, object, list). List elements are merged and scalars are all "value",
+so content changes are invisible; only keys and nesting count. The previous
+run lives in `/tlg/<env>/fresha-watch/state` (SSM). On a transition (a check
+fails, recovers, or its shape differs) the Lambda texts `alert_phone_numbers`
+through SNS and emails the ops topic with the added and removed paths. Nothing
+is sent when nothing moved. The Lambda error alarm goes to the ops topic.
+
+Run the checks without saving or sending: invoke with `{"dry_run": true}`.
+
 ### Monitoring (`src/monitor/`)
 
 A second Lambda from the same build, run by EventBridge (default every hour,

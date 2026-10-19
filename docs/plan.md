@@ -91,6 +91,33 @@ mutation's request body and the session cookie (steps in
 booking queue (SQS) with idempotency key per conversation and slot, Jess
 notified of every booking at first, shadow-mode week.
 
+### 5. Fresha watch Lambda: `tlg-prod-fresha-watch` (built 2026-10-19 evening; stack `terraform/fresha_watch`)
+
+The user's ask: a Lambda that checks Fresha's public pages and sends a text
+or WhatsApp when something structural changes. Every hour at half past,
+07:30 to 22:30 London time, between menu sync runs. Loads the venue page and
+the booking flow the same way the menu sync does, records the shape of the
+parts the sync reads (keys and nesting, not values), and compares with the
+previous run kept in Parameter Store. A failed page, a recovered page or a
+changed shape sends an SMS through SNS to `alert_phone_numbers` and a fuller
+email to the ops topic. Steady state is quiet. `{"dry_run": true}` shows
+the result without saving or sending.
+
+Decisions taken while building:
+
+- Text message first, WhatsApp later. WhatsApp from AWS (End User
+  Messaging Social) needs a Meta Business verification, a WhatsApp Business
+  account and a registered sender number; the text is one SNS call. The
+  channel is one function (`send_sms`) so WhatsApp can replace it.
+- The account is probably in the SNS SMS sandbox: the destination number
+  must be verified in the SNS console (eu-west-2) before any text arrives.
+  See `docs/setup.md`.
+- Phone numbers come from the GitHub `prod` environment secret
+  `ALERT_PHONE_NUMBERS` (JSON list, E.164), so they are not in the repo.
+- Shapes merge list elements and treat every scalar as "value", so a new
+  person, a new service or a null description is not a change. Only keys
+  appearing, disappearing or changing kind (value, object, list) count.
+
 ## Open questions for the user
 
 1. Prod only, or a dev stack as well?

@@ -1,10 +1,10 @@
 name: Deploy
 
-# Deploys the menu sync stack (terraform/menu_sync): the Fresha menu sync
-# Lambda, its schedule and alarm, the ops topic, and the deploy role this
-# workflow assumes. Plans on every push to main; applies when the "prod"
-# environment holds the PAT. The bot stack (terraform/) is not deployed by
-# this workflow yet.
+# Deploys the menu sync stack (terraform/menu_sync) and the Fresha watch
+# stack (terraform/fresha_watch), in that order: the watch reads the ops
+# topic from the menu sync state. Plans on every push to main; applies when
+# the "prod" environment holds the PAT. The bot stack (terraform/) is not
+# deployed by this workflow yet.
 #
 # Hands-off menu changes: the Lambda opens a pull request from branch
 # "menu-sync". This workflow runs the tests on that PR and, when they pass,
@@ -17,6 +17,7 @@ name: Deploy
 #   variables: AWS_ROLE_ARN (that role's ARN),
 #              OPS_ALERT_EMAILS (JSON list, optional), OWNER_EMAIL (optional)
 #   secrets:   GH_PAT (fine-grained PAT: contents + pull requests on this repo)
+#              ALERT_PHONE_NUMBERS (JSON list of E.164 numbers, optional)
 
 on:
   push:
@@ -102,16 +103,14 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build the menu sync bundle
-        run: bash scripts/build_lambda.sh menu_sync
-
-      - name: Terraform init
-        working-directory: terraform/menu_sync
-        run: terraform init
+      - name: Build the Lambda bundles
+        run: |
+          bash scripts/build_lambda.sh menu_sync
+          bash scripts/build_lambda.sh fresha_watch menu_sync
 
       # The secrets context is not available in a step's `if`, so a step
-      # decides and the apply reads its output.
-      - name: Decide whether the stack can be applied
+      # decides and the applies read its output.
+      - name: Decide whether the stacks can be applied
         id: gate
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
@@ -123,14 +122,39 @@ jobs:
             echo "apply=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Terraform plan
+      # ---- menu sync ------------------------------------------------------
+
+      - name: Menu sync - init
+        working-directory: terraform/menu_sync
+        run: terraform init
+
+      - name: Menu sync - plan
         working-directory: terraform/menu_sync
         env:
           # A placeholder keeps the plan readable before the secret is set.
           TF_VAR_github_pat: ${{ secrets.GH_PAT || 'unset' }}
         run: terraform plan -no-color -var-file=../salon.auto.tfvars -out=tfplan
 
-      - name: Terraform apply
+      - name: Menu sync - apply
         if: steps.gate.outputs.apply == 'true'
         working-directory: terraform/menu_sync
+        run: terraform apply -no-color -auto-approve tfplan
+
+      # ---- Fresha watch (reads the ops topic from the menu sync state) -----
+
+      - name: Fresha watch - init
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform/fresha_watch
+        run: terraform init
+
+      - name: Fresha watch - plan
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform/fresha_watch
+        env:
+          TF_VAR_alert_phone_numbers: ${{ secrets.ALERT_PHONE_NUMBERS || '[]' }}
+        run: terraform plan -no-color -var-file=../salon.auto.tfvars -out=tfplan
+
+      - name: Fresha watch - apply
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform/fresha_watch
         run: terraform apply -no-color -auto-approve tfplan

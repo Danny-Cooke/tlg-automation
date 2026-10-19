@@ -119,6 +119,17 @@ the PAT when they pass; the merge triggers the deploy. Only that branch is
 auto-merged, so any other PR still waits for a review. The ops email remains
 the human's notice that the menu changed.
 
+## 2026-10-19: Fresha watch texts by SMS now, WhatsApp later
+
+The user wants a text or WhatsApp when Fresha's public pages change shape.
+SMS through SNS is one API call and needs only a verified number. WhatsApp
+through AWS End User Messaging Social needs Meta Business verification, a
+WhatsApp Business account and a registered sender number, which is days of
+setup for the same message. So: SMS now, behind one function, WhatsApp when
+the salon's WhatsApp number is set up for it. The watch is its own stack
+(`terraform/fresha_watch`) rather than part of the parked monitor, because
+the monitor also checks Meta and the bot, neither of which is deployed.
+
 ## 2026-10-17: Escalation stops the bot on that thread
 
 Once a thread is handed to Jess, the bot stays silent until she clears it. A bot

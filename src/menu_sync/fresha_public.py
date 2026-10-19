@@ -92,11 +92,22 @@ def fetch_team(http, venue_url: str) -> list[TeamMember]:
     return parse_team(resp.text)
 
 
-def parse_team(html: str) -> list[TeamMember]:
+def venue_data(html: str) -> dict:
+    """The Next.js data block embedded in the venue page."""
     m = _NEXT_DATA_RE.search(html)
     if not m:
         raise FreshaError("venue page has no __NEXT_DATA__ block; Fresha changed the page")
-    data = json.loads(m.group(1))
+    try:
+        return json.loads(m.group(1))
+    except ValueError as exc:
+        raise FreshaError(f"venue page __NEXT_DATA__ is not JSON: {exc}") from exc
+
+
+def parse_team(html: str) -> list[TeamMember]:
+    return team_from_data(venue_data(html))
+
+
+def team_from_data(data: dict) -> list[TeamMember]:
     try:
         edges = data["props"]["pageProps"]["data"]["location"]["employeeProfiles"]["edges"]
     except (KeyError, TypeError) as exc:
@@ -120,7 +131,7 @@ def parse_team(html: str) -> list[TeamMember]:
 
 def fetch_menu(http, venue_url: str, employee_id: str | None = None) -> list[MenuCategory]:
     """Full menu, or only what one person can be booked for."""
-    body = _init_body(venue_url, employee_id)
+    body = init_body(venue_url, employee_id)
     resp = http.post(
         GRAPHQL_URL,
         json=body,
@@ -137,7 +148,8 @@ def fetch_menu(http, venue_url: str, employee_id: str | None = None) -> list[Men
     return parse_menu(resp.json())
 
 
-def _init_body(venue_url: str, employee_id: str | None) -> dict:
+def init_body(venue_url: str, employee_id: str | None) -> dict:
+    """Request body for the booking-flow initialise mutation, optionally filtered to one person."""
     return {
         "operationName": INIT_OPERATION,
         "variables": {

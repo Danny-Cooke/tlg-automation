@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Assemble a Lambda bundle for Terraform's archive_file.
 #
-#   scripts/build_lambda.sh              -> build/lambda     (bot, monitor, menu_sync + persona)
-#   scripts/build_lambda.sh menu_sync    -> build/menu_sync  (that package only)
+#   scripts/build_lambda.sh                        -> build/lambda        (bot, monitor, menu_sync + persona)
+#   scripts/build_lambda.sh menu_sync              -> build/menu_sync     (that package only)
+#   scripts/build_lambda.sh fresha_watch menu_sync -> build/fresha_watch  (named after the first package,
+#                                                                          holds every package listed)
 #
 # Installs deps for the Lambda target (arm64, python3.12) and copies the named
 # src/ packages next to them. The persona file ships only with the bot.
@@ -15,7 +17,7 @@ if [ $# -eq 0 ]; then
   OUT="$ROOT/build/lambda"
 else
   PACKAGES=("$@")
-  OUT="$ROOT/build/$(IFS=-; echo "${PACKAGES[*]}")"
+  OUT="$ROOT/build/$1"
 fi
 
 rm -rf "$OUT"
