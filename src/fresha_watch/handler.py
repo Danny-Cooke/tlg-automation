@@ -15,7 +15,8 @@ Environment:
     ALERT_PHONE_NUMBERS   comma-separated E.164 numbers for the text (optional)
 
 Invoke with {"dry_run": true} to run the checks and see the diff without
-saving state or sending anything.
+saving state or sending anything. Invoke with {"test_sms": true} to send a
+test text to the configured numbers through the real SNS path.
 """
 from __future__ import annotations
 
@@ -35,12 +36,30 @@ from .checks import CheckResult
 log = logging.getLogger("fresha_watch")
 log.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
-SMS_MAX = 300  # a couple of segments; the email carries the detail
+DEFAULT_FUNCTION_NAME = "tlg-fresha-watch"
+SUBJECT = "Fresha's public pages about staff, calendars or services"
 
 
 def lambda_handler(event: dict, context=None) -> dict:
-    dry_run = bool((event or {}).get("dry_run"))
-    return run(http=_http(), ssm=_ssm(), sns=_sns(), env=dict(os.environ), dry_run=dry_run)
+    event = event or {}
+    if event.get("test_sms"):
+        return test_sms(sns=_sns(), env=dict(os.environ))
+    return run(http=_http(), ssm=_ssm(), sns=_sns(), env=dict(os.environ), dry_run=bool(event.get("dry_run")))
+
+
+def test_sms(*, sns, env: dict) -> dict:
+    """Send one test text so the number, the sandbox and the IAM are proven
+    before Fresha ever changes."""
+    numbers = env.get("ALERT_PHONE_NUMBERS", "")
+    if not numbers.strip():
+        return {"test": True, "sms_sent_to": [], "error": "ALERT_PHONE_NUMBERS is empty; nothing to text"}
+    text = f"{function_name(env)}: test message. A real one says: something has changed in {SUBJECT}."
+    sent_to = send_sms(sns, numbers, text)
+    return {"test": True, "sms_sent_to": sent_to, "message": text}
+
+
+def function_name(env: dict) -> str:
+    return env.get("AWS_LAMBDA_FUNCTION_NAME") or DEFAULT_FUNCTION_NAME
 
 
 def run(*, http, ssm, sns, env: dict, dry_run: bool = False, now: datetime | None = None) -> dict:
@@ -62,7 +81,7 @@ def run(*, http, ssm, sns, env: dict, dry_run: bool = False, now: datetime | Non
     save_state(ssm, env["STATE_PARAMETER"], next_state(previous, results, now))
     if alerts:
         subject, body = format_email(alerts, results, now)
-        text = format_sms(alerts)
+        text = format_sms(alerts, function_name(env))
         sent_to = send_sms(sns, env.get("ALERT_PHONE_NUMBERS", ""), text)
         topic = env.get("OPS_TOPIC_ARN")
         if topic:
@@ -179,16 +198,17 @@ def headline(alerts: list[dict]) -> str:
     return "RECOVERED"
 
 
-def format_sms(alerts: list[dict]) -> str:
-    parts = [f"TLG Fresha watch {headline(alerts)}."]
-    for a in alerts:
-        first = a["lines"][0] if a["lines"] else a["detail"]
-        parts.append(f"{a['check']} {a['kind']}: {first}")
-    parts.append("Detail in the ops email.")
-    text = " ".join(parts)
-    if len(text) > SMS_MAX:
-        text = text[: SMS_MAX - 3].rstrip() + "..."
-    return text
+def format_sms(alerts: list[dict], name: str = DEFAULT_FUNCTION_NAME) -> str:
+    """One short sentence; the email has the detail. Wording chosen by the user."""
+    what = headline(alerts)
+    if what == "BROKEN":
+        failing = ", ".join(sorted(a["check"] for a in alerts if a["kind"] == "failed"))
+        body = f"{SUBJECT} are not working ({failing})"
+    elif what == "CHANGED":
+        body = f"something has changed in {SUBJECT}"
+    else:
+        body = f"{SUBJECT} are working again"
+    return f"{name}: {body}. Details in the ops email."
 
 
 def format_email(alerts: list[dict], results: list[CheckResult], now: datetime) -> tuple[str, str]:

@@ -254,8 +254,10 @@ def test_changed_shape_texts_and_emails_once(env):
     texts = [p for p in sns.published if "PhoneNumber" in p]
     emails = [p for p in sns.published if "TopicArn" in p]
     assert [t["PhoneNumber"] for t in texts] == ["+447700900123", "+447700900456"]
-    assert texts[0]["Message"].startswith("TLG Fresha watch CHANGED.")
-    assert len(texts[0]["Message"]) <= handler.SMS_MAX
+    assert texts[0]["Message"] == (
+        "tlg-fresha-watch: something has changed in Fresha's public pages about staff, "
+        "calendars or services. Details in the ops email."
+    )
     assert texts[0]["MessageAttributes"]["AWS.SNS.SMS.SMSType"]["StringValue"] == "Transactional"
     assert len(emails) == 1 and emails[0]["Subject"] == "[TLG Fresha watch] CHANGED: booking_flow, venue_page"
     assert "removed bookingFlowInitialize" in emails[0]["Message"]
@@ -284,7 +286,10 @@ def test_broken_then_recovered_alerts_once_each(env):
 
     out = handler.run(http=broken, ssm=ssm, sns=sns, env=env, now=NOW)
     assert [(a["check"], a["kind"]) for a in out["alerts"]] == [("booking_flow", "failed")]
-    assert sns.published[0]["Message"].startswith("TLG Fresha watch BROKEN.")
+    assert sns.published[0]["Message"] == (
+        "tlg-fresha-watch: Fresha's public pages about staff, calendars or services are not "
+        "working (booking_flow). Details in the ops email."
+    )
     assert json.loads(ssm.value)["failing"] == ["booking_flow"]
     assert handler.decode_state(ssm.value)["failing"] == ["booking_flow"]
 
@@ -294,7 +299,7 @@ def test_broken_then_recovered_alerts_once_each(env):
 
     out = handler.run(http=Fresha(), ssm=ssm, sns=sns, env=env, now=NOW)
     assert [(a["check"], a["kind"]) for a in out["alerts"]] == [("booking_flow", "recovered")]
-    assert sns.published[0]["Message"].startswith("TLG Fresha watch RECOVERED.")
+    assert sns.published[0]["Message"].endswith("are working again. Details in the ops email.")
 
 
 def test_venue_page_failure_skips_per_person_check(env):
@@ -334,7 +339,18 @@ def test_no_numbers_means_email_only(env):
     assert out["sms_sent_to"] == [] and len(sns.published) == 1 and "TopicArn" in sns.published[0]
 
 
-def test_sms_is_truncated():
+def test_sms_names_the_function_and_stays_short():
     alerts = [{"check": "booking_flow", "kind": "changed", "detail": "x" * 500, "lines": ["removed " + "y" * 400]}]
-    text = handler.format_sms(alerts)
-    assert len(text) == handler.SMS_MAX and text.endswith("...")
+    text = handler.format_sms(alerts, "tlg-prod-fresha-watch")
+    assert text.startswith("tlg-prod-fresha-watch: something has changed")
+    assert len(text) < 160  # one SMS segment
+
+
+def test_test_sms_sends_through_the_real_path(env):
+    sns = FakeSns()
+    out = handler.test_sms(sns=sns, env={**env, "AWS_LAMBDA_FUNCTION_NAME": "tlg-prod-fresha-watch"})
+    assert out["sms_sent_to"] == ["+447700900123", "+447700900456"]
+    assert sns.published[0]["Message"].startswith("tlg-prod-fresha-watch: test message.")
+    assert not any("TopicArn" in p for p in sns.published)  # no email for a test
+    out = handler.test_sms(sns=FakeSns(), env={**env, "ALERT_PHONE_NUMBERS": ""})
+    assert out["sms_sent_to"] == [] and "empty" in out["error"]

@@ -118,7 +118,13 @@ recovers or changes shape. Two things to do once:
    `alert_phone_numbers`. With no secret the watch still emails the ops
    topic and sends no texts.
 
-Check it is wired up without waiting for Fresha to change:
+Send yourself a test text through the real path (number, sandbox, IAM):
+
+```
+aws lambda invoke --region eu-west-2 --function-name tlg-prod-fresha-watch --cli-binary-format raw-in-base64-out --payload '{"test_sms": true}' out.json && cat out.json
+```
+
+Check the Fresha checks are wired up without waiting for Fresha to change:
 
 ```
 aws lambda invoke --region eu-west-2 --function-name tlg-prod-fresha-watch --cli-binary-format raw-in-base64-out --payload '{"dry_run": true}' out.json && cat out.json
