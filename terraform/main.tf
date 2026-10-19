@@ -23,26 +23,10 @@ locals {
     instagram = var.meta_instagram_app_id
   }
 
-  # Everything the bot may quote, rendered once into one env var.
-  salon_config = {
-    salon_name           = var.salon.name
-    address              = var.salon.address
-    phone                = var.salon.phone
-    opening_hours        = var.salon.opening_hours
-    general_booking_link = var.salon.general_booking_link
-    extra_notes          = var.salon.extra_notes
-    services             = var.services
-    staff = [
-      for slug, m in var.staff : {
-        name         = m.name
-        role         = m.role
-        booking_link = m.booking_link
-        services     = m.services
-      }
-    ]
-  }
-
-  # Populated by `scripts/build_lambda.sh bot` before terraform apply.
+  # Populated by `scripts/build_lambda.sh bot` before terraform apply. The
+  # bundle carries bot/salon_config.json, rendered from salon.auto.tfvars and
+  # fresha-menu.auto.tfvars.json by scripts/render_salon_config.py: the real
+  # menu is 49KB, far over Lambda's 4KB limit for environment variables.
   lambda_build_dir = "${path.module}/../build/bot"
 }
 
@@ -230,7 +214,7 @@ resource "aws_lambda_function" "bot" {
       BOT_MODE                   = var.bot_mode
       MESSAGE_TEST_MODE          = tostring(var.message_test_mode)
       MESSAGE_TEST_TRIGGER       = var.message_test_trigger
-      SALON_CONFIG_JSON          = jsonencode(local.salon_config)
+      SALON_CONFIG_PATH          = "/var/task/bot/salon_config.json"
       PERSONA_PATH               = "/var/task/bot/jess.md"
       CONVERSATIONS_TABLE        = aws_dynamodb_table.conversations.name
       ESCALATION_TOPIC_ARN       = aws_sns_topic.escalations.arn

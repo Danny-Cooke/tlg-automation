@@ -30,3 +30,33 @@ def test_persona_has_the_rules_jess_relies_on(persona_text):
 
 def test_load_persona_from_env():
     assert "You are Jess" in load_persona()
+
+
+def test_rendered_salon_config_loads_from_file(monkeypatch, tmp_path):
+    """The bundle ships bot/salon_config.json; it must parse into SalonConfig
+    and carry the whole Fresha menu."""
+    import json
+    import sys
+    from pathlib import Path
+
+    import pytest
+
+    ROOT = Path(__file__).resolve().parent.parent
+    pytest.importorskip("hcl2")
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from render_salon_config import render
+
+    from bot.config import SalonConfig
+
+    doc = render(ROOT / "terraform")
+    menu = json.loads((ROOT / "terraform" / "fresha-menu.auto.tfvars.json").read_text(encoding="utf-8"))
+    assert len(doc["services"]) == len(menu["services"]) and len(doc["staff"]) == len(menu["staff"])
+
+    path = tmp_path / "salon_config.json"
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    monkeypatch.delenv("SALON_CONFIG_JSON", raising=False)
+    monkeypatch.setenv("SALON_CONFIG_PATH", str(path))
+    cfg = SalonConfig.from_env()
+    assert cfg.salon_name == "The Looking Glass Beauty"
+    assert len(cfg.services) == len(menu["services"])
+    assert {m.name for m in cfg.staff} == {m["name"] for m in menu["staff"].values()}

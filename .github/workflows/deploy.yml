@@ -113,6 +113,7 @@ jobs:
 
       - name: Build the Lambda bundles
         run: |
+          pip install --quiet -r requirements-mcp.txt  # python-hcl2 for the salon config render
           bash scripts/build_lambda.sh menu_sync
           bash scripts/build_lambda.sh fresha_watch menu_sync
           bash scripts/build_lambda.sh bot

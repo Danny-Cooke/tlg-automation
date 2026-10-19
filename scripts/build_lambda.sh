@@ -7,7 +7,8 @@
 #                                                                          holds every package listed)
 #
 # Installs deps for the Lambda target (arm64, python3.12) and copies the named
-# src/ packages next to them. The persona file ships only with the bot.
+# src/ packages next to them. The persona and the rendered salon config ship
+# only with the bot (rendering needs python-hcl2 from requirements-mcp.txt).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -37,6 +38,8 @@ for pkg in "${PACKAGES[@]}"; do
 done
 if [ -d "$OUT/bot" ]; then
   cp "$ROOT/persona/jess.md" "$OUT/bot/jess.md"
+  # Salon facts travel in the bundle, not in an env var (4KB limit). Needs python-hcl2.
+  python "$ROOT/scripts/render_salon_config.py" "$ROOT/terraform" "$OUT/bot/salon_config.json"
 fi
 find "$OUT" -name "__pycache__" -type d -prune -exec rm -rf {} +
 
