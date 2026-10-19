@@ -125,7 +125,8 @@ EventBridge Scheduler, and on demand. It keeps the bot's menu equal to Fresha's:
 
 The GitHub token is a fine-grained PAT read from Parameter Store at run time
 (`/tlg/<env>/github/pat`, SecureString, written by the deploy pipeline).
-Merging the PR changes the bot's menu at the next deploy. Hand-written facts
+The deploy workflow runs the tests on that PR and merges it with the PAT when
+they pass, which triggers the deploy; nobody has to touch it. Hand-written facts
 (hours, address, notes to the bot, calendar emails) stay in
 `salon.auto.tfvars` and are never touched by the sync.
 

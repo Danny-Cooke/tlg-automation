@@ -57,9 +57,12 @@ def run(*, http, ssm, sns, env, dry_run: bool = False, now: datetime | None = No
 
     snapshot = now.strftime("%Y-%m-%d")
     text = model.render(menu.document(snapshot))
-    gh.ensure_branch(BRANCH, base)
-    gh.put_file(path, text, f"Fresha menu sync {snapshot}", BRANCH)
     pr_url = gh.open_pr_for(BRANCH)
+    if pr_url:
+        gh.ensure_branch(BRANCH, base)  # keep the open PR's history, add a commit
+    else:
+        gh.reset_branch(BRANCH, base)  # fresh branch from main: the last PR was merged or closed
+    gh.put_file(path, text, f"Fresha menu sync {snapshot}", BRANCH)
     if not pr_url:
         pr_url = gh.create_pr(BRANCH, base, f"Fresha menu sync {snapshot}", pr_body(changes, snapshot))
     result["pr_url"] = pr_url

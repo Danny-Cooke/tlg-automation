@@ -107,10 +107,17 @@ so escalation to Jess remains the fallback for every booking failure.
 Fresha is the source of truth for staff, services, prices, durations and who
 does what. A daily Lambda reads Fresha's public booking data and regenerates
 `terraform/fresha-menu.auto.tfvars.json`; a difference becomes a pull request,
-not a direct commit, so a Fresha slip is seen before the bot quotes it.
+not a direct commit, so the change is recorded and the tests run against it.
 Hand-written facts live in `salon.auto.tfvars` and are never regenerated.
 Consequence: nobody edits the menu in git; they fix it in Fresha and the PR
 follows within two hours (or on demand).
+
+Amended 2026-10-19 (evening): the PR is merged automatically. The user's
+call: this is a hands-off deployment, and a PR waiting for a person is not.
+The deploy workflow runs the tests on the `menu-sync` PR and merges it with
+the PAT when they pass; the merge triggers the deploy. Only that branch is
+auto-merged, so any other PR still waits for a review. The ops email remains
+the human's notice that the menu changed.
 
 ## 2026-10-17: Escalation stops the bot on that thread
 

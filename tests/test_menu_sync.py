@@ -216,6 +216,12 @@ class FakeGitHubHttp:
         if path == "/repos/o/r/git/refs" and method == "POST":
             self.branches[json["ref"].split("/")[-1]] = json["sha"]
             return Resp(201, body={})
+        if path.startswith("/repos/o/r/git/refs/heads/") and method == "PATCH":
+            b = path.rsplit("/", 1)[-1]
+            if b not in self.branches:
+                return Resp(422, "Reference does not exist")
+            self.branches[b] = json["sha"]
+            return Resp(body={})
         if path == "/repos/o/r/pulls":
             if method == "GET":
                 return Resp(body=[{"html_url": p} for p in self.prs if params["head"].endswith("menu-sync")])
@@ -264,6 +270,30 @@ def test_github_client_get_file_and_put_file():
     gh.ensure_branch("menu-sync", "main")
     assert gh.put_file(model.MENU_FILE, "new", "msg", "menu-sync") == "c1"
     assert gh.get_file(model.MENU_FILE, "menu-sync")[0] == "new"
+
+
+def test_github_client_reset_branch_creates_or_moves_the_branch():
+    http = FakeGitHubHttp(main_file="{}")
+    gh = GitHub(http, "tok", "o/r")
+    gh.reset_branch("menu-sync", "main")
+    assert http.branches["menu-sync"] == "sha-main"
+    http.branches["main"] = "sha-main-2"
+    gh.reset_branch("menu-sync", "main")
+    assert http.branches["menu-sync"] == "sha-main-2"
+    assert ("PATCH", "/repos/o/r/git/refs/heads/menu-sync") in http.log
+
+
+def test_run_restarts_the_branch_from_main_when_no_pr_is_open(env):
+    """After the workflow merged the last PR, the next change must start from
+    main, not from whatever the old branch pointed at."""
+    stale = built().document("2026-10-01")
+    stale["services"][0]["price"] = "£1"
+    http = CombinedHttp(FakeGitHubHttp(main_file=model.render(stale)))
+    http.gh.branches["menu-sync"] = "sha-old"  # leftover from a merged PR
+    out = handler.run(http=http, ssm=FakeSsm(), sns=FakeSns(), env=env, now=datetime(2026, 10, 19, tzinfo=timezone.utc))
+    assert out["changed"] and out["pr_url"] == "https://github.com/o/r/pull/1"
+    assert http.gh.branches["menu-sync"] == "sha-main"
+    assert ("PATCH", "/repos/o/r/git/refs/heads/menu-sync") in http.gh.log
 
 
 def test_github_client_raises_on_error():

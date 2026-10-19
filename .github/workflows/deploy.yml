@@ -6,6 +6,12 @@ name: Deploy
 # environment holds the PAT. The bot stack (terraform/) is not deployed by
 # this workflow yet.
 #
+# Hands-off menu changes: the Lambda opens a pull request from branch
+# "menu-sync". This workflow runs the tests on that PR and, when they pass,
+# merges it with the PAT. The merge is a push to main by the PAT, which
+# triggers this workflow again to deploy. (A merge made with GITHUB_TOKEN
+# would not trigger anything, hence the PAT.)
+#
 # Assumes the account's existing github-oidc role (trusts every Danny-Cooke
 # repo), the same one the other repos deploy with. GitHub environment "prod":
 #   variables: AWS_ROLE_ARN (that role's ARN),
@@ -15,6 +21,8 @@ name: Deploy
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -22,7 +30,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-prod
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'deploy-prod' }}
   cancel-in-progress: false
 
 jobs:
@@ -36,8 +44,28 @@ jobs:
       - run: pip install -r src/requirements.txt -r requirements-dev.txt -r requirements-mcp.txt
       - run: python -m pytest -q
 
+  # Only the Lambda's own branch is merged automatically. Any other PR still
+  # waits for a person.
+  merge-menu-sync:
+    needs: test
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'menu-sync' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Merge the menu sync pull request
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::The prod environment has no GH_PAT secret, so the menu sync PR cannot be merged automatically."
+            exit 1
+          fi
+          gh pr merge "$PR" --squash --delete-branch
+
   deploy:
     needs: test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: prod
     env:

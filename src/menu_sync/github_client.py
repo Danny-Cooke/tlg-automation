@@ -1,6 +1,7 @@
 """The little bit of the GitHub REST API the sync needs: read a file, push a
 change on a branch, open a pull request. Token is a fine-grained PAT with
-contents and pull-requests write on this one repo."""
+contents and pull-requests write on this one repo. The deploy workflow merges
+the PR once the tests pass, so the Lambda never merges anything itself."""
 from __future__ import annotations
 
 import base64
@@ -51,10 +52,19 @@ class GitHub:
     def ensure_branch(self, branch: str, base: str) -> None:
         if self.branch_sha(branch):
             return
+        self.reset_branch(branch, base)
+
+    def reset_branch(self, branch: str, base: str) -> None:
+        """Point the branch at the tip of base, creating it if needed. Used when
+        no PR is open, so a leftover branch from a merged or closed PR does not
+        carry stale commits into the next one."""
         base_sha = self.branch_sha(base)
         if not base_sha:
             raise GitHubError(f"base branch {base!r} not found in {self.repo}")
-        r = self._req("POST", f"/repos/{self.repo}/git/refs", json={"ref": f"refs/heads/{branch}", "sha": base_sha})
+        if self.branch_sha(branch):
+            r = self._req("PATCH", f"/repos/{self.repo}/git/refs/heads/{branch}", json={"sha": base_sha, "force": True})
+        else:
+            r = self._req("POST", f"/repos/{self.repo}/git/refs", json={"ref": f"refs/heads/{branch}", "sha": base_sha})
         self._ok(r)
 
     def put_file(self, path: str, text: str, message: str, branch: str) -> str:

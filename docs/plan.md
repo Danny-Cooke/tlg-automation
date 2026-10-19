@@ -61,6 +61,8 @@ Decisions taken while building:
   hand-written was lost. `salon.auto.tfvars` keeps hours, address, bot notes
   and `calendar_emails`.
 - PR, not direct commit. Branch `menu-sync`, one open PR updated in place.
+  Merged automatically by the deploy workflow once the tests pass (hands-off,
+  2026-10-19 evening); the branch restarts from main for each new PR.
 - Public booking flow request format captured and replayed from plain HTTP;
   details in `knowledge/fresha.md`.
 - Apply after merge is job 1.
