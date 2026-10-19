@@ -12,7 +12,7 @@ After the first apply, confirm the SNS subscription email if one was set,
 then run the sync by hand once:
 
 ```bash
-aws lambda invoke --function-name tlg-prod-menu-sync --payload '{"dry_run": true}' /dev/stdout
+aws lambda invoke --region eu-west-2 --function-name tlg-prod-menu-sync --cli-binary-format raw-in-base64-out --payload '{"dry_run": true}' out.json && cat out.json
 ```
 
 The bot runs without a browser. Messages come in over Meta's webhook and go
@@ -121,5 +121,5 @@ recovers or changes shape. Two things to do once:
 Check it is wired up without waiting for Fresha to change:
 
 ```
-aws lambda invoke --region eu-west-2 --function-name tlg-prod-fresha-watch --payload '{"dry_run": true}' out.json
+aws lambda invoke --region eu-west-2 --function-name tlg-prod-fresha-watch --cli-binary-format raw-in-base64-out --payload '{"dry_run": true}' out.json && cat out.json
 ```

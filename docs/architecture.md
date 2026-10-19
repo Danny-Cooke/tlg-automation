@@ -198,7 +198,7 @@ then the contract fingerprint is the early warning.
 Run it by hand after a deploy:
 
 ```
-aws lambda invoke --function-name $(terraform output -raw monitor_function_name) /dev/stdout
+aws lambda invoke --region eu-west-2 --function-name $(terraform output -raw monitor_function_name) --cli-binary-format raw-in-base64-out --payload "{}" out.json && cat out.json
 ```
 
 ## Build order
