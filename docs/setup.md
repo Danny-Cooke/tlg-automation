@@ -105,18 +105,49 @@ cd terraform && terraform fmt -check && terraform validate
 ## Fresha watch text messages
 
 The Fresha watch Lambda texts you through SNS when a Fresha page breaks,
-recovers or changes shape. Two things to do once:
+recovers or changes shape. Done once on 2026-10-19 for the first number;
+repeat steps 3 and 4 for each extra number.
 
-1. **Verify your number.** New accounts are in the SNS SMS sandbox, which only
-   delivers to verified numbers. In the console, region London: Amazon SNS ->
-   Text messaging (SMS) -> Sandbox destination phone numbers -> Add phone
-   number, then enter the code it texts you. Or request production access
-   on the same page to text any number.
-2. **Tell the pipeline the numbers.** On the GitHub `prod` environment add a
+1. **London needs an origination identity.** A new account has none, so SNS
+   accepts a text and drops it, and even the sandbox cannot send a
+   verification code ("No origination entities available to send"). A UK
+   alphanumeric sender ID needs no registration and costs nothing. The AWS
+   CLI on the laptop is too old for the call, so use boto3:
+
+   ```
+   python -c "import boto3; print(boto3.client('pinpoint-sms-voice-v2', region_name='eu-west-2').request_sender_id(SenderId='TLGWatch', IsoCountryCode='GB', MessageTypes=['TRANSACTIONAL']))"
+   ```
+
+2. **Make it the SNS default** so every text from the account uses it:
+
+   ```
+   aws sns set-sms-attributes --region eu-west-2 --attributes DefaultSenderID=TLGWATCH,DefaultSMSType=Transactional
+   ```
+
+3. **Verify the number.** The account is in the SMS sandbox, which only
+   delivers to verified numbers. The SNS sandbox call registers the number
+   but cannot always send the code; End User Messaging can, from the sender
+   ID. Register, send the code, then confirm it:
+
+   ```
+   aws sns create-sms-sandbox-phone-number --region eu-west-2 --phone-number +44... --language-code en-GB
+   python -c "import boto3; c=boto3.client('pinpoint-sms-voice-v2', region_name='eu-west-2'); v=c.describe_verified_destination_numbers()['VerifiedDestinationNumbers'][0]; print(c.send_destination_number_verification_code(VerifiedDestinationNumberId=v['VerifiedDestinationNumberId'], VerificationChannel='TEXT', LanguageCode='EN_GB', OriginationIdentity='TLGWATCH'))"
+   python -c "import boto3; c=boto3.client('pinpoint-sms-voice-v2', region_name='eu-west-2'); v=c.describe_verified_destination_numbers()['VerifiedDestinationNumbers'][0]; print(c.verify_destination_number(VerifiedDestinationNumberId=v['VerifiedDestinationNumberId'], VerificationCode='123456'))"
+   ```
+
+   `aws sns list-sms-sandbox-phone-numbers --region eu-west-2` should then
+   show the number as Verified. Ten numbers fit in the sandbox; to text
+   anyone, request production access under SNS, Text messaging (SMS).
+
+4. **Tell the pipeline the numbers.** On the GitHub `prod` environment add a
    secret `ALERT_PHONE_NUMBERS` holding a JSON list in E.164 form, for
-   example `["+447700900123"]`. The deploy passes it to Terraform as
-   `alert_phone_numbers`. With no secret the watch still emails the ops
-   topic and sends no texts.
+   example `["+447700900123"]`. Watch for a stray space in the name field.
+   The deploy passes it to Terraform as `alert_phone_numbers`. With no secret
+   the watch still emails the ops topic and sends no texts.
+
+The SNS monthly SMS spend limit is the default one dollar; a UK text costs a
+few pence, so that is dozens of alerts a month. Raise it under SNS, Text
+messaging (SMS), Account spend limit if it ever trips.
 
 Send yourself a test text through the real path (number, sandbox, IAM):
 
