@@ -120,7 +120,7 @@ def login(profile_dir: Path, timeout: int) -> dict | None:
                         return fresh
                     if time.monotonic() - last_report > 15:
                         last_report = time.monotonic()
-                        names = sorted({c["name"] for c in ctx.cookies() if "fresha" in c["name"] or "gatekeeper" in c["name"]})
+                        names = sorted({c["name"] for c in ctx.cookies(FRESHA_URLS) if "fresha" in c["name"] or "gatekeeper" in c["name"]})
                         print(f"  waiting... page: {page.url}  fresha cookies: {', '.join(names) or 'none yet'}")
                 except Exception as e:  # noqa: BLE001 - Playwright's TargetClosedError and friends
                     if "closed" in str(e):
@@ -217,16 +217,25 @@ def _shutdown(proc, ctx, profile_dir: Path) -> None:
         pass
 
 
+FRESHA_URLS = ["https://partners.fresha.com", "https://partners-api-gateway.fresha.com", "https://www.fresha.com"]
+
+
 def _drop_session_cookie(ctx) -> None:
-    """Keep every cookie except the session, so the login issues a new 30-day one."""
-    keep = [c for c in ctx.cookies() if c["name"] != SESSION_COOKIE]
-    ctx.clear_cookies()
-    if keep:
-        ctx.add_cookies(keep)
+    """Remove the old session cookie only, so the login issues a new 30-day one
+    and the trusted-device cookie survives (no SMS code next time)."""
+    if not _has_cookie(ctx, SESSION_COOKIE):
+        return
+    try:
+        ctx.clear_cookies(name=SESSION_COOKIE)
+    except TypeError:  # Playwright before 1.43: no name filter; restore everything else by hand
+        keep = [c for c in ctx.cookies(FRESHA_URLS) if c["name"] != SESSION_COOKIE]
+        ctx.clear_cookies()
+        if keep:
+            ctx.add_cookies(keep)
 
 
 def _has_cookie(ctx, name: str) -> bool:
-    return any(c["name"] == name for c in ctx.cookies())
+    return any(c["name"] == name for c in ctx.cookies(FRESHA_URLS))
 
 
 def _fresh_session_cookie(ctx) -> dict | None:
