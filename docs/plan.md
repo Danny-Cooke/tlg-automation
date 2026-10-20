@@ -85,11 +85,23 @@ sync stack's state. Details in `docs/architecture.md`.
 
 The bot creates and cancels appointments through Fresha's internal GraphQL.
 Availability comes from Fresha's own `availableTimeSlots`, so no staff
-calendar exports are required. Before design can finish, capture one
-mutation's request body and the session cookie (steps in
-`knowledge/fresha-internal-api.md`). Then: session storage and refresh,
-booking queue (SQS) with idempotency key per conversation and slot, Jess
-notified of every booking at first, shadow-mode week.
+calendar exports are required. The request side is fully captured
+(2026-10-20, `knowledge/fresha-internal-api.md`): form-encoded body with the
+query text, cookies only for auth, no CSRF header, exact create and cancel
+variables, and the client search endpoint. The login was recorded the
+same evening and changed the runtime shape: Fresha has no password, it
+sends one-time codes by email and, on a new device, by SMS, behind a
+reCAPTCHA, and the session lasts 30 days from login. So there is no
+unattended session keeper. Instead: a script on the owner's laptop
+(`scripts/fresha_session.py`, built 2026-10-20 with the SSM parameter,
+Lambda read permission and `bot/fresha_session.py` reader; run weekly)
+opens a browser, the owner logs in with the emailed code, the script
+keeps the trusted-device cookie in a local profile so the SMS step happens
+once a year, and writes the session cookie to Secrets Manager. The bot
+Lambda replays the dashboard's calls over plain HTTP with that cookie, and
+posts to Telegram three days before the session runs out and on any 401.
+Then: booking queue (SQS) with idempotency key per conversation and slot,
+Jess notified of every booking at first, shadow-mode week.
 
 Behaviour as stated by the user, 2026-10-20 (planning, not yet built):
 
@@ -108,9 +120,8 @@ Behaviour as stated by the user, 2026-10-20 (planning, not yet built):
   returns first and last name with the Page token (checked 2026-10-20 with
   the owner's own PSID). Instagram needs `instagram_manage_messages`.
 
-Open before build: who captures the Fresha session and one real create
-mutation (the blocker); whether a dedicated Fresha staff login is created
-for the bot; which staff and services the bot may book (hair colour needs a
+Decided 2026-10-20: the bot uses the owner's own Fresha login (see
+decisions). Open before build: which staff and services the bot may book (hair colour needs a
 patch test and Lori-Dee's consultation first); the payment policy to send
 (Fresha's default is card confirmation with a cancellation fee equal to the
 price); whether the bot may ask for email and phone in chat, as the team

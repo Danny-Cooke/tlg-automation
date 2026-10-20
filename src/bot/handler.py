@@ -31,7 +31,7 @@ import time
 import zoneinfo
 from functools import lru_cache
 
-from . import availability, brain, escalation, meta
+from . import availability, brain, escalation, fresha_session, meta
 from .config import SalonConfig, load_persona
 from .prompt import build_system_prompt
 from .state import Conversation, ConversationStore
@@ -74,6 +74,23 @@ def salon() -> SalonConfig:
 @lru_cache(maxsize=1)
 def system_prompt() -> str:
     return build_system_prompt(load_persona(), salon())
+
+
+@lru_cache(maxsize=1)
+def fresha_session_check() -> bool:
+    """Once per container: does the stored Fresha session work from here?
+    Logged so the owner can see it in CloudWatch; the bot does not yet book,
+    so a bad session changes nothing else."""
+    session = fresha_session.get()
+    if session is None:
+        log.info("FRESHA SESSION none (parameter not set, or expired)")
+        return False
+    where = fresha_session.probe(session)
+    if where:
+        log.info("FRESHA SESSION ok (%s, %s days left)", where, session.days_left())
+        return True
+    log.warning("FRESHA SESSION rejected; run scripts/fresha_session.py")
+    return False
 
 
 def lambda_handler(event: dict, context=None) -> dict:
@@ -168,6 +185,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     store.save(convo)  # claimed before the Claude call: a retry during it is a duplicate
     if MODE == "live":
         _typing(msg.sender_id)  # dots while we think, not just during the pause
+    fresha_session_check()
 
     if not text:
         # Attachment-only message: let a person see it rather than guess.

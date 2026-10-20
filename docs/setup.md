@@ -141,6 +141,51 @@ Spam hand-overs go to email only. Setup, once, on a phone:
 Each team member only needs Telegram installed and notifications on for the
 group. Email stays as the record of every hand-over.
 
+## 4d. The Fresha session the bot books with
+
+Fresha's partner login has no password: a code by email and, on a browser it
+has not seen, a second code by text, each behind a reCAPTCHA. The session it
+sets lasts 30 days from login and is not extended by use. So a person logs
+in, weekly, and a script stores the session for the bot. The bot uses the
+owner's own Fresha account (decision 2026-10-20).
+
+Once, on the laptop:
+
+```bash
+python -m pip install -r requirements-ops.txt
+```
+
+The script creates or updates the SSM parameter `/tlg/prod/fresha/session`
+itself (SecureString, default key), using the laptop's AWS credentials.
+Terraform does not manage the parameter; it only gives the bot Lambdas
+permission to read it, so the order of the first run and the first deploy
+does not matter.
+
+Every week (set a calendar reminder; the bot will also nag the Telegram
+group when the session is three days from running out):
+
+```bash
+python scripts/fresha_session.py
+```
+
+It opens Chrome on the Fresha login in its own browser profile under
+`.local/fresha-profile`. Log in: email, then the code Fresha emails you. The
+first time it also texts a code to the account's phone; tick "trust this
+device" and that step does not come back for a year, because the profile
+keeps the trusted-device cookie. The window closes by itself once the new
+session cookie exists. The script then checks the cookie works from plain
+HTTP, the way the Lambda uses it, writes it to the parameter and prints the
+expiry date. It never prints the cookie. `--dry-run` logs in and verifies
+without writing.
+
+The bot reads the parameter at run time and caches it for five minutes, so
+no deploy follows a refresh. On each cold start in shadow or live mode the
+bot also runs the same harmless probe query from inside AWS and logs
+`FRESHA SESSION ok (...)` or `FRESHA SESSION rejected`, which is how you
+know the cookie works from Lambda's address and not just the laptop. Each login starts a fresh 30 days, so a missed
+week costs nothing; a missed month means the bot stops booking and goes
+back to the Fresha link and a hand-over until the next run.
+
 ## 5. Clearing a hand-over
 
 When the bot hands over a complaint or something it cannot handle, it stays

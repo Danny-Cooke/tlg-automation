@@ -1,0 +1,5 @@
+# Operator scripts run on a laptop, not in Lambda or CI.
+# scripts/fresha_session.py: opens Chrome for the Fresha login, writes the session to SSM.
+playwright>=1.47
+requests>=2.32
+boto3>=1.35

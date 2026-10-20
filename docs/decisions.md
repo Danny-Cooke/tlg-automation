@@ -285,3 +285,20 @@ a second trust entry, `repo:Danny-Cooke@50141838/*`, pinned to the user id
 so a renamed or re-registered account can never match. The older repos keep
 presenting the plain form and are unaffected. Applied by hand to the shared
 `github-oidc` role 2026-10-19; the role is not under Terraform anywhere.
+
+## 2026-10-20: the bot books through the owner's own Fresha login
+
+Fresha's partner login has no password: a code by email, a second code by
+SMS on an unknown device, reCAPTCHA on each request, a 30-day session that
+is not extended by use (recorded in `knowledge/fresha-internal-api.md`).
+An unattended keeper would have to read email and SMS and get a headless
+browser past reCAPTCHA every month; not built, on fragility and on
+principle. Instead a person logs in once a month through a laptop script
+that keeps the trusted-device cookie and stores the session cookie in
+Secrets Manager; the bot Lambda uses that cookie over plain HTTP.
+
+The user's ruling: that login is their own Fresha account, not a separate
+staff account for the bot. Consequences: bookings the bot makes show as
+made by the owner; the monthly code goes to the owner's email; the owner
+runs the script. If the owner logs in on another new device, that is a
+separate session and does not affect the bot's.

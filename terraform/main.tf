@@ -147,6 +147,22 @@ resource "aws_ssm_parameter" "telegram_chat_id" {
   }
 }
 
+# The Fresha dashboard session the bot books with. Fresha's login is one-time
+# codes, so no pipeline can produce this: a person runs
+# scripts/fresha_session.py, which creates or updates the SecureString
+# parameter below with {"cookie", "expires_at", ...}. The script owns the
+# parameter (so it can run before or after any deploy); Terraform only names
+# it and lets the bot read it. The bot reads it at run time, so a refresh
+# never needs a deploy.
+locals {
+  fresha_session_param = "/tlg/${var.environment}/fresha/session"
+  fresha_session_arn   = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${local.fresha_session_param}"
+}
+
+data "aws_kms_alias" "ssm" {
+  name = "alias/aws/ssm"
+}
+
 # ---------------------------------------------------------------------------
 # Lambdas
 # ---------------------------------------------------------------------------
@@ -207,6 +223,18 @@ data "aws_iam_policy_document" "bot" {
       actions   = ["ssm:GetParameter", "ssm:PutParameter"]
       resources = [aws_ssm_parameter.telegram_chat_id[0].arn]
     }
+  }
+
+  statement {
+    sid       = "FreshaSession"
+    actions   = ["ssm:GetParameter"]
+    resources = [local.fresha_session_arn]
+  }
+
+  statement {
+    sid       = "FreshaSessionDecrypt"
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_alias.ssm.target_key_arn]
   }
 
   # Claude Platform on AWS: POST /v1/messages on this workspace only. Not
@@ -273,6 +301,7 @@ resource "aws_lambda_function" "bot" {
       TELEGRAM_SECRET_ARN        = local.telegram_enabled ? aws_secretsmanager_secret.telegram[0].arn : ""
       TELEGRAM_CHAT_ID_PARAM     = local.telegram_enabled ? aws_ssm_parameter.telegram_chat_id[0].name : ""
       TELEGRAM_CHAT_ID           = var.telegram_chat_id
+      FRESHA_SESSION_PARAM       = local.fresha_session_param
       CONVERSATIONS_TABLE        = aws_dynamodb_table.conversations.name
       ESCALATION_TOPIC_ARN       = aws_sns_topic.escalations.arn
       OPS_TOPIC_ARN              = local.ops_topic_arn
