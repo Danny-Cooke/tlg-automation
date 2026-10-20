@@ -182,13 +182,14 @@ data "aws_iam_policy_document" "bot" {
   }
 
   # The SDK first swaps the role's credentials for a web identity token
-  # (outbound web identity federation, enabled on the account 2026-10-20).
-  # Without this the call fails 403 before it reaches the workspace.
+  # tagged with the workspace (outbound web identity federation, enabled on
+  # the account 2026-10-20). Without both actions the call fails 403 before
+  # it reaches the workspace; the docs do not list them, the 403 messages do.
   dynamic "statement" {
     for_each = var.anthropic_aws_workspace_id == "" ? [] : [1]
     content {
       sid       = "ClaudeWebIdentityToken"
-      actions   = ["sts:GetWebIdentityToken"]
+      actions   = ["sts:GetWebIdentityToken", "sts:TagGetWebIdentityToken"]
       resources = ["arn:aws:sts::${data.aws_caller_identity.current.account_id}:self"]
     }
   }

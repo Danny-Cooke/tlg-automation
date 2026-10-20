@@ -277,8 +277,10 @@ def _send(recipient_id: str, text: str, started: float | None = None) -> bool:
         remaining = REPLY_DELAY_SECONDS - elapsed
         if remaining > 0:
             time.sleep(remaining)
-    for chunk in meta.chunk_text(text):
+    chunks = list(meta.chunk_text(text))
+    for chunk in chunks:
         meta.send_text(recipient_id, chunk, s["page_token"], app_secret=s.get("app_secret"))
+    log.info("SENT %d message(s) to %s: %r", len(chunks), recipient_id, text[:200])
     return True
 
 
