@@ -279,6 +279,11 @@ Consequences for the bot (see `docs/plan.md`, job 4):
 - Whether the session cookie's 30 days is also enforced server-side at
   exactly 30 days, or the server cuts it earlier on inactivity. The bot
   will see a 401 and say so either way.
+
+Confirmed 2026-10-20 evening: the session cookie alone, sent from AWS
+CloudShell in eu-west-2 with no browser headers beyond origin and referer,
+is accepted (`users_profileDetails` returned the account). Fresha does not
+tie the session to the login address or browser.
 - Whether `auth-api.fresha.com/pin-switching/session/heartbeat` (POST, 403
   before login) matters once logged in. Probably the staff-PIN feature.
 
