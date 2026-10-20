@@ -64,6 +64,16 @@ def test_voice_comes_from_the_message_history(persona_text):
     assert "Never make up a booking" in persona_text
 
 
+def test_one_voice_three_shapes(persona_text):
+    """Decision 2026-10-20: Jess is the only persona; hair and tattoo threads shift register
+    and hand over by name, the bot never claims to be Lori or Carmen."""
+    assert "Your register shifts with the treatment" in persona_text
+    assert "Hair: Lori-Dee's shape" in persona_text and "Tattoos: Carmen's shape" in persona_text
+    assert "natural daylight" in persona_text  # what Lori needs before quoting colour
+    assert "roughly how big" in persona_text  # what Carmen needs before quoting a tattoo
+    assert 'Never say "it\'s Lori" or "Carmen here"' in persona_text
+
+
 def test_persona_never_carries_client_data(persona_text):
     """The analysis read real threads; nothing personal may leak into the prompt."""
     assert not re.search(r"\b07\d{3}\s?\d{6}\b", persona_text)  # UK mobile numbers

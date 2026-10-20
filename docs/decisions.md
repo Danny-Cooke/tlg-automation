@@ -55,6 +55,32 @@ mid-October in a voice nothing like the salon's, alongside the instant
 reply. Both must be switched off in Meta Business Suite before the bot
 replies to the public, or three voices will answer every message.
 
+## 2026-10-20: One persona, three registers, not three personas
+
+The user asked whether the bot needs a Carmen persona for tattoos, a Jess
+persona for nails and a Lori-Dee persona for hair, since the history shows
+three distinct voices. Decided against, for now:
+
+- The Page already works as one front door. Jess answers first and the
+  specialists step in by announcing themselves ("Hiya its Lori the
+  hairdresser"). Clients read that as a human hand-over.
+- What makes Lori and Carmen sound different is what the bot cannot do:
+  quote colour from daylight photos, price a tattoo from a picture and a
+  size. Those are hand-overs whichever name the bot uses.
+- A bot saying "it's Lori" when Lori did not type it is a trust problem,
+  and threads mix treatments, which would need intent routing and an owner
+  rule for a mixed thread.
+
+Instead Jess stays the single voice and her register shifts with the
+treatment: Lori-Dee's shape on hair (Hiya, plain, one x, consultation and
+photos first), Carmen's on tattoos (low key, size and placement, free
+consultation), her own on everything else, then a hand-over naming the
+person. Written into `persona/jess.md` and `persona/voice-guide.md`.
+
+Revisit if Lori-Dee or Carmen want the bot to answer their threads in their
+own words (built from their own replies, their decision), or if the bot
+gets to quote and book hair and tattoos itself.
+
 ## 2026-10-17: Google Calendar mirror is config plus checklist, not code
 
 Fresha's native sync is per staff member and only configurable in the Fresha UI.
