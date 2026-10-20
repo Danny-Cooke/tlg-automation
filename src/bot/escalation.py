@@ -41,9 +41,35 @@ def format_alert(convo: Conversation, reason: str, last_user_text: str, page_id:
     return subject, "\n".join(lines)
 
 
-def notify(convo: Conversation, reason: str, last_user_text: str, *, to: str = "", sns=None) -> None:
-    topic_arn = os.environ.get("ESCALATION_TOPIC_ARN")
+CHANNEL_SHORT = {"messenger": "FB", "instagram": "Insta"}
+
+
+def format_telegram(convo: Conversation, page_id: str, *, area: str = "", kind: str = "", reason: str = "") -> str:
+    """The team's one-liner (user, 2026-10-20): `Nails: complaint: Danny Cooke: FB`,
+    then the link that opens the thread. The model's reason goes on a third line
+    when it adds something, for example the slot a client agreed to."""
+    who = convo.client_name or convo.sender_id
+    channel = CHANNEL_SHORT.get(convo.channel, convo.channel or "?")
+    first = f"{(area or 'general').capitalize()}: {kind or 'needs you'}: {who}: {channel}"
+    lines = [first, business_suite_link(convo.channel, page_id)]
+    if reason and reason.lower() not in (kind.lower(), ""):
+        lines.append(reason)
+    return "\n".join(lines)
+
+
+def notify(
+    convo: Conversation, reason: str, last_user_text: str, *, to: str = "", area: str = "", kind: str = "", sns=None, telegram=None
+) -> None:
+    """Email the escalation topic and post the one-liner to the team's Telegram group.
+    Spam goes to email only; nobody wants sellers buzzing their phone."""
     page_id = os.environ.get("META_PAGE_ID", "")
+    if kind != "spam":
+        poster = telegram or _telegram().post_handover
+        try:
+            poster(format_telegram(convo, page_id, area=area, kind=kind, reason=reason))
+        except Exception:  # noqa: BLE001 - Telegram must never break the hand-over
+            log.exception("Telegram hand-over failed")
+    topic_arn = os.environ.get("ESCALATION_TOPIC_ARN")
     subject, body = format_alert(convo, reason, last_user_text, page_id, to)
     if not topic_arn:
         log.warning("ESCALATION_TOPIC_ARN not set; would have sent: %s", subject)
@@ -95,3 +121,9 @@ def _sns():
     import boto3
 
     return boto3.client("sns")
+
+
+def _telegram():
+    from . import telegram
+
+    return telegram

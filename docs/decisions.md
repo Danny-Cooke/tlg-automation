@@ -81,6 +81,33 @@ Revisit if Lori-Dee or Carmen want the bot to answer their threads in their
 own words (built from their own replies, their decision), or if the bot
 gets to quote and book hair and tattoos itself.
 
+## 2026-10-20: Hand-overs go to a Telegram group, not Facebook, WhatsApp or SMS
+
+The user wants hand-overs to reach Jess, Carmen or Lori-Dee where they will
+see them, as a group. Checked in order:
+
+- A Facebook group: no. Meta removed app posting into groups in 2024, and
+  neither the Messenger nor the WhatsApp APIs can send into a group chat.
+- A WhatsApp group: possible since June 2026 through the Groups API, but
+  only with a WhatsApp Business Platform number (a second number; the
+  salon's runs the app) and an Official Business Account, which Meta grants
+  selectively. Weeks of waiting on two approvals.
+- WhatsApp Channels: one-way broadcast, no API.
+- SMS to the named person: works today (the Fresha watch sender), about 4p
+  a text, but one-to-one and no replies.
+- Telegram: groups fully supported by the Bot API, free, no approvals,
+  fifteen minutes to set up, and later a button to claim a hand-over and a
+  reply that unlocks the thread. The cost is a second app on three phones.
+
+Telegram it is. Message format is the user's: `<Area>: <kind>: <client's
+name>: <FB|Insta>`, then the Business Suite link, then the detail. The
+model fills `area` and `escalation_kind` (complaint; booking; cancellation
+or rebooking; can't assist anymore; spam) alongside `escalate_to`. Email
+stays as the record; spam is email only. The group's chat id is discovered
+by the Lambda from the bot's feed and cached in SSM so no one has to find
+it by hand. If the team will not live with Telegram, SMS to the named
+person is the fallback, same message, same routing.
+
 ## 2026-10-20: Availability comes from the public booking flow, not the dashboard session
 
 The bot needs to see what is free before it can talk slots through with a

@@ -200,6 +200,8 @@ jobs:
           TF_VAR_meta_instagram_app_secret: ${{ secrets.TLG_APP2_SECRET || '' }}
           TF_VAR_meta_page_token: ${{ secrets.TLG_PAGE_TOKEN || '' }}
           TF_VAR_anthropic_aws_workspace_id: ${{ secrets.ANTHROPIC_AWS_WORKSPACE_ID || '' }}
+          TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN || '' }}
+          TF_VAR_telegram_chat_id: ${{ vars.TELEGRAM_CHAT_ID || '' }}
         run: terraform plan -no-color -out=tfplan
 
       - name: Bots - apply

@@ -211,6 +211,16 @@ To run it: `BOT_MODE=live`, `ANTHROPIC_AWS_WORKSPACE_ID`, `MESSAGE_TEST_MODE`
 stays `true`. Meta's Business AI and the instant reply must be off in
 Business Suite first. Booking itself stays job 4.
 
+### 8. Hand-overs to the team's Telegram group (BUILT 2026-10-20; bot stack)
+
+One Telegram bot, one group of Jess, Carmen and Lori-Dee. Every hand-over
+posts `<Area>: <kind>: <client>: <FB|Insta>` plus the Business Suite link
+and the detail; spam is email only. Token in Secrets Manager via the
+`TELEGRAM_BOT_TOKEN` secret; chat id discovered by the Lambda and cached in
+SSM (`TELEGRAM_CHAT_ID` variable overrides). Steps in `docs/setup.md` 4c.
+Next, when wanted: an "I've got it" button and a reply that unlocks the
+thread, both needing a Telegram webhook route on the API.
+
 ## Open questions for the user
 
 1. Prod only, or a dev stack as well?

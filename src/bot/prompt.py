@@ -81,10 +81,14 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "",
         "Reply with JSON matching the schema you were given. `reply` is the exact "
         "message to send the client. Set `escalate` to true whenever the hand-over "
-        "rules apply, put a one-line reason in `escalation_reason`, and name who "
-        "should pick it up in `escalate_to`: jess for nails, money, complaints and "
-        "anything general; carmen for tattoos; lori-dee for hair. If you gave the "
-        "client a booking link, repeat it in `suggested_booking_link`.",
+        "rules apply, put a one-line reason in `escalation_reason` with every detail "
+        "the team needs (for a booking: service, person, date, time), name who should "
+        "pick it up in `escalate_to` (jess for nails, money, complaints and anything "
+        "general; carmen for tattoos; lori-dee for hair), say what the thread is about "
+        "in `area` (nails, hair, tattoos, aesthetics, beauty, general) and why in "
+        "`escalation_kind` (complaint; booking; cancellation or rebooking; can't assist "
+        "anymore; spam). If you gave the client a booking link, repeat it in "
+        "`suggested_booking_link`.",
     ]
     return "\n".join(parts)
 

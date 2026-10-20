@@ -111,6 +111,36 @@ complaint, a sales pitch. The last three hand over and lock the thread;
 clear it with the command in the next section. Watch the Lambda log for
 `TOOL check_availability` lines to see what the bot looked up.
 
+## 4c. The team's Telegram group for hand-overs
+
+Every hand-over posts one message to a Telegram group, in the team's format:
+
+```
+Nails: complaint: Danny Cooke: FB
+https://business.facebook.com/latest/inbox/all?asset_id=<page id>
+<the detail the team needs, when there is any, e.g. the slot a client agreed>
+```
+
+Spam hand-overs go to email only. Setup, once, on a phone:
+
+1. In Telegram, message **BotFather**: `/newbot`, a display name, a username
+   ending in `bot`. Copy the token into the GitHub `prod` environment as the
+   secret `TELEGRAM_BOT_TOKEN`. Never paste it anywhere else; if it has been
+   seen, `/revoke` and use the new one.
+2. BotFather again: `/setprivacy`, pick the bot, **Disable**, so the bot can
+   read the group (needed to find the group, and later for replies).
+3. Create a group, add Jess, Carmen and Lori-Dee, add the bot, make the bot
+   an admin. Send any message in it.
+4. Push. Terraform stores the token in Secrets Manager and creates the SSM
+   parameter `/tlg/prod/telegram/chat_id` as `unset`. On the first hand-over
+   the Lambda reads the bot's update feed, finds the group, and caches its
+   id in that parameter. Telegram keeps updates for about a day, so if the
+   first hand-over is later than that, say something in the group first, or
+   set the `TELEGRAM_CHAT_ID` variable by hand (a negative number).
+
+Each team member only needs Telegram installed and notifications on for the
+group. Email stays as the record of every hand-over.
+
 ## 5. Clearing a hand-over
 
 When the bot escalates, it stays quiet on that thread. To hand it back:

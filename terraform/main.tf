@@ -116,6 +116,37 @@ resource "aws_sns_topic_subscription" "email" {
   endpoint  = each.value
 }
 
+# The team's Telegram group gets the one-liner for every hand-over. The token
+# sits in Secrets Manager; the group's chat id is discovered by the Lambda and
+# cached here, so Terraform never needs to know it (ignore_changes on value).
+locals {
+  telegram_enabled = var.telegram_bot_token != ""
+}
+
+resource "aws_secretsmanager_secret" "telegram" {
+  count                   = local.telegram_enabled ? 1 : 0
+  name                    = "${local.name}/telegram"
+  description             = "Telegram bot token for the team's hand-over group"
+  recovery_window_in_days = 7
+}
+
+resource "aws_secretsmanager_secret_version" "telegram" {
+  count         = local.telegram_enabled ? 1 : 0
+  secret_id     = aws_secretsmanager_secret.telegram[0].id
+  secret_string = jsonencode({ bot_token = var.telegram_bot_token })
+}
+
+resource "aws_ssm_parameter" "telegram_chat_id" {
+  count = local.telegram_enabled ? 1 : 0
+  name  = "/tlg/${var.environment}/telegram/chat_id"
+  type  = "String"
+  value = var.telegram_chat_id != "" ? var.telegram_chat_id : "unset"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+}
+
 # ---------------------------------------------------------------------------
 # Lambdas
 # ---------------------------------------------------------------------------
@@ -166,7 +197,16 @@ data "aws_iam_policy_document" "bot" {
   statement {
     sid       = "Secrets"
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_secretsmanager_secret.meta[each.key].arn]
+    resources = concat([aws_secretsmanager_secret.meta[each.key].arn], aws_secretsmanager_secret.telegram[*].arn)
+  }
+
+  dynamic "statement" {
+    for_each = local.telegram_enabled ? [1] : []
+    content {
+      sid       = "TelegramChatId"
+      actions   = ["ssm:GetParameter", "ssm:PutParameter"]
+      resources = [aws_ssm_parameter.telegram_chat_id[0].arn]
+    }
   }
 
   # Claude Platform on AWS: POST /v1/messages on this workspace only. Not
@@ -230,6 +270,9 @@ resource "aws_lambda_function" "bot" {
       REPLY_DELAY_SECONDS        = tostring(var.reply_delay_seconds)
       SALON_CONFIG_PATH          = "/var/task/bot/salon_config.json"
       PERSONA_PATH               = "/var/task/bot/persona"
+      TELEGRAM_SECRET_ARN        = local.telegram_enabled ? aws_secretsmanager_secret.telegram[0].arn : ""
+      TELEGRAM_CHAT_ID_PARAM     = local.telegram_enabled ? aws_ssm_parameter.telegram_chat_id[0].name : ""
+      TELEGRAM_CHAT_ID           = var.telegram_chat_id
       CONVERSATIONS_TABLE        = aws_dynamodb_table.conversations.name
       ESCALATION_TOPIC_ARN       = aws_sns_topic.escalations.arn
       OPS_TOPIC_ARN              = local.ops_topic_arn

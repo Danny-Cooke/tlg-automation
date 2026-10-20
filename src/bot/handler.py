@@ -166,7 +166,10 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
 
     if not text:
         # Attachment-only message: let a person see it rather than guess.
-        reply = brain.BotReply(reply=brain.SAFE_REPLY, escalate=True, escalation_reason="Non-text message", escalate_to="jess")
+        reply = brain.BotReply(
+            reply=brain.SAFE_REPLY, escalate=True, escalation_reason="Non-text message (picture or attachment)",
+            escalate_to="jess", area="general", escalation_kind="can't assist anymore",
+        )
     else:
         reply = brain.ask(system_prompt(), convo.history, user_text, context=context_block(convo), tools=tools())
 
@@ -177,7 +180,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         # In shadow mode nothing reaches the client, so keep drafting instead
         # of locking the thread.
         convo.handed_to_jess = MODE == "live"
-        escalation.notify(convo, reply.escalation_reason, user_text, to=reply.escalate_to)
+        escalation.notify(convo, reply.escalation_reason, user_text, to=reply.escalate_to, area=reply.area, kind=reply.escalation_kind)
 
     if MODE == "shadow":
         log.info("SHADOW reply to %s: %s", msg.sender_id, reply.reply)

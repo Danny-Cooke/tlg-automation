@@ -56,11 +56,15 @@ def test_schema_is_strict():
     assert set(brain.REPLY_SCHEMA["required"]) == set(brain.REPLY_SCHEMA["properties"])
 
 
-def test_parse_escalate_to_is_validated():
-    good = {"reply": "x", "escalate": True, "escalation_reason": "hair colour", "escalate_to": "lori-dee", "suggested_booking_link": ""}
-    assert brain.parse_response(fake_response(json.dumps(good))).escalate_to == "lori-dee"
-    bad = dict(good, escalate_to="the cat")
-    assert brain.parse_response(fake_response(json.dumps(bad))).escalate_to == ""
+def test_parse_escalate_to_area_and_kind_are_validated():
+    good = {"reply": "x", "escalate": True, "escalation_reason": "hair colour", "escalate_to": "lori-dee",
+            "area": "hair", "escalation_kind": "can't assist anymore", "suggested_booking_link": ""}
+    r = brain.parse_response(fake_response(json.dumps(good)))
+    assert (r.escalate_to, r.area, r.escalation_kind) == ("lori-dee", "hair", "can't assist anymore")
+    bad = dict(good, escalate_to="the cat", area="feet", escalation_kind="whatever")
+    r = brain.parse_response(fake_response(json.dumps(bad)))
+    assert (r.escalate_to, r.area, r.escalation_kind) == ("", "", "")
+    assert brain._safe_escalation("x").escalation_kind == "can't assist anymore"
 
 
 # ---------------------------------------------------------------------------

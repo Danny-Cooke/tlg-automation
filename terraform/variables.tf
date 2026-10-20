@@ -213,3 +213,20 @@ variable "staff" {
   }))
   default = {}
 }
+
+# ---------------------------------------------------------------------------
+# Telegram: the team's hand-over group (decision 2026-10-20)
+# ---------------------------------------------------------------------------
+
+variable "telegram_bot_token" {
+  description = "BotFather token for the hand-over bot. Empty disables Telegram; hand-overs then go to email only."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "telegram_chat_id" {
+  description = "The team group's chat id (a negative number). Leave empty: the bot discovers it from its update feed the first time someone has spoken in the group, and caches it in SSM."
+  type        = string
+  default     = ""
+}

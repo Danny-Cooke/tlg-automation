@@ -58,7 +58,7 @@ def wired(monkeypatch):
 
     monkeypatch.setattr(brain, "ask", fake_ask)
     monkeypatch.setattr(meta, "send_text", lambda rid, text, token, **kw: calls["sent"].append((rid, text)))
-    monkeypatch.setattr(escalation, "notify", lambda convo, reason, text, to="": calls["escalated"].append((convo.sender_id, reason, to)))
+    monkeypatch.setattr(escalation, "notify", lambda convo, reason, text, to="", **kw: calls["escalated"].append((convo.sender_id, reason, to)))
     monkeypatch.setattr(
         escalation, "notify_new_message",
         lambda convo, text, ts=0, reply=None: calls["noticed"].append((convo.sender_id, text, reply)),
@@ -234,7 +234,7 @@ def test_attachment_only_message_escalates_in_live_mode(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "live")
     store = MemoryStore()
     handler.process_message(inbound(text=""), store)
-    assert wired["escalated"] == [("psid1", "Non-text message", "jess")]
+    assert wired["escalated"] == [("psid1", "Non-text message (picture or attachment)", "jess")]
     assert wired["ask"] == []
 
 

@@ -23,6 +23,9 @@ MAX_TOKENS = 1024  # replies are two or three sentences; the JSON wrapper is sma
 MAX_TOOL_ROUNDS = 3  # a lookup per person or date range; more than this is a loop
 
 ESCALATE_TO = ["", "jess", "carmen", "lori-dee"]
+AREAS = ["", "nails", "hair", "tattoos", "aesthetics", "beauty", "general"]
+# The team's own words for why a thread is being handed over (user, 2026-10-20).
+ESCALATION_KINDS = ["", "complaint", "booking", "cancellation or rebooking", "can't assist anymore", "spam"]
 
 REPLY_SCHEMA = {
     "type": "object",
@@ -31,19 +34,29 @@ REPLY_SCHEMA = {
         "escalate": {"type": "boolean", "description": "True if a person must take over this thread."},
         "escalation_reason": {
             "type": "string",
-            "description": "One line for the team explaining why. Empty if not escalating.",
+            "description": "One line for the team explaining why, with every detail they need (service, person, date, time). Empty if not escalating.",
         },
         "escalate_to": {
             "type": "string",
             "enum": ESCALATE_TO,
             "description": "Who should pick it up: jess (nails, general, complaints, money), carmen (tattoos), lori-dee (hair). Empty if not escalating.",
         },
+        "area": {
+            "type": "string",
+            "enum": AREAS,
+            "description": "What the thread is about: nails, hair, tattoos, aesthetics, beauty, or general. Empty if not escalating.",
+        },
+        "escalation_kind": {
+            "type": "string",
+            "enum": ESCALATION_KINDS,
+            "description": "Why: complaint; booking (a slot agreed in chat that needs putting in); cancellation or rebooking; can't assist anymore (anything else you cannot handle); spam. Empty if not escalating.",
+        },
         "suggested_booking_link": {
             "type": "string",
             "description": "Booking link given to the client, or empty string.",
         },
     },
-    "required": ["reply", "escalate", "escalation_reason", "escalate_to", "suggested_booking_link"],
+    "required": ["reply", "escalate", "escalation_reason", "escalate_to", "area", "escalation_kind", "suggested_booking_link"],
     "additionalProperties": False,
 }
 
@@ -90,6 +103,8 @@ class BotReply:
     escalate: bool
     escalation_reason: str = ""
     escalate_to: str = ""
+    area: str = ""
+    escalation_kind: str = ""
     suggested_booking_link: str = ""
     refused: bool = False
 
@@ -191,7 +206,9 @@ def parse_response(response) -> BotReply:
             reply=data["reply"],
             escalate=bool(data["escalate"]),
             escalation_reason=data.get("escalation_reason", ""),
-            escalate_to=data.get("escalate_to", "") if data.get("escalate_to", "") in ESCALATE_TO else "",
+            escalate_to=_one_of(data.get("escalate_to"), ESCALATE_TO),
+            area=_one_of(data.get("area"), AREAS),
+            escalation_kind=_one_of(data.get("escalation_kind"), ESCALATION_KINDS),
             suggested_booking_link=data.get("suggested_booking_link", ""),
         )
     except (ValueError, KeyError, TypeError):
@@ -199,5 +216,12 @@ def parse_response(response) -> BotReply:
         return _safe_escalation("Unparseable model output")
 
 
+def _one_of(value, allowed: list[str]) -> str:
+    return value if isinstance(value, str) and value in allowed else ""
+
+
 def _safe_escalation(reason: str, refused: bool = False) -> BotReply:
-    return BotReply(reply=SAFE_REPLY, escalate=True, escalation_reason=reason, escalate_to="jess", refused=refused)
+    return BotReply(
+        reply=SAFE_REPLY, escalate=True, escalation_reason=reason, escalate_to="jess",
+        area="general", escalation_kind="can't assist anymore", refused=refused,
+    )
