@@ -161,6 +161,8 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         return
 
     _ensure_name(convo)
+    convo.mark_seen(msg.message_id)
+    store.save(convo)  # claimed before the Claude call: a retry during it is a duplicate
     if MODE == "live":
         _typing(msg.sender_id)  # dots while we think, not just during the pause
 

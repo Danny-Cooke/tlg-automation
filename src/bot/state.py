@@ -33,9 +33,14 @@ class Conversation:
             self.seen_message_ids = (self.seen_message_ids + [message_id])[-SEEN_IDS_KEPT:]
         self.history = (self.history + [{"role": "user", "content": user_text}])[-(MAX_TURNS * 2):]
 
-    def record_turn(self, message_id: str, user_text: str, bot_text: str) -> None:
-        if message_id:
+    def mark_seen(self, message_id: str) -> None:
+        """Claim the message before the slow part, so a Meta retry that lands
+        while Claude is thinking is dropped as a duplicate."""
+        if message_id and message_id not in self.seen_message_ids:
             self.seen_message_ids = (self.seen_message_ids + [message_id])[-SEEN_IDS_KEPT:]
+
+    def record_turn(self, message_id: str, user_text: str, bot_text: str) -> None:
+        self.mark_seen(message_id)
         self.history += [
             {"role": "user", "content": user_text},
             {"role": "assistant", "content": bot_text},

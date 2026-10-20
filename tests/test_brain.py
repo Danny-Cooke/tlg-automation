@@ -75,12 +75,20 @@ def test_parse_escalate_to_area_and_kind_are_validated():
 FINAL = json.dumps({"reply": "We have 10am or 1.30 Friday?", "escalate": False, "escalation_reason": "", "escalate_to": "", "suggested_booking_link": ""})
 
 
-def tool_use_response(name, args, uid="tu1"):
+def tool_use_response(name, args, uid="tu1", text="Let me look."):
     return SimpleNamespace(
-        content=[SimpleNamespace(type="text", text="Let me look."), SimpleNamespace(type="tool_use", id=uid, name=name, input=args)],
+        content=[SimpleNamespace(type="text", text=text), SimpleNamespace(type="tool_use", id=uid, name=name, input=args)],
         stop_reason="tool_use",
         stop_details=None,
     )
+
+
+def test_empty_text_block_in_a_tool_turn_is_not_echoed_back():
+    """Live failure 2026-10-20: the API rejects `text: ""` sent back, so the turn must carry only the tool call."""
+    client = FakeClient([tool_use_response("check_availability", {"service": "x", "people": ["Jess"], "dates": ["2026-10-24"]}, text=""), fake_response(FINAL)])
+    brain.ask("SYSTEM", [], "Saturday?", tools={"check_availability": lambda a: "nothing free"}, client=client)
+    assistant_turn = client.requests[1]["messages"][-2]
+    assert assistant_turn["content"] == [{"type": "tool_use", "id": "tu1", "name": "check_availability", "input": {"service": "x", "people": ["Jess"], "dates": ["2026-10-24"]}}]
 
 
 class FakeClient:

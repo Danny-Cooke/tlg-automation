@@ -160,7 +160,8 @@ def ask(
         if response.stop_reason != "tool_use":
             return parse_response(response)
         tool_uses = [b for b in response.content if b.type == "tool_use"]
-        messages.append({"role": "assistant", "content": [_block_dict(b) for b in response.content]})
+        # The API refuses an empty text block echoed back, and a tool turn often has one.
+        messages.append({"role": "assistant", "content": [d for d in map(_block_dict, response.content) if d]})
         results = []
         for use in tool_uses:
             results.append({"type": "tool_result", "tool_use_id": use.id, "content": _run_tool(tools or {}, use.name, use.input)})
@@ -182,11 +183,12 @@ def _run_tool(tools: dict[str, ToolRunner], name: str, args: dict) -> str:
     return out or "no result"
 
 
-def _block_dict(block) -> dict:
-    """A response content block as a plain dict the API accepts back."""
+def _block_dict(block) -> dict | None:
+    """A response content block as a plain dict the API accepts back; None for an empty text block."""
     if block.type == "tool_use":
         return {"type": "tool_use", "id": block.id, "name": block.name, "input": block.input}
-    return {"type": "text", "text": getattr(block, "text", "")}
+    text = getattr(block, "text", "") or ""
+    return {"type": "text", "text": text} if text.strip() else None
 
 
 def parse_response(response) -> BotReply:

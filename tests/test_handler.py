@@ -254,6 +254,23 @@ def test_name_is_fetched_once_and_given_to_the_model(wired, monkeypatch):
     assert "Channel: messenger" in wired["context"][1]
 
 
+def test_message_is_claimed_before_claude_is_asked(wired, monkeypatch):
+    """A Meta retry that arrives during a 20 second Claude call must find the message seen."""
+    monkeypatch.setattr(handler, "MODE", "live")
+    store = MemoryStore()
+    seen_when_asked = []
+    real_ask = brain.ask
+
+    def spying_ask(system, history, text, **kw):
+        seen_when_asked.append(store.items["psid1"].has_seen("m1"))
+        return real_ask(system, history, text, **kw)
+
+    monkeypatch.setattr(brain, "ask", spying_ask)
+    handler.process_message(inbound("Hi", mid="m1"), store)
+    assert seen_when_asked == [True]
+    assert store.items["psid1"].seen_message_ids.count("m1") == 1  # record_turn does not double it
+
+
 def test_live_mode_shows_typing_while_thinking(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "live")
     monkeypatch.setattr(handler, "REPLY_DELAY_SECONDS", 10)
