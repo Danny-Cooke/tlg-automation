@@ -54,6 +54,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--param", default=DEFAULT_PARAM, help="SSM parameter to write")
     ap.add_argument("--region", default="eu-west-2")
+    ap.add_argument("--aws-profile", default="default", help="AWS CLI profile to write with (named explicitly so stale AWS_ACCESS_KEY_ID variables are ignored)")
     ap.add_argument("--profile-dir", type=Path, default=PROFILE_DIR, help="browser profile that keeps the trusted-device cookie")
     ap.add_argument("--timeout", type=int, default=600, help="seconds to wait for the login")
     ap.add_argument("--dry-run", action="store_true", help="log in and verify, write nothing")
@@ -76,7 +77,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         print("Dry run: not writing to SSM.")
         return 0
-    write_parameter(args.param, args.region, cookie["value"], expires)
+    try:
+        write_parameter(args.param, args.region, cookie["value"], expires, profile=args.aws_profile)
+    except Exception as e:  # noqa: BLE001 - say what failed without a stack trace; the cookie is not in it
+        print(f"Could not write to SSM with AWS profile {args.aws_profile!r} in {args.region}: {type(e).__name__}: {str(e)[:200]}")
+        print("Check `aws sts get-caller-identity --profile default` works, then run this again.")
+        return 3
     print(f"Written to {args.param}. The bot picks it up within five minutes. Run this again within {days_left(expires)} days.")
     return 0
 
@@ -254,7 +260,9 @@ def verify(cookie_value: str, http=None) -> str | None:
     return None
 
 
-def write_parameter(name: str, region: str, cookie_value: str, expires: dt.datetime) -> None:
+def write_parameter(name: str, region: str, cookie_value: str, expires: dt.datetime, *, profile: str = "default") -> None:
+    """Create or update the SecureString. A named profile makes boto3 skip any
+    AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY left in the shell's environment."""
     import boto3
 
     payload = {
@@ -262,9 +270,8 @@ def write_parameter(name: str, region: str, cookie_value: str, expires: dt.datet
         "expires_at": expires.isoformat(timespec="seconds"),
         "refreshed_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
     }
-    boto3.client("ssm", region_name=region).put_parameter(
-        Name=name, Type="SecureString", Value=json.dumps(payload), Overwrite=True,
-    )
+    ssm = boto3.Session(profile_name=profile, region_name=region).client("ssm")
+    ssm.put_parameter(Name=name, Type="SecureString", Value=json.dumps(payload), Overwrite=True)
 
 
 def days_left(expires: dt.datetime) -> int:
