@@ -216,7 +216,7 @@ resource "aws_lambda_function" "bot" {
       MESSAGE_TEST_TRIGGER       = var.message_test_trigger
       REPLY_DELAY_SECONDS        = tostring(var.reply_delay_seconds)
       SALON_CONFIG_PATH          = "/var/task/bot/salon_config.json"
-      PERSONA_PATH               = "/var/task/bot/jess.md"
+      PERSONA_PATH               = "/var/task/bot/persona"
       CONVERSATIONS_TABLE        = aws_dynamodb_table.conversations.name
       ESCALATION_TOPIC_ARN       = aws_sns_topic.escalations.arn
       OPS_TOPIC_ARN              = local.ops_topic_arn

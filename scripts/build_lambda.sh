@@ -37,7 +37,9 @@ for pkg in "${PACKAGES[@]}"; do
   cp -r "$ROOT/src/$pkg" "$OUT/$pkg"
 done
 if [ -d "$OUT/bot" ]; then
-  cp "$ROOT/persona/jess.md" "$OUT/bot/jess.md"
+  # The persona is the whole folder: jess.md, voice-guide.md, vocabulary.md.
+  mkdir -p "$OUT/bot/persona"
+  cp "$ROOT"/persona/*.md "$OUT/bot/persona/"
   # Salon facts travel in the bundle, not in an env var (4KB limit). Needs python-hcl2.
   python "$ROOT/scripts/render_salon_config.py" "$ROOT/terraform" "$OUT/bot/salon_config.json"
 fi

@@ -29,7 +29,7 @@ Meta app Tlg-app1 --webhook POST-->  API Gateway (HTTP API)  <--webhook POST-- M
                                  - verify X-Hub-Signature-256
                                  - dedupe message id (DynamoDB)
                                  - load conversation history (DynamoDB)
-                                 - build prompt from persona/jess.md + salon config
+                                 - build prompt from persona/ (jess, voice guide, vocabulary) + salon config
                                  - call Claude (Claude Platform on AWS, SigV4)
                                  - structured reply: {reply_text, escalate, reason, booking_link}
                                  - send reply via Graph API
@@ -66,7 +66,8 @@ Replies are not instant: the bot shows the typing indicator, waits
 under a second), then sends. The message is marked seen in the store before
 the wait, so a Meta retry during it is dropped as a duplicate.
 
-The handler is deliberately thin. All salon knowledge lives in `persona/jess.md`
+The handler is deliberately thin. The voice lives in `persona/` (three files, see
+`docs/voice-analysis.md` for where it came from) and all salon knowledge lives
 and in Terraform variables (services, staff, opening hours, booking links), which
 are rendered into the system prompt at deploy time.
 

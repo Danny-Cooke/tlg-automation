@@ -91,7 +91,7 @@ trigger word is stored and logged, never answered.
 Set the `BOT_MODE` variable to `shadow`, add `TLG_PAGE_TOKEN`,
 `ANTHROPIC_AWS_WORKSPACE_ID` and `ESCALATION_EMAILS`, push. The bot drafts a
 reply for every message and emails it to Jess instead of sending it. Nothing
-reaches clients. Run this for a week, tune `persona/jess.md` and the salon
+reaches clients. Run this for a week, tune the files in `persona/` and the salon
 variables, then set `BOT_MODE` to `live`. `MESSAGE_TEST_MODE` keeps gating
 replies in every mode until it is set to `false`.
 

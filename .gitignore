@@ -27,3 +27,6 @@ lambda.zip
 # Committed Terraform inputs (the ignore above is for terraform.tfvars and friends)
 !example.tfvars
 !fresha-menu.auto.tfvars.json
+
+# Client message history pulled by scripts/message_history.py (personal data)
+.local/

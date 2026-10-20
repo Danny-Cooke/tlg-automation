@@ -133,7 +133,9 @@ applies without it. Sequence, each step proven before the next:
 1. **Simple.** `bot_mode = simple`: reply with a plain acknowledgement
    ("Hi, this is the TLG messenger test bot. I received ..."), store the
    thread, email the ops topic the message and the reply. No Claude, no
-   persona; the user adds the framework and persona later. Deployed by the
+   persona (the framework and persona were built 2026-10-20 from the real
+   Messenger history, see `docs/voice-analysis.md`; they are used from the
+   shadow stage on). Deployed by the
    pipeline as the third stack, which also registers the webhooks with
    Meta. Guardrail (user, 2026-10-19): GitHub variable `MESSAGE_TEST_MODE`;
    while true only messages starting with "bootycall" are answered, so only

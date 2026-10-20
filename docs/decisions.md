@@ -29,6 +29,32 @@ changes by editing one Markdown file. Salon facts (services, prices, hours,
 staff, links) are Terraform variables so they can change without touching the
 persona text.
 
+## 2026-10-20: The voice is built from the real message history, not written from guesses
+
+The first persona was written before anyone had read how the team actually
+talks; the user stopped that ("you got ahead of yourself"). The replacement
+was built from every Messenger thread on the Page (283 threads, 924 human
+replies after removing Meta's instant replies, ad greetings and Business AI
+answers). Method and numbers: `docs/voice-analysis.md`. The persona is now
+three files in `persona/`, loaded in order: `jess.md` (identity, rules,
+hand-over), `voice-guide.md` (how a reply is built, by situation),
+`vocabulary.md` (the word bank with counts). `scripts/message_history.py`
+re-pulls and re-measures the history, so the guide can be checked against
+the humans again later. Client data stays in git-ignored `.local/`.
+
+Two rules fell out of the reading:
+
+- **The bot never sends bank details or asks for a deposit.** The humans
+  pasted the salon's account number into chat for most of the year; that is
+  not something an automated reply should ever do.
+- **"lovely" and first names only.** Jess's "babe", "angel", "my love" are
+  for people she knows. The bot has no history with anyone.
+
+Also found: Meta's Business AI has been answering clients on the Page since
+mid-October in a voice nothing like the salon's, alongside the instant
+reply. Both must be switched off in Meta Business Suite before the bot
+replies to the public, or three voices will answer every message.
+
 ## 2026-10-17: Google Calendar mirror is config plus checklist, not code
 
 Fresha's native sync is per staff member and only configurable in the Fresha UI.

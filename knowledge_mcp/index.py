@@ -1,7 +1,7 @@
 """Knowledge index for the TLG automation project.
 
 Sources, all inside the repo:
-  - Markdown: README.md, docs/*.md, knowledge/*.md, persona/jess.md
+  - Markdown: README.md, docs/*.md, knowledge/*.md, persona/*.md
   - Salon data: terraform/salon.auto.tfvars (hand-written, parsed with python-hcl2)
     and terraform/fresha-menu.auto.tfvars.json (staff and services, generated
     from Fresha by the menu sync)
@@ -22,7 +22,7 @@ import hcl2
 from rank_bm25 import BM25Okapi
 
 ROOT = Path(__file__).resolve().parent.parent
-DOC_GLOBS = ["README.md", "docs/*.md", "knowledge/*.md", "persona/jess.md"]
+DOC_GLOBS = ["README.md", "docs/*.md", "knowledge/*.md", "persona/*.md"]
 SALON_TFVARS = Path("terraform") / "salon.auto.tfvars"
 MENU_JSON = Path("terraform") / "fresha-menu.auto.tfvars.json"
 

@@ -1,4 +1,11 @@
-from bot.config import SalonConfig, load_persona
+import re
+from pathlib import Path
+
+import pytest
+
+from bot.config import PERSONA_FILES, SalonConfig, load_persona
+
+ROOT = Path(__file__).resolve().parent.parent
 from bot.prompt import build_system_prompt
 
 
@@ -30,6 +37,38 @@ def test_persona_has_the_rules_jess_relies_on(persona_text):
 
 def test_load_persona_from_env():
     assert "You are Jess" in load_persona()
+
+
+def test_persona_is_three_files_in_order(tmp_path):
+    """The folder is joined jess -> voice guide -> vocabulary; a single file still loads."""
+    text = load_persona(ROOT / "persona")
+    assert PERSONA_FILES == ("jess.md", "voice-guide.md", "vocabulary.md")
+    assert text.index("You are Jess") < text.index("# How we talk to clients") < text.index("# Vocabulary")
+
+    single = tmp_path / "only.md"
+    single.write_text("You are Test", encoding="utf-8")
+    assert load_persona(single) == "You are Test"
+
+    (tmp_path / "jess.md").write_text("one", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="voice-guide.md"):
+        load_persona(tmp_path)
+
+
+def test_voice_comes_from_the_message_history(persona_text):
+    """The words the team actually uses are in the prompt; the ones the bot must not use are named."""
+    for phrase in ["Hey lovely", "Hiya", "beaut", "Absolutely", "no worries", "xx", "from £", "huge frog"]:
+        assert phrase in persona_text, phrase
+    # Friends-only words are off limits for the bot, and money is off limits full stop.
+    assert 'Do not use "babe"' in persona_text
+    assert "Never send bank details" in persona_text
+    assert "Never make up a booking" in persona_text
+
+
+def test_persona_never_carries_client_data(persona_text):
+    """The analysis read real threads; nothing personal may leak into the prompt."""
+    assert not re.search(r"\b07\d{3}\s?\d{6}\b", persona_text)  # UK mobile numbers
+    assert not re.search(r"\w@\w", persona_text)  # email addresses
+    assert "Account number" not in persona_text and "Sort code" not in persona_text
 
 
 def test_rendered_salon_config_loads_from_file(monkeypatch, tmp_path):

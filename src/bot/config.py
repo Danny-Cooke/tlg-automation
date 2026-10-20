@@ -4,8 +4,8 @@ Salon facts come from bot/salon_config.json, rendered at build time by
 scripts/render_salon_config.py from the Terraform inputs and bundled next to
 the code (SALON_CONFIG_PATH). The real menu is far over Lambda's 4KB limit
 for environment variables, so it cannot travel that way; SALON_CONFIG_JSON
-is still honoured for tests. The persona comes from persona/jess.md, bundled
-the same way.
+is still honoured for tests. The persona comes from the persona/ folder
+(jess.md, voice-guide.md, vocabulary.md), bundled the same way.
 """
 from __future__ import annotations
 
@@ -70,10 +70,28 @@ class SalonConfig:
         return cls.from_json(path.read_text(encoding="utf-8"))
 
 
+# The persona is three files, read in this order: who Jess is and the rules,
+# how a reply is built, then the word bank. All three came from the Page's
+# real message history (docs/voice-analysis.md).
+PERSONA_FILES = ("jess.md", "voice-guide.md", "vocabulary.md")
+
+
 def load_persona(path: str | os.PathLike | None = None) -> str:
-    """Return the persona text. Defaults to the bundled persona/jess.md."""
+    """Return the persona text.
+
+    `path` (or PERSONA_PATH) may be a directory holding PERSONA_FILES, which
+    are joined in order, or a single Markdown file. Defaults to the bundled
+    persona/ folder next to this package."""
     candidate = Path(path or os.environ.get("PERSONA_PATH") or _default_persona_path())
-    return candidate.read_text(encoding="utf-8")
+    if candidate.is_file():
+        return candidate.read_text(encoding="utf-8")
+    parts = []
+    for name in PERSONA_FILES:
+        file = candidate / name
+        if not file.exists():
+            raise RuntimeError(f"persona file missing: {file}")
+        parts.append(file.read_text(encoding="utf-8").strip())
+    return "\n\n---\n\n".join(parts) + "\n"
 
 
 def _default_config_path() -> Path:
@@ -82,13 +100,9 @@ def _default_config_path() -> Path:
 
 def _default_persona_path() -> Path:
     here = Path(__file__).resolve().parent
-    # In the Lambda zip the persona sits next to the package; in the repo it is
-    # two levels up under persona/.
-    for candidate in (
-        here / "jess.md",
-        here.parent / "persona" / "jess.md",
-        here.parent.parent / "persona" / "jess.md",
-    ):
-        if candidate.exists():
+    # In the Lambda zip the persona folder sits inside the package; in the
+    # repo it is two levels up under persona/.
+    for candidate in (here / "persona", here.parent / "persona", here.parent.parent / "persona"):
+        if (candidate / PERSONA_FILES[0]).exists():
             return candidate
-    raise FileNotFoundError("persona/jess.md not found; set PERSONA_PATH")
+    raise FileNotFoundError("persona/ folder not found; set PERSONA_PATH")

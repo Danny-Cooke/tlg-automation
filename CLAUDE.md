@@ -26,7 +26,8 @@ is for how the user likes to work, not for salon facts.
 | Design and why | `docs/architecture.md`, `docs/decisions.md` |
 | Agreed jobs, open decisions, what is parked | `docs/plan.md` (read first in a new session) |
 | Operator steps (Meta, AWS, calendar) | `docs/setup.md`, `docs/calendar-sync.md` |
-| Jess's voice and hand-over rules | `persona/jess.md` |
+| Jess's voice and hand-over rules | `persona/jess.md` (identity, rules), `persona/voice-guide.md` (how a reply is built), `persona/vocabulary.md` (word bank); all built from the real message history, see `docs/voice-analysis.md` |
+| Facts the team told clients in chat, not yet confirmed | `knowledge/from-messages.md` |
 
 ## Conventions
 

@@ -19,15 +19,15 @@ reasoning behind the main choices.
 | Path | What it is |
 |---|---|
 | `docs/` | Architecture, decisions, setup notes, calendar sync guide |
-| `knowledge/` | Facts that are not code: Fresha ids and how to read it, open questions for Jess |
+| `knowledge/` | Facts that are not code: Fresha ids and how to read it, facts the team told clients in chat, open questions for Jess |
 | `knowledge_mcp/` | Local MCP server + BM25 index over the repo, so Claude Code queries files instead of memory (`.mcp.json`, `CLAUDE.md`) |
-| `persona/jess.md` | Jess's voice and salon rules. Versioned prompt asset, loaded by the bot |
+| `persona/` | The voice, built from the real Messenger history: `jess.md` (who Jess is, the rules), `voice-guide.md` (how a reply is built), `vocabulary.md` (the word bank). Loaded by the bot in that order |
 | `src/bot/` | Python Lambda: Meta webhook, conversation state, Claude call, replies, escalation |
 | `src/menu_sync/` | Scheduled Lambda: reads Fresha's team and menu, regenerates `terraform/fresha-menu.auto.tfvars.json`, opens a PR when it differs |
 | `src/monitor/` | Scheduled Lambda: checks the webhook, Meta token, Fresha links and Fresha dashboard code, alerts the ops topic on change or failure |
 | `tests/` | Unit tests for the bot (no network) |
 | `terraform/` | AWS infrastructure (API Gateway, Lambdas, DynamoDB, SNS, IAM). `salon.auto.tfvars` is hand-written; `fresha-menu.auto.tfvars.json` is generated |
-| `scripts/` | Lambda bundle build, and the Meta webhook wiring done over the Graph API |
+| `scripts/` | Lambda bundle build, the Meta webhook wiring, and `message_history.py` (pull and measure the Page's Messenger history) |
 
 ## Quick start
 

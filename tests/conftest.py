@@ -46,12 +46,15 @@ def salon_config_json() -> str:
 
 @pytest.fixture
 def persona_text() -> str:
-    return (ROOT / "persona" / "jess.md").read_text(encoding="utf-8")
+    """The whole persona as the bot sees it: jess.md, voice-guide.md, vocabulary.md."""
+    from bot.config import load_persona
+
+    return load_persona(ROOT / "persona")
 
 
 @pytest.fixture(autouse=True)
 def env(monkeypatch, salon_config_json):
     monkeypatch.setenv("SALON_CONFIG_JSON", salon_config_json)
-    monkeypatch.setenv("PERSONA_PATH", str(ROOT / "persona" / "jess.md"))
+    monkeypatch.setenv("PERSONA_PATH", str(ROOT / "persona"))
     monkeypatch.delenv("ESCALATION_TOPIC_ARN", raising=False)
     yield
