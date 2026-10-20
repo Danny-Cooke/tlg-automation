@@ -121,7 +121,7 @@ variable "reply_delay_seconds" {
 variable "message_test_trigger" {
   description = "The word a message must start with to be answered while message_test_mode is true. Stripped before the bot reads the text."
   type        = string
-  default     = "bootycall"
+  default     = "joshsmells"
 }
 
 variable "escalation_emails" {

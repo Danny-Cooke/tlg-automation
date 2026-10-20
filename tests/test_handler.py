@@ -144,9 +144,9 @@ def test_test_mode_answers_only_the_trigger_word(wired, monkeypatch):
     monkeypatch.setattr(handler, "TEST_MODE", True)
     store = MemoryStore()
     handler.process_message(inbound("Hi, do you do lashes?", mid="m1"), store)
-    handler.process_message(inbound("BootyCall do you do lashes?", mid="m2"), store)
-    handler.process_message(inbound("  bootycall", mid="m3"), store)
-    handler.process_message(inbound("I said bootycall later", mid="m4"), store)
+    handler.process_message(inbound("JoshSmells do you do lashes?", mid="m2"), store)
+    handler.process_message(inbound("  joshsmells", mid="m3"), store)
+    handler.process_message(inbound("I said joshsmells later", mid="m4"), store)
 
     assert wired["sent"] == [
         ("psid1", 'Hi, this is the TLG messenger test bot. I received "do you do lashes?".'),
@@ -161,8 +161,8 @@ def test_test_mode_answers_only_the_trigger_word(wired, monkeypatch):
 def test_test_mode_off_means_no_trigger_needed(wired, monkeypatch):
     monkeypatch.setattr(handler, "TEST_MODE", False)
     store = MemoryStore()
-    handler.process_message(inbound("bootycall hi", mid="m1"), store)
-    assert wired["sent"] == [("psid1", 'Hi, this is the TLG messenger test bot. I received "bootycall hi".')]
+    handler.process_message(inbound("joshsmells hi", mid="m1"), store)
+    assert wired["sent"] == [("psid1", 'Hi, this is the TLG messenger test bot. I received "joshsmells hi".')]
 
 
 def test_test_mode_gates_claude_modes_too(wired, monkeypatch):
@@ -171,7 +171,7 @@ def test_test_mode_gates_claude_modes_too(wired, monkeypatch):
     store = MemoryStore()
     handler.process_message(inbound("Can I book nails?", mid="m1"), store)
     assert wired["ask"] == [] and wired["sent"] == []
-    handler.process_message(inbound("bootycall Can I book nails?", mid="m2"), store)
+    handler.process_message(inbound("joshsmells Can I book nails?", mid="m2"), store)
     assert wired["ask"][0][1] == "Can I book nails?"
     assert wired["sent"] == [("psid1", "Here's the link.")]
 

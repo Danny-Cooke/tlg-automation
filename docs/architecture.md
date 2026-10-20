@@ -50,7 +50,7 @@ debugged on its own). Per channel:
   with that app's secret. Meta sends it the moment a message arrives.
 
 While `MESSAGE_TEST_MODE` is true a message is answered only if it starts
-with the trigger word (default "bootycall"), which is stripped before the
+with the trigger word (default "joshsmells"), which is stripped before the
 bot reads it; everything else is stored and logged, never answered, in every
 mode. This is the user's guardrail for testing against the live Page.
 

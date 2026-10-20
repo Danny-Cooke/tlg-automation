@@ -165,7 +165,7 @@ applies without it. Sequence, each step proven before the next:
    shadow stage on). Deployed by the
    pipeline as the third stack, which also registers the webhooks with
    Meta. Guardrail (user, 2026-10-19): GitHub variable `MESSAGE_TEST_MODE`;
-   while true only messages starting with "bootycall" are answered, so only
+   while true only messages starting with "joshsmells" are answered, so only
    the user hears from the bots on the live Page; false answers everyone.
    Secrets are named `TLG_APP1_*` (Messenger) and `TLG_APP2_*`
    (Instagram); `TLG_PAGE_TOKEN` is needed before anything can be sent.

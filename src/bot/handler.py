@@ -43,7 +43,7 @@ MODES = ("simple", "shadow", "live")
 MODE = os.environ.get("BOT_MODE", "simple")
 CHANNEL = os.environ.get("CHANNEL", "")  # messenger | instagram; empty accepts both
 TEST_MODE = os.environ.get("MESSAGE_TEST_MODE", "true").lower() == "true"
-TEST_TRIGGER = os.environ.get("MESSAGE_TEST_TRIGGER", "bootycall")
+TEST_TRIGGER = os.environ.get("MESSAGE_TEST_TRIGGER", "joshsmells")
 # A human does not answer in under a second. Typing indicator on, wait, reply.
 # The wait is measured from when the message arrived, so time spent asking
 # Claude and Fresha counts towards it. Kept under Meta's 20 second webhook
