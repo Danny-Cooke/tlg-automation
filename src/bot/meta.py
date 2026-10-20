@@ -105,7 +105,13 @@ def send_text(recipient_id: str, text: str, page_token: str, *, app_secret: str 
     return resp.json()
 
 
-def user_profile(sender_id: str, page_token: str, *, app_secret: str | None = None, session=None) -> dict:
+PROFILE_FIELDS = {
+    "messenger": "first_name,last_name,name",  # asking Messenger for username is an error (#12)
+    "instagram": "name,username",
+}
+
+
+def user_profile(sender_id: str, page_token: str, *, channel: str = "messenger", app_secret: str | None = None, session=None) -> dict:
     """The sender's name from Meta's User Profile API, best effort.
 
     Messenger returns first_name and last_name for anyone who has messaged
@@ -116,7 +122,7 @@ def user_profile(sender_id: str, page_token: str, *, app_secret: str | None = No
     import requests
 
     http = session or requests
-    params = {"access_token": page_token, "fields": "first_name,last_name,name,username"}
+    params = {"access_token": page_token, "fields": PROFILE_FIELDS.get(channel, PROFILE_FIELDS["messenger"])}
     if app_secret:
         params["appsecret_proof"] = appsecret_proof(page_token, app_secret)
     try:

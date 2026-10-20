@@ -249,7 +249,7 @@ def _ensure_name(convo: Conversation) -> None:
     s = secrets()
     if not s.get("page_token"):
         return
-    profile = meta.user_profile(convo.sender_id, s["page_token"], app_secret=s.get("app_secret"))
+    profile = meta.user_profile(convo.sender_id, s["page_token"], channel=convo.channel, app_secret=s.get("app_secret"))
     convo.client_name = meta.display_name(profile)
     if convo.client_name:
         log.info("Client %s is %s", convo.sender_id, convo.client_name)

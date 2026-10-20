@@ -4,6 +4,29 @@ import json
 
 from bot import meta
 
+
+def test_user_profile_asks_each_channel_only_for_fields_it_allows():
+    """Messenger rejects `username` outright (error #12), so the field list is per channel."""
+    calls = []
+
+    class Http:
+        def get(self, url, params, timeout):
+            calls.append(params["fields"])
+
+            class R:
+                status_code = 200
+
+                def json(self):
+                    return {"first_name": "Danny", "last_name": "Cooke", "id": "1"}
+
+            return R()
+
+    assert meta.user_profile("1", "tok", channel="messenger", session=Http()) == {"first_name": "Danny", "last_name": "Cooke"}
+    meta.user_profile("1", "tok", channel="instagram", session=Http())
+    assert calls == ["first_name,last_name,name", "name,username"]
+    assert meta.display_name({"first_name": "Danny", "last_name": "Cooke"}) == "Danny Cooke"
+    assert meta.display_name({"username": "tlg"}) == "tlg" and meta.display_name({}) == ""
+
 SECRET = "app-secret"
 
 
