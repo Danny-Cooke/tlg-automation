@@ -72,7 +72,11 @@ In the Claude modes the bot also fetches the client's name once per thread
 `check_availability` tool, served from Fresha's public booking flow with no
 login (`src/bot/availability.py`, `knowledge/fresha.md`), one service, up to
 three people, up to four dates, read only. Every hand-over names who should
-pick it up (`escalate_to`: jess, carmen, lori-dee).
+pick it up (`escalate_to`: jess, carmen, lori-dee), what it is about (`area`)
+and why (`escalation_kind`). A complaint or "can't assist anymore" locks the
+thread: the bot stays quiet until a person clears the hand-over. A booking
+or a cancellation hand-over tells the team and the bot keeps talking, since
+the client is mid-conversation.
 
 The handler is deliberately thin. The voice lives in `persona/` (three files, see
 `docs/voice-analysis.md` for where it came from) and all salon knowledge lives

@@ -50,6 +50,9 @@ TEST_TRIGGER = os.environ.get("MESSAGE_TEST_TRIGGER", "joshsmells")
 # deadline; the message is marked seen in the store before the wait, so a
 # retry during it is ignored.
 REPLY_DELAY_SECONDS = float(os.environ.get("REPLY_DELAY_SECONDS", "10"))
+# Hand-over kinds after which the bot stays quiet on the thread. The rest
+# (booking, cancellation or rebooking, spam) notify the team and carry on.
+LOCKING_KINDS = frozenset({"complaint", "can't assist anymore", ""})
 SALON_TZ = zoneinfo.ZoneInfo(os.environ.get("SALON_TIMEZONE", "Europe/London"))
 
 
@@ -179,10 +182,16 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     store.save(convo)  # seen before the wait, so a Meta retry is a duplicate
 
     if reply.escalate:
-        # In shadow mode nothing reaches the client, so keep drafting instead
-        # of locking the thread.
-        convo.handed_to_jess = MODE == "live"
-        escalation.notify(convo, reply.escalation_reason, user_text, to=reply.escalate_to, area=reply.area, kind=reply.escalation_kind)
+        # A complaint, or something the bot cannot handle, goes quiet so a
+        # person takes the thread. A booking or a move just tells the team and
+        # the bot keeps talking: the client is mid-conversation (user,
+        # 2026-10-20). Shadow mode never locks, nothing reaches the client.
+        lock = MODE == "live" and reply.escalation_kind in LOCKING_KINDS
+        convo.handed_to_jess = lock
+        escalation.notify(
+            convo, reply.escalation_reason, user_text,
+            to=reply.escalate_to, area=reply.area, kind=reply.escalation_kind, bot_quiet=lock,
+        )
 
     if MODE == "shadow":
         log.info("SHADOW reply to %s: %s", msg.sender_id, reply.reply)

@@ -17,7 +17,9 @@ def business_suite_link(channel: str, page_id: str) -> str:
     return f"https://business.facebook.com/latest/inbox/all?asset_id={page_id}"
 
 
-def format_alert(convo: Conversation, reason: str, last_user_text: str, page_id: str, to: str = "") -> tuple[str, str]:
+def format_alert(
+    convo: Conversation, reason: str, last_user_text: str, page_id: str, to: str = "", bot_quiet: bool = True
+) -> tuple[str, str]:
     """Return (subject, body) for the escalation message. `to` names who should pick it up."""
     who = convo.client_name or convo.sender_id
     for_whom = f" for {to.title()}" if to else ""
@@ -37,7 +39,8 @@ def format_alert(convo: Conversation, reason: str, last_user_text: str, page_id:
     for turn in convo.history[-10:]:
         speaker = "Client" if turn["role"] == "user" else "Bot"
         lines.append(f"  {speaker}: {turn['content']}")
-    lines += ["", "The bot will stay quiet on this thread until you clear the hand-over."]
+    lines += ["", "The bot will stay quiet on this thread until you clear the hand-over." if bot_quiet
+              else "The bot is still answering on this thread; it has told the client you will sort this."]
     return subject, "\n".join(lines)
 
 
@@ -58,7 +61,8 @@ def format_telegram(convo: Conversation, page_id: str, *, area: str = "", kind: 
 
 
 def notify(
-    convo: Conversation, reason: str, last_user_text: str, *, to: str = "", area: str = "", kind: str = "", sns=None, telegram=None
+    convo: Conversation, reason: str, last_user_text: str, *,
+    to: str = "", area: str = "", kind: str = "", bot_quiet: bool = True, sns=None, telegram=None,
 ) -> None:
     """Email the escalation topic and post the one-liner to the team's Telegram group.
     Spam goes to email only; nobody wants sellers buzzing their phone."""
@@ -70,7 +74,7 @@ def notify(
         except Exception:  # noqa: BLE001 - Telegram must never break the hand-over
             log.exception("Telegram hand-over failed")
     topic_arn = os.environ.get("ESCALATION_TOPIC_ARN")
-    subject, body = format_alert(convo, reason, last_user_text, page_id, to)
+    subject, body = format_alert(convo, reason, last_user_text, page_id, to, bot_quiet)
     if not topic_arn:
         log.warning("ESCALATION_TOPIC_ARN not set; would have sent: %s", subject)
         return

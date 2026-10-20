@@ -143,7 +143,9 @@ group. Email stays as the record of every hand-over.
 
 ## 5. Clearing a hand-over
 
-When the bot escalates, it stays quiet on that thread. To hand it back:
+When the bot hands over a complaint or something it cannot handle, it stays
+quiet on that thread (booking and cancellation hand-overs do not lock it).
+To hand it back:
 
 ```bash
 aws dynamodb update-item \

@@ -220,6 +220,26 @@ def test_escalation_locks_thread_in_live_mode(wired, monkeypatch):
     assert len(wired["ask"]) == 1
 
 
+def test_booking_handover_keeps_the_bot_talking(wired, monkeypatch):
+    """A slot agreed in chat is told to the team, but the client is mid-conversation (user, 2026-10-20)."""
+    monkeypatch.setattr(handler, "MODE", "live")
+    calls = wired
+
+    def ask(system, history, text, **kw):
+        if "book" in text.lower():
+            return brain.BotReply(reply="I'll get the girls to pop you in x", escalate=True, escalation_reason="Sav Fri 2.15",
+                                  escalate_to="jess", area="nails", escalation_kind="booking")
+        return brain.BotReply(reply="Still here x", escalate=False)
+
+    monkeypatch.setattr(brain, "ask", ask)
+    store = MemoryStore()
+    handler.process_message(inbound("book me in", mid="m1"), store)
+    assert store.items["psid1"].handed_to_jess is False
+    handler.process_message(inbound("actually can we do thursday", mid="m2"), store)
+    assert calls["sent"][-1] == ("psid1", "Still here x")
+    assert handler.LOCKING_KINDS == {"complaint", "can't assist anymore", ""}
+
+
 def test_shadow_mode_never_sends_to_client(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "shadow")
     store = MemoryStore()
