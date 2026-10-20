@@ -30,9 +30,10 @@ def inbound(text="Can I book nails?", mid="m1", sender="psid1", channel="messeng
 def wired(monkeypatch):
     """Stub everything that talks to the outside world and record calls.
     Default: simple mode, test mode off, page token present."""
-    calls = {"ask": [], "sent": [], "escalated": [], "noticed": []}
+    calls = {"ask": [], "sent": [], "escalated": [], "noticed": [], "profile": [], "context": []}
     monkeypatch.setattr(handler, "secrets", lambda: {"page_token": "tok", "app_secret": "s", "verify_token": "v"})
     monkeypatch.setattr(handler, "system_prompt", lambda: "SYSTEM")
+    monkeypatch.setattr(handler, "tools", lambda: {"check_availability": lambda args: "nothing free"})
     monkeypatch.setattr(handler, "MODE", "simple")
     monkeypatch.setattr(handler, "TEST_MODE", False)
     monkeypatch.setattr(handler, "CHANNEL", "")
@@ -42,15 +43,22 @@ def wired(monkeypatch):
     calls["slept"] = []
     monkeypatch.setattr(handler.time, "sleep", lambda s: calls["slept"].append(s))
 
-    def fake_ask(system, history, text):
+    def fake_profile(sender_id, token, **kw):
+        calls["profile"].append(sender_id)
+        return {"first_name": "Danny", "last_name": "Cooke"}
+
+    monkeypatch.setattr(meta, "user_profile", fake_profile)
+
+    def fake_ask(system, history, text, **kw):
         calls["ask"].append((history, text))
+        calls["context"].append(kw.get("context", ""))
         if "refund" in text.lower():
-            return brain.BotReply(reply="Let me check that.", escalate=True, escalation_reason="Refund request")
+            return brain.BotReply(reply="Let me check that.", escalate=True, escalation_reason="Refund request", escalate_to="jess")
         return brain.BotReply(reply="Here's the link.", escalate=False)
 
     monkeypatch.setattr(brain, "ask", fake_ask)
     monkeypatch.setattr(meta, "send_text", lambda rid, text, token, **kw: calls["sent"].append((rid, text)))
-    monkeypatch.setattr(escalation, "notify", lambda convo, reason, text: calls["escalated"].append((convo.sender_id, reason)))
+    monkeypatch.setattr(escalation, "notify", lambda convo, reason, text, to="": calls["escalated"].append((convo.sender_id, reason, to)))
     monkeypatch.setattr(
         escalation, "notify_new_message",
         lambda convo, text, ts=0, reply=None: calls["noticed"].append((convo.sender_id, text, reply)),
@@ -96,8 +104,18 @@ def test_reply_waits_with_typing_indicator(wired, monkeypatch):
     store = MemoryStore()
     handler.process_message(inbound("Hi", mid="m1"), store)
     assert wired["actions"] == [("psid1", "typing_on")]
-    assert wired["slept"] == [10]
+    assert len(wired["slept"]) == 1 and 9.5 < wired["slept"][0] <= 10
     assert wired["sent"] == [("psid1", 'Hi, this is the TLG messenger test bot. I received "Hi".')]
+
+
+def test_time_spent_thinking_counts_towards_the_pause(wired, monkeypatch):
+    """Ten seconds from when the message arrived, not ten seconds after Claude answers."""
+    monkeypatch.setattr(handler, "REPLY_DELAY_SECONDS", 10)
+    handler._send("psid1", "hi", started=handler.time.monotonic() - 4)
+    assert len(wired["slept"]) == 1 and 5.5 < wired["slept"][0] <= 6
+    wired["slept"].clear()
+    handler._send("psid1", "hi", started=handler.time.monotonic() - 30)
+    assert wired["slept"] == []  # already slower than a person; send now
 
 
 def test_message_is_marked_seen_before_the_wait(wired, monkeypatch):
@@ -193,7 +211,7 @@ def test_escalation_locks_thread_in_live_mode(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "live")
     store = MemoryStore()
     handler.process_message(inbound("I want a refund", mid="m1"), store)
-    assert wired["escalated"] == [("psid1", "Refund request")]
+    assert wired["escalated"] == [("psid1", "Refund request", "jess")]
     assert wired["sent"] == [("psid1", "Let me check that.")]
     assert store.items["psid1"].handed_to_jess is True
 
@@ -216,8 +234,68 @@ def test_attachment_only_message_escalates_in_live_mode(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "live")
     store = MemoryStore()
     handler.process_message(inbound(text=""), store)
-    assert wired["escalated"] == [("psid1", "Non-text message")]
+    assert wired["escalated"] == [("psid1", "Non-text message", "jess")]
     assert wired["ask"] == []
+
+
+# ---------------------------------------------------------------------------
+# Name, context and the availability tool
+# ---------------------------------------------------------------------------
+
+
+def test_name_is_fetched_once_and_given_to_the_model(wired, monkeypatch):
+    monkeypatch.setattr(handler, "MODE", "live")
+    store = MemoryStore()
+    handler.process_message(inbound("Hi", mid="m1"), store)
+    handler.process_message(inbound("Any Friday slots?", mid="m2"), store)
+    assert wired["profile"] == ["psid1"]  # second message reuses the stored name
+    assert store.items["psid1"].client_name == "Danny Cooke"
+    assert "Danny Cooke" in wired["context"][0] and "Today is" in wired["context"][0]
+    assert "Channel: messenger" in wired["context"][1]
+
+
+def test_live_mode_shows_typing_while_thinking(wired, monkeypatch):
+    monkeypatch.setattr(handler, "MODE", "live")
+    monkeypatch.setattr(handler, "REPLY_DELAY_SECONDS", 10)
+    store = MemoryStore()
+    handler.process_message(inbound("Hi", mid="m1"), store)
+    assert wired["actions"][0] == ("psid1", "typing_on")  # before the Claude call
+
+
+def test_context_block_wording():
+    import datetime as dt
+
+    convo = Conversation(sender_id="p", channel="instagram", client_name="Sam Jones")
+    text = handler.context_block(convo, now=dt.datetime(2026, 10, 23, 9, 5, tzinfo=handler.SALON_TZ))
+    assert text.startswith("Today is Friday 23 October 2026, 09:05 in Shrewsbury.")
+    assert "Sam Jones" in text and "Channel: instagram." in text
+    assert "not known" in handler.context_block(Conversation(sender_id="p"))
+
+
+def test_run_availability_maps_first_names_to_fresha_ids(monkeypatch):
+    from bot import availability
+    from bot.config import SalonConfig, StaffMember
+
+    cfg = SalonConfig(salon_name="S", address="", phone="", opening_hours={}, general_booking_link="", services=[],
+                      staff=[StaffMember(name="Jess", role="m", employee_id="3440861"), StaffMember(name="Lori-Dee", role="h")],
+                      venue_url="https://www.fresha.com/en-GB/a/x")
+    seen = {}
+
+    def fake_check(http, venue_url, *, service, people, dates):
+        seen.update(venue_url=venue_url, service=service, people=people, dates=dates)
+        return [availability.PersonAvailability("Jess", service, {"2026-10-23": ["10am"]})]
+
+    monkeypatch.setattr(availability, "check", fake_check)
+    text = handler.run_availability({"service": "Gel polish", "people": ["jess", "lori", "Bob"], "dates": ["2026-10-23"]}, cfg, http=object())
+    assert seen == {"venue_url": "https://www.fresha.com/en-GB/a/x", "service": "Gel polish", "people": [("Jess", "3440861")], "dates": ["2026-10-23"]}
+    assert text.splitlines() == ["Not on the team list or not bookable online: lori, Bob", "Gel polish with Jess, Fri 23 Oct: 10am"]
+
+
+def test_tools_are_off_without_a_venue_url(monkeypatch):
+    from bot.config import SalonConfig
+
+    monkeypatch.setattr(handler, "salon", lambda: SalonConfig(salon_name="S", address="", phone="", opening_hours={}, general_booking_link="", services=[], staff=[]))
+    assert handler.tools() == {}
 
 
 # ---------------------------------------------------------------------------

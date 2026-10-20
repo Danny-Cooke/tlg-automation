@@ -95,6 +95,22 @@ reaches clients. Run this for a week, tune the files in `persona/` and the salon
 variables, then set `BOT_MODE` to `live`. `MESSAGE_TEST_MODE` keeps gating
 replies in every mode until it is set to `false`.
 
+## 4b. Live chat with the owner, before anyone else hears it
+
+Set the `BOT_MODE` variable to `live`, add the `ANTHROPIC_AWS_WORKSPACE_ID`
+secret (Claude Platform on AWS workspace in this account, eu-west-2), keep
+`MESSAGE_TEST_MODE` at `true`, push. Only messages starting with the trigger
+word are answered, so only the owner hears from the bot. First switch off
+Meta's Business AI and the instant reply in Meta Business Suite (Inbox >
+Automations), or two voices answer every test message.
+
+What to try, one message each, starting with the trigger word: a nails
+price, "can you do these" with a picture, "what's Jess got Friday", a hair
+colour question, a tattoo quote, parking, moving an appointment, a
+complaint, a sales pitch. The last three hand over and lock the thread;
+clear it with the command in the next section. Watch the Lambda log for
+`TOOL check_availability` lines to see what the bot looked up.
+
 ## 5. Clearing a hand-over
 
 When the bot escalates, it stays quiet on that thread. To hand it back:

@@ -81,6 +81,24 @@ Revisit if Lori-Dee or Carmen want the bot to answer their threads in their
 own words (built from their own replies, their decision), or if the bot
 gets to quote and book hair and tattoos itself.
 
+## 2026-10-20: Availability comes from the public booking flow, not the dashboard session
+
+The bot needs to see what is free before it can talk slots through with a
+client. The dashboard's `availableTimeSlots` needs a logged-in session whose
+auth has not been captured (the blocker on booking). The public booking
+flow needs nothing: it is what a client sees on fresha.com, server-driven,
+persisted queries only, and it returns five months of dates and 15-minute
+start times for one service and one person. So availability is read from
+there (`src/bot/availability.py`), and booking stays on the dashboard path
+for later. Costs: three or four requests per person per lookup, and a hash
+that Fresha could retire (old ones have stayed valid so far; the Fresha
+watch covers the first step and the tool reports failures to the model).
+
+The model gets a tool rather than pre-fetched data, because which service,
+person and dates to check only emerge from the conversation. Three rounds
+at most, and the reply pause is measured from message arrival so the lookup
+does not push the reply past Meta's clock.
+
 ## 2026-10-17: Google Calendar mirror is config plus checklist, not code
 
 Fresha's native sync is per staff member and only configurable in the Fresha UI.

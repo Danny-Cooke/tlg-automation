@@ -17,12 +17,14 @@ def business_suite_link(channel: str, page_id: str) -> str:
     return f"https://business.facebook.com/latest/inbox/all?asset_id={page_id}"
 
 
-def format_alert(convo: Conversation, reason: str, last_user_text: str, page_id: str) -> tuple[str, str]:
-    """Return (subject, body) for the escalation message."""
+def format_alert(convo: Conversation, reason: str, last_user_text: str, page_id: str, to: str = "") -> tuple[str, str]:
+    """Return (subject, body) for the escalation message. `to` names who should pick it up."""
     who = convo.client_name or convo.sender_id
-    subject = f"[TLG bot] Needs you: {who} ({convo.channel})"
+    for_whom = f" for {to.title()}" if to else ""
+    subject = f"[TLG bot] Needs you{for_whom}: {who} ({convo.channel})"
     lines = [
         f"Reason: {reason}",
+        f"For: {to.title() or 'whoever is on the inbox'}",
         f"Channel: {convo.channel}",
         f"Client: {who}",
         f"Open inbox: {business_suite_link(convo.channel, page_id)}",
@@ -39,10 +41,10 @@ def format_alert(convo: Conversation, reason: str, last_user_text: str, page_id:
     return subject, "\n".join(lines)
 
 
-def notify(convo: Conversation, reason: str, last_user_text: str, *, sns=None) -> None:
+def notify(convo: Conversation, reason: str, last_user_text: str, *, to: str = "", sns=None) -> None:
     topic_arn = os.environ.get("ESCALATION_TOPIC_ARN")
     page_id = os.environ.get("META_PAGE_ID", "")
-    subject, body = format_alert(convo, reason, last_user_text, page_id)
+    subject, body = format_alert(convo, reason, last_user_text, page_id, to)
     if not topic_arn:
         log.warning("ESCALATION_TOPIC_ARN not set; would have sent: %s", subject)
         return

@@ -54,3 +54,94 @@ def test_garbage_becomes_safe_escalation():
 def test_schema_is_strict():
     assert brain.REPLY_SCHEMA["additionalProperties"] is False
     assert set(brain.REPLY_SCHEMA["required"]) == set(brain.REPLY_SCHEMA["properties"])
+
+
+def test_parse_escalate_to_is_validated():
+    good = {"reply": "x", "escalate": True, "escalation_reason": "hair colour", "escalate_to": "lori-dee", "suggested_booking_link": ""}
+    assert brain.parse_response(fake_response(json.dumps(good))).escalate_to == "lori-dee"
+    bad = dict(good, escalate_to="the cat")
+    assert brain.parse_response(fake_response(json.dumps(bad))).escalate_to == ""
+
+
+# ---------------------------------------------------------------------------
+# The tool loop
+# ---------------------------------------------------------------------------
+
+
+FINAL = json.dumps({"reply": "We have 10am or 1.30 Friday?", "escalate": False, "escalation_reason": "", "escalate_to": "", "suggested_booking_link": ""})
+
+
+def tool_use_response(name, args, uid="tu1"):
+    return SimpleNamespace(
+        content=[SimpleNamespace(type="text", text="Let me look."), SimpleNamespace(type="tool_use", id=uid, name=name, input=args)],
+        stop_reason="tool_use",
+        stop_details=None,
+    )
+
+
+class FakeClient:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.requests = []
+        self.beta = SimpleNamespace(messages=SimpleNamespace(create=self.create))
+
+    def create(self, **kw):
+        self.requests.append({**kw, "messages": list(kw["messages"])})  # snapshot; the loop appends to the same list
+        return self.responses.pop(0)
+
+
+def test_ask_runs_the_tool_and_feeds_the_result_back():
+    client = FakeClient([tool_use_response("check_availability", {"service": "Gel polish", "people": ["Jess"], "dates": ["2026-10-23"]}), fake_response(FINAL)])
+    seen = []
+
+    def lookup(args):
+        seen.append(args)
+        return "Gel polish with Jess, Fri 23 Oct: 10am, 1:30pm"
+
+    reply = brain.ask("SYSTEM", [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "hey"}], "Friday?",
+                      context="Today is Tuesday 20 October 2026.", tools={"check_availability": lookup}, client=client)
+
+    assert reply.reply == "We have 10am or 1.30 Friday?" and reply.escalate is False
+    assert seen == [{"service": "Gel polish", "people": ["Jess"], "dates": ["2026-10-23"]}]
+    first, second = client.requests
+    assert first["tools"] == [brain.AVAILABILITY_TOOL]
+    assert first["system"][0]["cache_control"] == {"type": "ephemeral"} and first["system"][1]["text"].startswith("Today is")
+    assert first["messages"][-1] == {"role": "user", "content": "Friday?"}
+    # Second round carries the assistant's tool call and our result, in order
+    assert second["messages"][-2]["role"] == "assistant"
+    assert second["messages"][-2]["content"][1] == {"type": "tool_use", "id": "tu1", "name": "check_availability", "input": seen[0]}
+    assert second["messages"][-1] == {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "tu1", "content": "Gel polish with Jess, Fri 23 Oct: 10am, 1:30pm"}]}
+
+
+def test_ask_without_tools_sends_none_and_no_context_block():
+    client = FakeClient([fake_response(FINAL)])
+    brain.ask("SYSTEM", [], "hi", client=client)
+    req = client.requests[0]
+    assert "tools" not in req and len(req["system"]) == 1
+
+
+def test_tool_failure_is_told_to_the_model_not_raised():
+    client = FakeClient([tool_use_response("check_availability", {"service": "x", "people": [], "dates": []}), fake_response(FINAL)])
+
+    def boom(args):
+        raise ConnectionError("fresha down")
+
+    reply = brain.ask("SYSTEM", [], "Friday?", tools={"check_availability": boom}, client=client)
+    assert reply.escalate is False
+    assert client.requests[1]["messages"][-1]["content"][0]["content"] == "check_availability failed: ConnectionError"
+
+
+def test_ask_gives_up_after_too_many_tool_rounds():
+    loops = [tool_use_response("check_availability", {}, uid=f"t{i}") for i in range(brain.MAX_TOOL_ROUNDS + 1)]
+    client = FakeClient(loops + [fake_response(FINAL)])
+    reply = brain.ask("SYSTEM", [], "Friday?", tools={"check_availability": lambda a: "nothing free"}, client=client)
+    assert reply.escalate is True and reply.reply == brain.SAFE_REPLY and reply.escalate_to == "jess"
+    assert len(client.requests) == brain.MAX_TOOL_ROUNDS + 1
+
+
+def test_api_failure_is_a_safe_escalation():
+    class Dead:
+        beta = SimpleNamespace(messages=SimpleNamespace(create=lambda **kw: (_ for _ in ()).throw(RuntimeError("503"))))
+
+    reply = brain.ask("SYSTEM", [], "hi", client=Dead())
+    assert reply.escalate is True and reply.reply == brain.SAFE_REPLY

@@ -82,6 +82,47 @@ Verified 2026-10-19 by replaying from a plain HTTP client, no cookies:
   call returns a `PersistedQueryNotFound` error and the hash must be
   re-captured from a browser.
 
+## Reading availability without a browser (used by the bot)
+
+Verified 2026-10-20 from a plain HTTP client, no cookies. The public booking
+flow is server-driven: every button press is the same mutation and the
+server returns the next screen. `src/bot/availability.py` does this:
+
+1. `BookingFlow_Initialize_Mutation` with `options.employeeId` (the body
+   above): returns `cartId` and that person's services. Each item's
+   `primaryAction.id` is a JSON string; a single-variant service carries
+   `onScreenServicesServiceVariantAdd` directly, a multi-variant one carries
+   `onScreenServicesModalServiceOpen` with the `serviceVariants` to build
+   the add action from.
+2. `BookingFlow_ActionButtonPressed_Mutation`, persisted hash
+   `6bd8507eeae4c39450fd5b72d436414939ed7176d943ba4f57dd0627f518f565`,
+   variables `{id: <action id>, cartId, shouldAutoContinue: true}`. Press
+   the service's add action, then `screenServices.continueAction.id`. The
+   response is `data.bookingFlowActionButtonPressed` with `screenTime`:
+   `dates[]` (about 150 days, each with `date.iso`, `isAvailableToBeBooked`,
+   `isSelected`, and an `action` of type `onScreenTimeDaySelectorDateSet`)
+   and `day.timeslots[]` for the selected day (`time` in seconds since
+   midnight, 15-minute steps, plus a formatted label).
+3. Press a date's action to switch day and read its `timeslots`.
+
+Three or four requests per person and date set, about a second each.
+Nothing in this flow books or holds anything; the cart is abandoned.
+
+The hashes are literal in Fresha's web bundles as `__meta__.hash` next to
+the operation name (`scripts`-free method: fetch the booking page, follow
+`_next/static/chunks/*.js` references two levels deep, grep for
+`BookingFlow_`). The bundle on 2026-10-20 carried a newer initialise hash
+(`fc40247e93b002cdb15af26ecb258280e3fa7b1ea213832c1c5b5efbae1aa209`) but
+the 2026-10-19 one still works, so old hashes stay valid for a while. The
+client also falls back to posting the full query text when a hash is
+unknown, but the query text is not in the bundle, so re-capture the hash if
+`PersistedQueryNotFound` ever appears. The Fresha watch checks the
+initialise step hourly; the availability step is checked by the bot's own
+tool errors, which the model reports as "couldn't check just now".
+
+Without an employee the flow shows an employee-choice screen instead, which
+the bot does not use: it looks people up by name, up to three at a time.
+
 ## How to read Fresha's menu reliably (browser method)
 
 The venue and booking pages are React apps. The menu is not in the page's

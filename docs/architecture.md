@@ -61,10 +61,18 @@ adds the framework and persona later). `shadow`: draft a reply with Claude
 and email it to Jess. `live`: reply with Claude. Every Graph call carries an
 appsecret_proof, so the apps' "Require app secret" setting is on.
 
-Replies are not instant: the bot shows the typing indicator, waits
+Replies are not instant: the bot shows the typing indicator and sends
 `reply_delay_seconds` (default 10, user's call: a person does not answer in
-under a second), then sends. The message is marked seen in the store before
-the wait, so a Meta retry during it is dropped as a duplicate.
+under a second) after the message arrived; time spent on Claude and Fresha
+counts towards it. The message is marked seen in the store before the wait,
+so a Meta retry during it is dropped as a duplicate.
+
+In the Claude modes the bot also fetches the client's name once per thread
+(Meta User Profile API) and can look up real availability: Claude gets a
+`check_availability` tool, served from Fresha's public booking flow with no
+login (`src/bot/availability.py`, `knowledge/fresha.md`), one service, up to
+three people, up to four dates, read only. Every hand-over names who should
+pick it up (`escalate_to`: jess, carmen, lori-dee).
 
 The handler is deliberately thin. The voice lives in `persona/` (three files, see
 `docs/voice-analysis.md` for where it came from) and all salon knowledge lives

@@ -10,26 +10,31 @@ word is answered; the word is stripped before the bot sees the text. Anything
 else is stored and logged, never answered. false: every message is answered.
 
 BOT_MODE decides how a message is answered:
-    simple  a plain acknowledgement, no Claude, no persona (the first stage;
-            the user adds the framework and persona later). The ops topic
+    simple  a plain acknowledgement, no Claude, no persona. The ops topic
             gets an email per message so the path can be watched.
     shadow  draft a reply with Claude and email it to Jess. Nothing reaches
             the client.
-    live    reply with Claude; hand over to Jess when the bot says so.
+    live    reply with Claude; hand over to a person when the bot says so.
+
+In the Claude modes the bot knows the client's name (Meta's profile call,
+once per thread) and can look up real availability on Fresha's public
+booking flow. It cannot book: when a slot is agreed it hands over.
 """
 from __future__ import annotations
 
 import base64
+import datetime as dt
 import json
 import logging
 import os
 import time
+import zoneinfo
 from functools import lru_cache
 
-from . import brain, escalation, meta
+from . import availability, brain, escalation, meta
 from .config import SalonConfig, load_persona
 from .prompt import build_system_prompt
-from .state import ConversationStore
+from .state import Conversation, ConversationStore
 
 log = logging.getLogger()
 log.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -40,9 +45,12 @@ CHANNEL = os.environ.get("CHANNEL", "")  # messenger | instagram; empty accepts 
 TEST_MODE = os.environ.get("MESSAGE_TEST_MODE", "true").lower() == "true"
 TEST_TRIGGER = os.environ.get("MESSAGE_TEST_TRIGGER", "bootycall")
 # A human does not answer in under a second. Typing indicator on, wait, reply.
-# Kept under Meta's 20 second webhook deadline; the message is marked seen in
-# the store before the wait, so a retry during it is ignored.
+# The wait is measured from when the message arrived, so time spent asking
+# Claude and Fresha counts towards it. Kept under Meta's 20 second webhook
+# deadline; the message is marked seen in the store before the wait, so a
+# retry during it is ignored.
 REPLY_DELAY_SECONDS = float(os.environ.get("REPLY_DELAY_SECONDS", "10"))
+SALON_TZ = zoneinfo.ZoneInfo(os.environ.get("SALON_TIMEZONE", "Europe/London"))
 
 
 @lru_cache(maxsize=1)
@@ -56,8 +64,13 @@ def secrets() -> dict:
 
 
 @lru_cache(maxsize=1)
+def salon() -> SalonConfig:
+    return SalonConfig.from_env()
+
+
+@lru_cache(maxsize=1)
 def system_prompt() -> str:
-    return build_system_prompt(load_persona(), SalonConfig.from_env())
+    return build_system_prompt(load_persona(), salon())
 
 
 def lambda_handler(event: dict, context=None) -> dict:
@@ -115,6 +128,7 @@ def test_gate(text: str) -> tuple[bool, str]:
 
 
 def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
+    started = time.monotonic()
     convo = store.load(msg.sender_id)
     convo.channel = msg.channel
     if convo.has_seen(msg.message_id):
@@ -134,23 +148,27 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         reply_text = simple_reply(msg.channel, text)
         convo.record_turn(msg.message_id, user_text, reply_text)
         store.save(convo)  # seen before the wait, so a Meta retry is a duplicate
-        sent = _send(msg.sender_id, reply_text)
+        sent = _send(msg.sender_id, reply_text, started)
         escalation.notify_new_message(convo, user_text, msg.timestamp_ms, reply=reply_text if sent else None)
         store.save(convo)
         log.info("SIMPLE %s from %s: %r -> %r (sent=%s)", msg.channel, msg.sender_id, user_text[:200], reply_text, sent)
         return
 
     if convo.handed_to_jess:
-        log.info("Thread %s is with Jess, staying quiet", msg.sender_id)
+        log.info("Thread %s is with the team, staying quiet", msg.sender_id)
         convo.seen_message_ids.append(msg.message_id)
         store.save(convo)
         return
 
+    _ensure_name(convo)
+    if MODE == "live":
+        _typing(msg.sender_id)  # dots while we think, not just during the pause
+
     if not text:
-        # Attachment-only message: let Jess see it rather than guess.
-        reply = brain.BotReply(reply=brain.SAFE_REPLY, escalate=True, escalation_reason="Non-text message")
+        # Attachment-only message: let a person see it rather than guess.
+        reply = brain.BotReply(reply=brain.SAFE_REPLY, escalate=True, escalation_reason="Non-text message", escalate_to="jess")
     else:
-        reply = brain.ask(system_prompt(), convo.history, user_text)
+        reply = brain.ask(system_prompt(), convo.history, user_text, context=context_block(convo), tools=tools())
 
     convo.record_turn(msg.message_id, user_text, reply.reply)
     store.save(convo)  # seen before the wait, so a Meta retry is a duplicate
@@ -159,35 +177,106 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         # In shadow mode nothing reaches the client, so keep drafting instead
         # of locking the thread.
         convo.handed_to_jess = MODE == "live"
-        escalation.notify(convo, reply.escalation_reason, user_text)
+        escalation.notify(convo, reply.escalation_reason, user_text, to=reply.escalate_to)
 
     if MODE == "shadow":
         log.info("SHADOW reply to %s: %s", msg.sender_id, reply.reply)
         if not reply.escalate:
             escalation.notify(convo, f"Shadow mode draft: {reply.reply}", user_text)
     else:
-        _send(msg.sender_id, reply.reply)
+        _send(msg.sender_id, reply.reply, started)
 
     store.save(convo)
 
 
 def simple_reply(channel: str, text: str) -> str:
-    """The stand-in reply until the framework and persona exist."""
+    """The stand-in reply of the first stage."""
     what = f'"{text}"' if text else "a message with no text"
     return f"Hi, this is the TLG {channel} test bot. I received {what}."
 
 
-def _send(recipient_id: str, text: str) -> bool:
+def context_block(convo: Conversation, now: dt.datetime | None = None) -> str:
+    """The small uncached block after the persona: today, the client, the channel."""
+    now = now or dt.datetime.now(SALON_TZ)
+    lines = [f"Today is {now:%A} {now.day} {now:%B %Y}, {now:%H:%M} in Shrewsbury."]
+    if convo.client_name:
+        lines.append(f"The client's name from their {convo.channel or 'Meta'} profile is {convo.client_name}. Use their first name.")
+    else:
+        lines.append("The client's name is not known.")
+    lines.append(f"Channel: {convo.channel or 'unknown'}.")
+    return " ".join(lines)
+
+
+def tools() -> dict[str, brain.ToolRunner]:
+    """What the model may call. Availability needs the venue URL and staff ids from the salon config."""
+    cfg = salon()
+    if not cfg.venue_url:
+        return {}
+    return {"check_availability": lambda args: run_availability(args, cfg)}
+
+
+def run_availability(args: dict, cfg: SalonConfig, http=None) -> str:
+    """Tool body: map first names to Fresha ids, look up, format for the model."""
+    import requests
+
+    people = []
+    unknown = []
+    for name in args.get("people") or []:
+        member = cfg.staff_named(str(name))
+        if member and member.employee_id:
+            people.append((member.name, member.employee_id))
+        else:
+            unknown.append(str(name))
+    lines = []
+    if unknown:
+        lines.append(f"Not on the team list or not bookable online: {', '.join(unknown)}")
+    if people:
+        results = availability.check(
+            http or requests.Session(),
+            cfg.venue_url,
+            service=str(args.get("service") or ""),
+            people=people,
+            dates=[str(d) for d in (args.get("dates") or [])],
+        )
+        lines.append(availability.format_for_model(results))
+    return "\n".join(lines) or "nobody to check"
+
+
+def _ensure_name(convo: Conversation) -> None:
+    """Fetch the client's name once per thread. Best effort; a missing name is fine."""
+    if convo.client_name:
+        return
+    s = secrets()
+    if not s.get("page_token"):
+        return
+    profile = meta.user_profile(convo.sender_id, s["page_token"], app_secret=s.get("app_secret"))
+    convo.client_name = meta.display_name(profile)
+    if convo.client_name:
+        log.info("Client %s is %s", convo.sender_id, convo.client_name)
+
+
+def _typing(recipient_id: str) -> None:
+    s = secrets()
+    if s.get("page_token") and REPLY_DELAY_SECONDS > 0:
+        meta.send_action(recipient_id, "typing_on", s["page_token"], app_secret=s.get("app_secret"))
+
+
+def _send(recipient_id: str, text: str, started: float | None = None) -> bool:
     """Reply through the Graph API after a human-length pause with the typing
-    indicator showing. Without a page token nothing can be sent; say so in the
-    log rather than fail, so the rest of the path still works."""
+    indicator showing. The pause counts from `started` (time.monotonic), so a
+    slow Claude or Fresha call eats into it rather than adding to it. Without
+    a page token nothing can be sent; say so in the log rather than fail, so
+    the rest of the path still works."""
     s = secrets()
     if not s.get("page_token"):
         log.warning("No page token configured; cannot reply to %s", recipient_id)
         return False
     if REPLY_DELAY_SECONDS > 0:
         meta.send_action(recipient_id, "typing_on", s["page_token"], app_secret=s.get("app_secret"))
-        time.sleep(REPLY_DELAY_SECONDS)
+        elapsed = time.monotonic() - started if started is not None else 0.0
+        remaining = REPLY_DELAY_SECONDS - elapsed
+        if remaining > 0:
+            time.sleep(remaining)
     for chunk in meta.chunk_text(text):
         meta.send_text(recipient_id, chunk, s["page_token"], app_secret=s.get("app_secret"))
     return True

@@ -32,6 +32,7 @@ class StaffMember:
     role: str
     booking_link: str = ""
     services: list[str] = field(default_factory=list)
+    employee_id: str = ""  # Fresha's id; empty means availability cannot be looked up for them
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,7 @@ class SalonConfig:
     services: list[Service]
     staff: list[StaffMember]
     extra_notes: str = ""
+    venue_url: str = ""  # Fresha venue page; the availability lookup starts from its slug
 
     @classmethod
     def from_json(cls, raw: str) -> "SalonConfig":
@@ -57,7 +59,15 @@ class SalonConfig:
             services=[Service(**s) for s in data.get("services", [])],
             staff=[StaffMember(**s) for s in data.get("staff", [])],
             extra_notes=data.get("extra_notes", ""),
+            venue_url=data.get("venue_url", ""),
         )
+
+    def staff_named(self, first_name: str) -> StaffMember | None:
+        want = first_name.strip().casefold()
+        for m in self.staff:
+            if m.name.casefold() == want or m.name.casefold().split()[0] == want:
+                return m
+        return None
 
     @classmethod
     def from_env(cls) -> "SalonConfig":

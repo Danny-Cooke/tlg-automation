@@ -21,8 +21,9 @@ def test_prompt_contains_persona_and_salon_facts(persona_text, salon_config_json
     assert "Book with Amy: https://www.fresha.com/a/tlg?staff=amy" in prompt
     assert "Book with Jess" not in prompt  # no per-person link set, falls back to the main link
     assert "Free parking" in prompt
-    # Days render in week order, not dict order
-    assert prompt.index("Monday") < prompt.index("Tuesday") < prompt.index("Saturday")
+    # Days render in week order, not dict order (look inside the hours section; the persona mentions days too)
+    hours = prompt[prompt.index("## Opening hours"):prompt.index("## Team")]
+    assert hours.index("Monday") < hours.index("Tuesday") < hours.index("Saturday")
 
 
 def test_prompt_is_stable_for_caching(persona_text, salon_config_json):

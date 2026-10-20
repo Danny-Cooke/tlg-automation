@@ -44,6 +44,7 @@ def render(terraform_dir: Path) -> dict:
             "role": m["role"],
             "booking_link": m.get("booking_link", ""),
             "services": m.get("services", []),
+            "employee_id": str(m.get("employee_id", "")),  # Fresha's id, used for availability lookups
         }
         for _, m in sorted(menu["staff"].items())
     ]
@@ -53,6 +54,7 @@ def render(terraform_dir: Path) -> dict:
         "phone": salon["phone"],
         "opening_hours": salon["opening_hours"],
         "general_booking_link": salon["general_booking_link"],
+        "venue_url": salon.get("venue_url", ""),
         "extra_notes": salon.get("extra_notes", ""),
         "services": services,
         "staff": staff,

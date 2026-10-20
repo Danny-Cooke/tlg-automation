@@ -91,6 +91,33 @@ mutation's request body and the session cookie (steps in
 booking queue (SQS) with idempotency key per conversation and slot, Jess
 notified of every booking at first, shadow-mode week.
 
+Behaviour as stated by the user, 2026-10-20 (planning, not yet built):
+
+- Nails and hair bookings: encourage Fresha first, "but we can do it for you
+  here if you'd rather". If they'd rather, go back and forth on days, look
+  up availability (Fresha `availableTimeSlots`), and once a slot is agreed
+  create the appointment through the Fresha integration.
+- Easy queries the bot answers itself: "can I add nail art to my
+  appointment", prices, what's included, where, parking.
+- Complex queries, and anything the bot has no answer for, escalate to the
+  right person: Jess (nails, general), Carmen (tattoos), Lori-Dee (hair).
+- Complaints: never handled, always escalated.
+- Rescheduling: ask them to do it through Fresha if they can; otherwise the
+  bot does it.
+- The client's name comes from the chat: Messenger's User Profile API
+  returns first and last name with the Page token (checked 2026-10-20 with
+  the owner's own PSID). Instagram needs `instagram_manage_messages`.
+
+Open before build: who captures the Fresha session and one real create
+mutation (the blocker); whether a dedicated Fresha staff login is created
+for the bot; which staff and services the bot may book (hair colour needs a
+patch test and Lori-Dee's consultation first); the payment policy to send
+(Fresha's default is card confirmation with a cancellation fee equal to the
+price); whether the bot may ask for email and phone in chat, as the team
+does, to create or match the Fresha client; what "add nail art" means
+(advice, or editing the booking, which needs an update mutation not yet
+captured); the reschedule rule inside the cancellation-fee window.
+
 ### 5. Fresha watch Lambda: `tlg-prod-fresha-watch` (built 2026-10-19 evening; stack `terraform/fresha_watch`)
 
 The user's ask: a Lambda that checks Fresha's public pages and sends a text
@@ -153,6 +180,36 @@ Only the user can do, in the Meta developer console: the two apps (done),
 Page, generate a page token, add testers, submit for review. Steps in
 `docs/setup.md`. Secrets go on the GitHub `prod` environment and into
 Secrets Manager by Terraform, one secret per channel, as the PAT does.
+
+### 7. Live availability and interactive chat (BUILT 2026-10-20; bot stack)
+
+The user's ask: leave booking alone for now; let the bot look at the nails
+and hair calendars and talk slots through, interactively, with the user on
+the live Page behind the trigger word. Built:
+
+- `src/bot/availability.py`: real free start times from Fresha's public
+  booking flow, no login (how in `knowledge/fresha.md`). One service, up to
+  three named people, up to four dates. Read only.
+- `brain.ask` runs a tool loop: Claude may call `check_availability`, the
+  handler serves it, the final answer is still the JSON reply. Three tool
+  rounds at most; an API or tool failure is a safe escalation.
+- The client's name from Meta's User Profile API, once per thread, stored
+  on the conversation and given to the model in an uncached context block
+  with today's date and the channel. Messenger works with the Page token;
+  Instagram needs `instagram_manage_messages`.
+- The reply pause now counts from when the message arrived, so Claude and
+  Fresha time eats into the ten seconds instead of adding to it; the typing
+  dots start before the Claude call.
+- `escalate_to` on every hand-over (jess, carmen, lori-dee), in the email
+  subject.
+- Persona: Fresha first, "or I can sort it for you this end", back and
+  forth on real times, then "I'll get the girls to pop that in" and a
+  hand-over with the details. Easy add-ons answered; moves via the Fresha
+  confirmation link first; complaints never handled.
+
+To run it: `BOT_MODE=live`, `ANTHROPIC_AWS_WORKSPACE_ID`, `MESSAGE_TEST_MODE`
+stays `true`. Meta's Business AI and the instant reply must be off in
+Business Suite first. Booking itself stays job 4.
 
 ## Open questions for the user
 

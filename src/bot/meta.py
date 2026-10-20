@@ -105,6 +105,40 @@ def send_text(recipient_id: str, text: str, page_token: str, *, app_secret: str 
     return resp.json()
 
 
+def user_profile(sender_id: str, page_token: str, *, app_secret: str | None = None, session=None) -> dict:
+    """The sender's name from Meta's User Profile API, best effort.
+
+    Messenger returns first_name and last_name for anyone who has messaged
+    the Page, with the Page token (checked 2026-10-20). Instagram needs
+    instagram_manage_messages and returns name and username. Anything that
+    goes wrong gives {} so a missing name never blocks a reply.
+    """
+    import requests
+
+    http = session or requests
+    params = {"access_token": page_token, "fields": "first_name,last_name,name,username"}
+    if app_secret:
+        params["appsecret_proof"] = appsecret_proof(page_token, app_secret)
+    try:
+        resp = http.get(f"{GRAPH_BASE}/{sender_id}", params=params, timeout=10)
+        if resp.status_code >= 400:
+            log.warning("User profile for %s failed %s: %s", sender_id, resp.status_code, resp.text[:120])
+            return {}
+        data = resp.json()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("User profile for %s failed: %s", sender_id, exc)
+        return {}
+    return {k: v for k, v in data.items() if k in ("first_name", "last_name", "name", "username") and v}
+
+
+def display_name(profile: dict) -> str:
+    """'Danny Cooke', or the Instagram name or username, or ''."""
+    first, last = profile.get("first_name", ""), profile.get("last_name", "")
+    if first:
+        return f"{first} {last}".strip()
+    return profile.get("name") or profile.get("username") or ""
+
+
 def send_action(recipient_id: str, action: str, page_token: str, *, app_secret: str | None = None, session=None) -> None:
     """typing_on, typing_off or mark_seen. Best effort: a failure here must not stop the reply."""
     import requests
