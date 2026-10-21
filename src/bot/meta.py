@@ -26,6 +26,7 @@ class InboundMessage:
     message_id: str
     text: str
     timestamp_ms: int
+    attachments: int = 0  # pictures, videos, files that came with it; the bot cannot see them
 
 
 def verify_challenge(query: dict, verify_token: str) -> str | None:
@@ -69,6 +70,7 @@ def parse_events(body: dict) -> list[InboundMessage]:
                     message_id=str(msg.get("mid", "")),
                     text=(msg.get("text") or "").strip(),
                     timestamp_ms=int(event.get("timestamp", 0)),
+                    attachments=len(msg.get("attachments") or []),
                 )
             )
     return out

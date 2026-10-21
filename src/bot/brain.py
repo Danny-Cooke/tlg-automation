@@ -25,7 +25,7 @@ MAX_TOOL_ROUNDS = 5  # a move is check, availability, book, cancel; more than th
 ESCALATE_TO = ["", "jess", "carmen", "lori-dee"]
 AREAS = ["", "nails", "hair", "tattoos", "aesthetics", "beauty", "general"]
 # The team's own words for why a thread is being handed over (user, 2026-10-20).
-ESCALATION_KINDS = ["", "complaint", "booking", "cancellation or rebooking", "cancellation fee", "can't assist anymore", "spam"]
+ESCALATION_KINDS = ["", "complaint", "booking", "cancellation or rebooking", "cancellation fee", "quote", "can't assist anymore", "spam"]
 
 REPLY_SCHEMA = {
     "type": "object",
@@ -49,7 +49,7 @@ REPLY_SCHEMA = {
         "escalation_kind": {
             "type": "string",
             "enum": ESCALATION_KINDS,
-            "description": "Why: complaint; booking (a slot agreed in chat that the tool could not put in); cancellation or rebooking (one the tool could not do); cancellation fee (a client inside the 24-hour window who is unsure or asks not to pay; Jess decides, the bot goes quiet); can't assist anymore (anything else you cannot handle); spam. Empty if not escalating.",
+            "description": "Why: complaint; booking (a slot agreed in chat that the tool could not put in); cancellation or rebooking (one the tool could not do); cancellation fee (a client inside the 24-hour window who is unsure or asks not to pay; Jess decides, the bot goes quiet); quote (a price you cannot give straight from the salon details, including anything from a picture; the team prices it, the bot goes quiet); can't assist anymore (anything else you cannot handle); spam. Empty if not escalating.",
         },
         "suggested_booking_link": {
             "type": "string",
@@ -95,13 +95,13 @@ AVAILABILITY_TOOL = {
 BOOKING_TOOL = {
     "name": "book_appointment",
     "description": (
-        "Put one agreed nail or hair appointment into the salon's Fresha diary for a client Fresha "
+        "Put one agreed appointment into the salon's Fresha diary for a client Fresha "
         "already knows. Call it only after the client has said yes to a specific service, "
         "person, date and time that you confirmed back to them in one message. It answers "
         "'Booked: ...' when the appointment is in, or says why it could not book and what to "
         "do instead; never tell the client it is booked unless the answer starts with 'Booked'. "
-        "Nails and hair only: tattoos, beauty and aesthetics are not booked here, and neither "
-        "is hair colour that needs a patch test."
+        "Nails, hair, beauty, lashes, aesthetics, and for tattoos only Carmen's free consultation: "
+        "a tattoo itself is not booked here, and neither is hair colour that needs a patch test."
     ),
     "input_schema": {
         "type": "object",
@@ -152,7 +152,7 @@ CANCEL_TOOL = {
 
 TOOL_DEFINITIONS = {"check_availability": AVAILABILITY_TOOL, "book_appointment": BOOKING_TOOL, "cancel_appointment": CANCEL_TOOL}
 
-SAFE_REPLY = "Thanks for your message. Let me check that with the team and come back to you shortly."
+SAFE_REPLY = "Hi lovely, give me a little time to have a think and I'll get back to you x"
 
 ToolRunner = Callable[[dict], str]
 

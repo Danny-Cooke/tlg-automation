@@ -62,7 +62,10 @@ later `ANTHROPIC_AWS_WORKSPACE_ID` for shadow mode. The Page ID is in
 Variables: `MESSAGE_TEST_MODE` (`true`: only messages starting with the
 trigger word are answered, so only the tester hears from the bots; `false`:
 everyone is answered), `BOT_MODE` (`simple`, the default, then `shadow`,
-then `live`) and `ESCALATION_EMAILS` (JSON list, Jess, from shadow mode on).
+then `live`), `ESCALATION_EMAILS` (JSON list, Jess, from shadow mode on) and
+`CARMEN_WHATSAPP` (her number as clients should dial it; tattoo questions
+beyond a consultation are sent there in her words; empty means the bot uses
+the holding line instead).
 
 The bot stack applies once `TLG_APP1_SECRET` exists. The deploy then
 registers the webhooks with Meta itself (section 3) and prints the URLs.
@@ -113,7 +116,9 @@ clear it with the command in the next section. Watch the Lambda log for
 
 ## 4c. The team's Telegram group for hand-overs
 
-Every hand-over posts one message to a Telegram group, in the team's format:
+Every hand-over posts one message to a Telegram group, in the team's format.
+Only hand-overs: a booking or cancellation the bot completed is emailed to
+the ops topic and never posted, the group is not a running commentary.
 
 ```
 Nails: complaint: Danny Cooke: FB
@@ -202,10 +207,11 @@ team when a fee applies, so nobody but the team ever decides about money.
 `python scripts/fresha_book.py upcoming <client id> --fee` shows what the
 tool sees for a client.
 
-Every booking or cancellation the bot makes is posted to the Telegram group as
-`Nails: booked by the bot: <client>: FB` with the slot and Fresha id, and
-emailed to the ops topic. Fresha itself sends the client the confirmation
-with the card step, exactly as for a dashboard booking (proved 2026-10-21).
+Every booking or cancellation the bot makes is emailed to the ops topic for
+the record, and nothing else: the Telegram group is only for hand-overs,
+the point where the bot cannot continue (user, 2026-10-21). Fresha itself
+sends the client the confirmation with the card step, exactly as for a
+dashboard booking (proved 2026-10-21), and the team sees it in the diary.
 
 To try it by hand without Messenger, the same code is driven from the
 laptop:
@@ -220,9 +226,8 @@ python scripts/fresha_book.py cancel <appointment id> --notify
 
 First live run: `BOT_MODE=live`, `MESSAGE_TEST_MODE=true`, message the Page
 with the trigger word and ask for nails with Jess on a day she works; say
-yes when the bot reads the slot back. Check the Fresha calendar, the
-Telegram group and the confirmation email, then cancel from the dashboard
-or with the script.
+yes when the bot reads the slot back. Check the Fresha calendar and the
+confirmation email, then cancel from the dashboard or with the script.
 
 ## 5. Clearing a hand-over
 

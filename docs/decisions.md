@@ -356,3 +356,114 @@ the window is the bot's to do (user, same afternoon): it checks the old one
 is free to cancel, agrees the new slot, books it, and only then cancels the
 old one, so a failed booking never leaves the client with nothing. A move
 inside the window is handled like a cancellation with a fee.
+
+## 2026-10-21: the booking read-back opens with "to confirm then"
+
+The user's ruling after the first hair move through Messenger: the message
+that reads an agreed slot back must open "Hi <name>, to confirm then, ..."
+rather than "so that's ...", with "shall I pop you in? x" still at the end.
+Why: people skim and miss a question at the end of a message; the opening
+tells them a yes is wanted before they read the details. Applies to new
+bookings and to moves. Written into the prompt's booking and moving rules
+and `persona/jess.md`.
+
+## 2026-10-21: a price the bot cannot give is one holding line, then a quiet hand-over
+
+The user's ruling after sending a picture of a nail set with "how much
+would a set of these cost with extra nail art": the bot replied that it
+could not see the picture, gave guide prices for BIAB, acrylics and art per
+nail, and said it would pass the picture to Jess. The user does not want
+that. Any price enquiry the bot cannot answer straight from the salon
+details, including anything priced from a picture, gets one short line,
+"Hi lovely, give me a little time to have a think and I'll get back to you
+x" (wording settled the same evening), and a hand-over of a new kind "quote"
+to the right person; the thread
+then goes quiet so the team sends the price without the bot talking over
+them. No guide prices, no mention of not seeing the picture, no asking for
+more photos: the team does that. Consequences: `quote` is a locking kind
+like complaint; a picture that comes with text is flagged to the model as
+"[1 picture(s) attached]" (the handler used to drop that fact, which is why
+the bot guessed about the picture); a picture with no text gets the same
+holding line and a quote hand-over; and the bot's fallback line when Claude
+fails is now that same sentence in Jess's voice. The old register notes
+that asked for daylight photos (hair) or placement and size (tattoos) are
+gone: Lori-Dee and Carmen ask for those themselves.
+
+## 2026-10-21: tattoos in chat are the free consultation only, everything else is a quote
+
+The user's ruling: the only tattoo appointment the bot may book is Carmen's
+free 15-minute "consultation" (Fresha category "Tattoos by Skin deep
+canvas"). Tiny Tattoo and Tiny Tattoo Tuesdays are not booked in chat;
+Carmen books the tattoo itself, usually at the consultation. "How much
+would this cost" and "can you design me something similar to this" are
+quotes: the holding line and a quote hand-over to Carmen on Telegram, the
+thread quiet. Consequence: the booking tool has a per-category allow list
+(`ONLY_THESE` in `src/bot/booking.py`), the tattoo category now carries the
+area word "tattoos" for the Telegram line, and the persona and prompt say
+so.
+
+## 2026-10-21: Telegram is for hand-overs only, never a running commentary
+
+The user's ruling after watching the day's bookings land in the group:
+"I do not want successful conversations going to Telegram. It's an
+escalation point where you cannot continue." So a booking or cancellation
+the bot completed is emailed to the ops topic for the record and is not
+posted; Fresha's diary and its own notifications tell the team. The group
+gets exactly the hand-overs: complaint, booking the tool could not make,
+cancellation or rebooking it could not do, cancellation fee, quote, can't
+assist anymore. Spam and shadow-mode drafts stay email only. The
+three-days-to-expiry session warning, when built, still belongs there: it
+is a point where the bot is about to stop working.
+
+## 2026-10-21: beauty, lashes and aesthetics are bookable in chat too
+
+The user's ruling, the same evening: "I want beauty, lashes and
+Bernadette's aesthetics bookable via you." So the booking tool now takes
+every Fresha category: the two nail ones, the two hair ones, "Beauty -
+TLG", "Lashes by Amber" and "Bernadettes ReFresh aethetics", plus the
+tattoo consultation. The only thing on the menu it refuses is a tattoo
+itself. Who does what still comes from Fresha. The bot books aesthetics
+but never advises on them: suitability and anything medical stay a
+hand-over, as before. Area words for the Telegram line and ops email:
+beauty (beauty and lashes), aesthetics. New clients are the next item.
+
+## 2026-10-21: some Fresha team members are never bookable through the bot
+
+The user's ruling while tidying staff in Fresha: "SJP Accountants",
+"Danny Cooke" and "Rebekah Cooke" are not bookable for any service, even
+if Fresha lists them somewhere. They are Fresha team-member records that
+are not people clients book. The list is hand-written in
+`terraform/salon.auto.tfvars` as `not_bookable_staff`, rendered into the
+bundle, and applied when the config loads: those names are dropped from the
+team the bot knows and from every service's staff list, so the prompt never
+mentions them and the booking tool answers "not on the team list" if a
+client asks for one. The menu sync keeps writing whatever Fresha says, so
+the generated file may still carry them; the filter is the bot's, not the
+sync's. Matching is on the name, case-insensitive, either way round.
+
+## 2026-10-21: hand-written "not for this service" overrides beat Fresha's staff lists
+
+The user's ruling: Carmen does not do makeup, only Amber, and "don't book
+people in with Carmen" for it, even though Fresha lists her on "Make up by
+the lash goblin". Rather than wait for Fresha to be tidied, the salon file
+`terraform/salon.auto.tfvars` carries `not_bookable_for`, a map of service
+name to first names the bot must never offer or book for it. Applied when
+the config loads, so the prompt lists the right people, and enforced in
+the booking tool: the person must be on the service's staff list as the
+bot knows it, not merely in Fresha's catalog (that check was missing; the
+tool used to trust Fresha alone, which would have bypassed any override).
+The sync still writes what Fresha says; the override is the bot's.
+
+## 2026-10-21: tattoo questions go to Carmen's WhatsApp, in her words
+
+The user's ruling: a client who wants a tattoo consultation is offered
+Carmen's free consultation times straight away and booked in. Anyone who
+wants more than that, "how much is a half sleeve", a full sleeve, a picture,
+a design, is answered once in Carmen's persona and first person: "Hey
+lovely, to discuss this further you can talk to me directly on WhatsApp, I
+can respond much quicker on there if that's ok? <number> x", then a quote
+hand-over to Carmen and the thread goes quiet. Her number is a GitHub prod
+variable `CARMEN_WHATSAPP`, passed through Terraform into the bot's
+environment (never in the repo); without it the holding line is used. This
+is the one deliberate exception to the 2026-10-20 one-persona rule: the
+message sends the client to Carmen's own phone, so it is hers.

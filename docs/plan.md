@@ -107,11 +107,14 @@ from the laptop (`scripts/fresha_book.py`), and `src/bot/booking.py`, the
 `book_appointment` tool: nails only, existing clients matched by exact
 name, Fresha's own clash check before the write, an idempotency key per
 conversation and slot (so no queue is needed), the booking recorded on the
-conversation, a Telegram post and an ops email per booking, dry run outside
+conversation, an ops email per booking (no Telegram post: the group is for
+hand-overs only, decision 2026-10-21 evening), dry run outside
 live mode. Widened to hair the same afternoon (decision 2026-10-21): the two
 hair categories book with Lori-Dee or Sophie in Lori-Dee's register, colour
-needing a patch test is refused and handed to Lori-Dee, and the Telegram
-line says Hair or Nails from the service's category. The persona and prompt now read the slot back, ask "shall I pop
+needing a patch test is refused and handed to Lori-Dee. Tattoos: the free
+consultation with Carmen only; prices and designs are quote hand-overs.
+Beauty, lashes and aesthetics bookable too (evening ruling), so the only
+menu item not booked in chat is a tattoo itself. The persona and prompt now read the slot back, ask "shall I pop
 you in?", and only say booked when the tool said Booked. First live booking through Messenger the same day (Biab with Carmen, booked,
 confirmed by email, cancelled). Cancel tool added the same afternoon: lists
 the client's upcoming appointments, cancels free ones with Fresha's
@@ -241,9 +244,11 @@ Business Suite first. Booking itself stays job 4.
 
 ### 8. Hand-overs to the team's Telegram group (BUILT 2026-10-20; bot stack)
 
-One Telegram bot, one group of Jess, Carmen and Lori-Dee. Every hand-over
-posts `<Area>: <kind>: <client>: <FB|Insta>` plus the Business Suite link
-and the detail; spam is email only. Token in Secrets Manager via the
+One Telegram bot, one group of Jess, Carmen and Lori-Dee (group
+"TLG-Messages", id cached 2026-10-21). Every hand-over posts
+`<Area>: <kind>: <client>: <FB|Insta>` plus the Business Suite link and the
+detail; spam is email only, and so are bookings and cancellations the bot
+completed: the group is where the bot stops, not a running commentary. Token in Secrets Manager via the
 `TELEGRAM_BOT_TOKEN` secret; chat id discovered by the Lambda and cached in
 SSM (`TELEGRAM_CHAT_ID` variable overrides). Steps in `docs/setup.md` 4c.
 Next, when wanted: an "I've got it" button and a reply that unlocks the

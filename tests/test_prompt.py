@@ -101,6 +101,8 @@ def test_rendered_salon_config_loads_from_file(monkeypatch, tmp_path):
     doc = render(ROOT / "terraform")
     menu = json.loads((ROOT / "terraform" / "fresha-menu.auto.tfvars.json").read_text(encoding="utf-8"))
     assert len(doc["services"]) == len(menu["services"]) and len(doc["staff"]) == len(menu["staff"])
+    assert {"SJP Accountants", "Danny Cooke", "Rebekah Cooke"} <= set(doc["hidden_staff"])  # user, 2026-10-21
+    assert doc["not_bookable_for"]["Make up by the lash goblin"] == ["Carmen"]
 
     path = tmp_path / "salon_config.json"
     path.write_text(json.dumps(doc), encoding="utf-8")
@@ -109,4 +111,34 @@ def test_rendered_salon_config_loads_from_file(monkeypatch, tmp_path):
     cfg = SalonConfig.from_env()
     assert cfg.salon_name == "The Looking Glass Beauty"
     assert len(cfg.services) == len(menu["services"])
-    assert {m.name for m in cfg.staff} == {m["name"] for m in menu["staff"].values()}
+    assert {m.name for m in cfg.staff} == {m["name"] for m in menu["staff"].values()} - set(cfg.hidden_staff)
+    assert not any("cooke" in m.name.casefold() or "sjp" in m.name.casefold() for m in cfg.staff)
+    makeup = next(s for s in cfg.services if s.name == "Make up by the lash goblin")
+    assert "Carmen" not in makeup.staff and "Amber" in makeup.staff  # user, 2026-10-21: only Amber does makeup
+
+
+def test_hidden_staff_are_never_known_to_the_bot():
+    import json
+
+    from bot.config import SalonConfig
+
+    doc = {
+        "salon_name": "TLG", "address": "", "phone": "", "opening_hours": {}, "general_booking_link": "x",
+        "hidden_staff": ["SJP Accountants", "Danny Cooke", "ebekah Cooke"],
+        "not_bookable_for": {"make up by the lash goblin": ["Carmen"]},
+        "staff": [
+            {"name": "Jess", "role": "Manager", "employee_id": "1"},
+            {"name": "SJP Accountants", "role": "Admin", "employee_id": "2"},
+            {"name": "Danny Cooke", "role": "Owner", "employee_id": "3"},
+            {"name": "Rebekah Cooke", "role": "Owner", "employee_id": "4"},
+        ],
+        "services": [{"category": "Beauty - TLG", "name": "Brow wax", "price": "£10", "duration": "15 mins",
+                      "staff": ["Jess", "Danny Cooke", "SJP Accountants", "Rebekah Cooke"]},
+                     {"category": "Lashes by Amber", "name": "Make up by the lash goblin", "price": "from £25",
+                      "duration": "1 hour 15 mins", "staff": ["Amber", "Carmen"]}],
+    }
+    cfg = SalonConfig.from_json(json.dumps(doc))
+    assert [m.name for m in cfg.staff] == ["Jess"]
+    assert cfg.services[0].staff == ["Jess"]
+    assert cfg.services[1].staff == ["Amber"]
+    assert cfg.staff_named("Danny") is None and cfg.staff_named("Rebekah Cooke") is None and cfg.staff_named("Jess")

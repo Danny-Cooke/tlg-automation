@@ -55,7 +55,7 @@ REPLY_DELAY_SECONDS = float(os.environ.get("REPLY_DELAY_SECONDS", "10"))
 # Hand-over kinds after which the bot stays quiet on the thread. The rest
 # (booking, cancellation or rebooking, spam) notify the team and carry on.
 # A cancellation-fee plea locks too: Jess decides about money (user, 2026-10-21).
-LOCKING_KINDS = frozenset({"complaint", "cancellation fee", "can't assist anymore", ""})
+LOCKING_KINDS = frozenset({"complaint", "cancellation fee", "quote", "can't assist anymore", ""})
 SALON_TZ = zoneinfo.ZoneInfo(os.environ.get("SALON_TIMEZONE", "Europe/London"))
 
 
@@ -166,6 +166,8 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         return
 
     user_text = text or "[attachment without text]"
+    if text and msg.attachments:
+        user_text = f"{text} [{msg.attachments} picture(s) attached]"  # the model knows, without being able to see
 
     if MODE == "simple":
         reply_text = simple_reply(msg.channel, text)
@@ -194,7 +196,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         # Attachment-only message: let a person see it rather than guess.
         reply = brain.BotReply(
             reply=brain.SAFE_REPLY, escalate=True, escalation_reason="Non-text message (picture or attachment)",
-            escalate_to="jess", area="general", escalation_kind="can't assist anymore",
+            escalate_to="jess", area="general", escalation_kind="quote",
         )
     else:
         reply = brain.ask(system_prompt(), convo.history, user_text, context=context_block(convo), tools=tools(convo, store))
@@ -217,7 +219,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     if MODE == "shadow":
         log.info("SHADOW reply to %s: %s", msg.sender_id, reply.reply)
         if not reply.escalate:
-            escalation.notify(convo, f"Shadow mode draft: {reply.reply}", user_text)
+            escalation.notify(convo, f"Shadow mode draft: {reply.reply}", user_text, kind="shadow draft")
     else:
         _send(msg.sender_id, reply.reply, started)
 

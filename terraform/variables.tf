@@ -118,6 +118,12 @@ variable "reply_delay_seconds" {
   }
 }
 
+variable "carmen_whatsapp" {
+  description = "Carmen's WhatsApp number, given to tattoo clients who want more than a consultation (user, 2026-10-21). Empty: the bot uses the holding line instead."
+  type        = string
+  default     = ""
+}
+
 variable "message_test_trigger" {
   description = "The word a message must start with to be answered while message_test_mode is true. Stripped before the bot reads the text."
   type        = string
@@ -175,7 +181,9 @@ variable "salon" {
     general_booking_link = string
     opening_hours        = map(string)
     extra_notes          = optional(string, "")
-    venue_url            = optional(string, "") # Fresha venue page; the monitor checks it loads
+    venue_url            = optional(string, "")            # Fresha venue page; the monitor checks it loads
+    not_bookable_staff   = optional(list(string), [])      # Fresha team members the bot must never offer or book
+    not_bookable_for     = optional(map(list(string)), {}) # service name -> people the bot must not book for it
   })
 }
 

@@ -35,6 +35,29 @@ class StaffMember:
     employee_id: str = ""  # Fresha's id; empty means availability cannot be looked up for them
 
 
+def _lookup(table: dict[str, list[str]], service_name: str) -> list[str]:
+    """The people banned from `service_name`, matched on the name ignoring case and spacing."""
+    want = " ".join(service_name.split()).casefold()
+    for k, names in table.items():
+        if " ".join(k.split()).casefold() == want:
+            return list(names)
+    return []
+
+
+def _hidden(name: str, hidden: list[str]) -> bool:
+    """A Fresha team member the bot must not know about: the configured name
+    equals the staff name, or one contains the other, case-insensitive, so a
+    first name or a slightly mistyped name still matches."""
+    n = " ".join(name.split()).casefold()
+    if not n:
+        return False
+    for h in hidden:
+        h = " ".join(str(h).split()).casefold()
+        if h and (h == n or h in n or n in h):
+            return True
+    return False
+
+
 @dataclass(frozen=True)
 class SalonConfig:
     salon_name: str
@@ -46,20 +69,33 @@ class SalonConfig:
     staff: list[StaffMember]
     extra_notes: str = ""
     venue_url: str = ""  # Fresha venue page; the availability lookup starts from its slug
+    hidden_staff: list[str] = field(default_factory=list)  # names the bot must never offer or book
+    not_bookable_for: dict[str, list[str]] = field(default_factory=dict)  # service name -> people never offered for it
 
     @classmethod
     def from_json(cls, raw: str) -> "SalonConfig":
         data = json.loads(raw)
+        hidden = [h for h in data.get("hidden_staff", []) if str(h).strip()]
+        not_for = {str(k): [str(n) for n in v] for k, v in (data.get("not_bookable_for") or {}).items()}
+        staff = [StaffMember(**s) for s in data.get("staff", [])]
+        staff = [m for m in staff if not _hidden(m.name, hidden)]
+        services = []
+        for s in data.get("services", []):
+            banned = hidden + _lookup(not_for, s.get("name", ""))
+            s = dict(s, staff=[n for n in s.get("staff", []) if not _hidden(n, banned)])
+            services.append(Service(**s))
         return cls(
             salon_name=data["salon_name"],
             address=data["address"],
             phone=data["phone"],
             opening_hours=data["opening_hours"],
             general_booking_link=data["general_booking_link"],
-            services=[Service(**s) for s in data.get("services", [])],
-            staff=[StaffMember(**s) for s in data.get("staff", [])],
+            services=services,
+            staff=staff,
             extra_notes=data.get("extra_notes", ""),
             venue_url=data.get("venue_url", ""),
+            hidden_staff=hidden,
+            not_bookable_for=not_for,
         )
 
     def staff_named(self, first_name: str) -> StaffMember | None:

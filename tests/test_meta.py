@@ -78,6 +78,14 @@ def test_parse_messenger_text():
     assert m.sender_id == "psid1"
     assert m.text == "Can I book nails?"
     assert m.message_id == "m1"
+    assert m.attachments == 0
+
+
+def test_parse_counts_attachments():
+    body = messenger_body("how much for these?")
+    body["entry"][0]["messaging"][0]["message"]["attachments"] = [{"type": "image", "payload": {"url": "x"}}]
+    [m] = meta.parse_events(body)
+    assert m.text == "how much for these?" and m.attachments == 1
 
 
 def test_parse_skips_echo_and_non_message_events():

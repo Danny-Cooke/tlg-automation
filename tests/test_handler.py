@@ -19,10 +19,10 @@ class MemoryStore(ConversationStore):
         self.items[convo.sender_id] = convo
 
 
-def inbound(text="Can I book nails?", mid="m1", sender="psid1", channel="messenger"):
+def inbound(text="Can I book nails?", mid="m1", sender="psid1", channel="messenger", attachments=0):
     return meta.InboundMessage(
         channel=channel, sender_id=sender, recipient_id="page1",
-        message_id=mid, text=text, timestamp_ms=0,
+        message_id=mid, text=text, timestamp_ms=0, attachments=attachments,
     )
 
 
@@ -237,7 +237,7 @@ def test_booking_handover_keeps_the_bot_talking(wired, monkeypatch):
     assert store.items["psid1"].handed_to_jess is False
     handler.process_message(inbound("actually can we do thursday", mid="m2"), store)
     assert calls["sent"][-1] == ("psid1", "Still here x")
-    assert handler.LOCKING_KINDS == {"complaint", "cancellation fee", "can't assist anymore", ""}
+    assert handler.LOCKING_KINDS == {"complaint", "cancellation fee", "quote", "can't assist anymore", ""}
 
 
 def test_shadow_mode_never_sends_to_client(wired, monkeypatch):
@@ -256,6 +256,15 @@ def test_attachment_only_message_escalates_in_live_mode(wired, monkeypatch):
     handler.process_message(inbound(text=""), store)
     assert wired["escalated"] == [("psid1", "Non-text message (picture or attachment)", "jess")]
     assert wired["ask"] == []
+    assert wired["sent"] == [("psid1", brain.SAFE_REPLY)] and brain.SAFE_REPLY == "Hi lovely, give me a little time to have a think and I'll get back to you x"
+    assert store.items["psid1"].handed_to_jess is True  # a quote hand-over locks the thread
+
+
+def test_a_picture_with_text_is_flagged_to_the_model(wired, monkeypatch):
+    monkeypatch.setattr(handler, "MODE", "live")
+    store = MemoryStore()
+    handler.process_message(inbound("how much would a set of these cost?", attachments=1), store)
+    assert wired["ask"][0][1] == "how much would a set of these cost? [1 picture(s) attached]"
 
 
 # ---------------------------------------------------------------------------

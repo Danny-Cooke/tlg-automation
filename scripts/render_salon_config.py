@@ -56,6 +56,8 @@ def render(terraform_dir: Path) -> dict:
         "general_booking_link": salon["general_booking_link"],
         "venue_url": salon.get("venue_url", ""),
         "extra_notes": salon.get("extra_notes", ""),
+        "hidden_staff": salon.get("not_bookable_staff", []),  # applied by SalonConfig.from_json
+        "not_bookable_for": salon.get("not_bookable_for", {}),  # service -> people; applied the same way
         "services": services,
         "staff": staff,
     }

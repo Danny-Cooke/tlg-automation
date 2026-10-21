@@ -19,13 +19,20 @@ CONFIG = {
         {"category": "Hair by Lori-dee", "name": "Dry cut", "price": "£30", "duration": "45 mins", "staff": ["Lori-Dee"]},
         {"category": "Sophie cooper", "name": "Curling hair", "price": "£30", "duration": "45 mins", "staff": ["Sophie", "Lori-Dee"]},
         {"category": "Tattoos by Skin deep canvas", "name": "Small tattoo", "price": "from £50", "duration": "1 hour", "staff": ["Carmen"]},
+        {"category": "Tattoos by Skin deep canvas", "name": "consultation", "price": "free", "duration": "15 mins", "staff": ["Carmen"]},
+        {"category": "Beauty - TLG", "name": "Brow wax", "price": "£10", "duration": "15 mins", "staff": ["Jess"]},
+        {"category": "Bernadettes ReFresh aethetics", "name": "Lip filler", "price": "£150", "duration": "45 mins", "staff": ["Bernadette"]},
+        {"category": "Gift vouchers", "name": "Voucher", "price": "£20", "duration": "5 mins", "staff": ["Jess"]},
+        {"category": "Lashes by Amber", "name": "Make up by the lash goblin", "price": "from £25", "duration": "1 hour 15 mins", "staff": ["Amber", "Carmen"]},
     ],
+    "not_bookable_for": {"Make up by the lash goblin": ["Carmen"]},
     "staff": [
         {"name": "Jess", "role": "Manager", "employee_id": "3440861"},
         {"name": "Sav", "role": "Nail tech", "employee_id": "5029221"},
         {"name": "Lori-Dee", "role": "Hairdresser", "employee_id": "3440849"},
         {"name": "Sophie", "role": "Hair stylist", "employee_id": "5630580"},
         {"name": "Carmen", "role": "Nail & Tattoo Tech", "employee_id": "3440872"},
+        {"name": "Bernadette", "role": "Aesthetic practitioner", "employee_id": "5007255"},
         {"name": "Lissy", "role": "Apprentice"},
     ],
 }
@@ -33,6 +40,9 @@ GEL = fresha.Service("22563223", "Gel polish", "Senior Nail Services - TLG", "25
 DRY_CUT = fresha.Service("22563300", "Dry cut", "Hair by Lori-dee", "25845700", "30.00", "FIXED", 2700, ("3440849",))
 CURLS = fresha.Service("22563301", "Curling hair", "Sophie cooper", "25845701", "30.00", "FIXED", 2700, ("5630580", "3440849"))
 TATTOO = fresha.Service("22563302", "Small tattoo", "Tattoos by Skin deep canvas", "25845702", "50.00", "STARTS_AT", 3600, ("3440872",))
+CONSULT = fresha.Service("22563303", "consultation", "Tattoos by Skin deep canvas", "25845703", "0.00", "FREE", 900, ("3440872",))
+BROWS = fresha.Service("22563304", "Brow wax", "Beauty - TLG", "25845704", "10.00", "FIXED", 900, ("3440861",))
+FILLER = fresha.Service("22563305", "Lip filler", "Bernadettes ReFresh aethetics", "25845705", "150.00", "FIXED", 2700, ("5007255",))
 DANNY = fresha.Client("279113349", "Danny Cooke", "+44", "d@example.com")
 
 
@@ -124,11 +134,31 @@ def test_dry_run_checks_everything_and_writes_nothing(cfg):
     assert f.created == [] and c.bookings == []
 
 
-def test_only_nails_and_hair_are_booked(cfg):
+def test_everything_but_a_tattoo_itself_is_booked(cfg):
+    out, f, _ = run(cfg, args={"service": "Voucher", "person": "Jess"})
+    assert "which the bot does not book in chat" in out and f.created == []
+    posted = []
+    for service, person, fake, area in (("Brow wax", "Jess", BROWS, "beauty"), ("Lip filler", "Bernadette", FILLER, "aesthetics")):
+        booking.forget_catalog()
+        out, f, _ = run(cfg, args={"service": service, "person": person}, f=FakeFresha(services=[fake]),
+                        notify=lambda convo, summary, appointment_id, **kw: posted.append(kw["area"]))
+        assert out.startswith(f"Booked: {service} with {person}"), out
+    assert posted == ["beauty", "aesthetics"]
+    booking.forget_catalog()
     out, f, _ = run(cfg, args={"service": "Small tattoo", "person": "Carmen"}, f=FakeFresha(services=[TATTOO]))
-    assert "only books nails and hair" in out and f.created == []
+    assert "only tattoo appointment the bot books is the free consultation with Carmen" in out and f.created == []
     out, f, _ = run(cfg, args={"service": "Unicorn wash"})
     assert "not a service in the salon details" in out
+
+
+def test_tattoo_consultation_is_booked_with_carmen(cfg):
+    posted = []
+    booking.forget_catalog()
+    out, f, _ = run(cfg, args={"service": "consultation", "person": "Carmen"}, f=FakeFresha(services=[CONSULT]),
+                    notify=lambda convo, summary, appointment_id, **kw: posted.append(kw))
+    assert out.startswith("Booked: consultation with Carmen, Thu 29 Oct 10am, for Danny Cooke")
+    assert f.created[0]["employee_id"] == "3440872" and f.created[0]["price"] == "0"
+    assert posted[0]["area"] == "tattoos"
 
 
 def test_hair_is_booked_with_lori_dee_or_sophie(cfg):
@@ -149,7 +179,7 @@ def test_hair_is_booked_with_lori_dee_or_sophie(cfg):
 
     booking.forget_catalog()
     out, f, _ = run(cfg, args={"service": "Dry cut", "person": "Sophie"}, f=FakeFresha(services=[DRY_CUT]))
-    assert "does not list 'Dry cut' for Sophie" in out and f.created == []
+    assert "Sophie is not booked for 'Dry cut' here; it is done by Lori-Dee" in out and f.created == []
 
 
 def test_hair_colour_with_a_patch_test_hands_over_to_lori_dee(cfg):
@@ -161,6 +191,17 @@ def test_hair_colour_with_a_patch_test_hands_over_to_lori_dee(cfg):
 def test_person_must_be_on_the_team_with_a_fresha_id(cfg):
     out, f, _ = run(cfg, args={"person": "Lissy"})
     assert "not on the team list" in out
+    out, f, _ = run(cfg, args={"service": "Gel polish", "person": "Carmen"})
+    assert "Carmen is not booked for 'Gel polish' here; it is done by Jess, Sav" in out and f.created == []
+
+
+def test_hand_written_exclusions_beat_fresha(cfg):
+    """Fresha lists Carmen on makeup; the salon says only Amber does it. The tool
+    must refuse Carmen even though Fresha's catalog would accept the booking."""
+    makeup = fresha.Service("22563306", "Make up by the lash goblin", "Lashes by Amber", "25845706", "25.00", "STARTS_AT", 4500, ("5394887", "3440872"))
+    booking.forget_catalog()
+    out, f, _ = run(cfg, args={"service": "Make up by the lash goblin", "person": "Carmen"}, f=FakeFresha(services=[makeup]))
+    assert "Carmen is not booked for 'Make up by the lash goblin' here; it is done by Amber" in out and f.created == []
     out, f, _ = run(cfg, f=FakeFresha(services=[fresha.Service("1", "Gel polish", "Senior Nail Services - TLG", "9", "34.00", "FIXED", 3600, ("5029221",))]))
     assert "does not list 'Gel polish' for Jess" in out and f.created == []
 
@@ -310,34 +351,50 @@ def test_state_round_trips_bookings():
     assert store.load("psid1").bookings == c.bookings
 
 
-def test_booking_notification_shape(monkeypatch):
+def test_booking_notification_is_email_only(monkeypatch):
+    """A booking the bot completed is a record for the ops topic, never a
+    Telegram post: the group is for the point where the bot cannot continue."""
     monkeypatch.setenv("META_PAGE_ID", "page1")
     monkeypatch.setenv("OPS_TOPIC_ARN", "arn:ops")
-    posted, published = [], []
+    published = []
 
     class Sns:
         def publish(self, **kw):
             published.append(kw)
 
-    escalation.notify_booking(convo(), "Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke", "1332159791", sns=Sns(), telegram=posted.append)
-    assert posted[0].splitlines()[0] == "Nails: booked by the bot: Danny Cooke: FB"
-    escalation.notify_booking(convo(), "Dry cut with Lori-Dee, Thu 29 Oct 10am, for Danny Cooke", "2", area="hair", kind="cancelled by the bot", sns=Sns(), telegram=posted.append)
-    assert posted[1].splitlines()[0] == "Hair: cancelled by the bot: Danny Cooke: FB"
-    assert "asset_id=page1" in posted[0] and "Fresha 1332159791" in posted[0]
+    monkeypatch.setattr(escalation, "_telegram", lambda: (_ for _ in ()).throw(AssertionError("Telegram must not be touched")))
+    escalation.notify_booking(convo(), "Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke", "1332159791", sns=Sns())
     assert published[0]["Subject"].startswith("[TLG bot] Booked: Gel polish with Jess")
-    assert "Fresha appointment: 1332159791" in published[0]["Message"]
+    assert "Fresha appointment: 1332159791" in published[0]["Message"] and "Area: nails" in published[0]["Message"]
+    escalation.notify_booking(convo(), "Dry cut with Lori-Dee, Thu 29 Oct 10am, for Danny Cooke", "2", area="hair", kind="cancelled by the bot", sns=Sns())
+    assert published[1]["Subject"].startswith("[TLG bot] Cancelled: Dry cut with Lori-Dee") and "Area: hair" in published[1]["Message"]
 
 
 def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_json):
     from bot.prompt import build_system_prompt
 
     prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
-    assert "# Booking nails and hair" in prompt and "`book_appointment`" in prompt
+    assert "# Booking" in prompt and "`book_appointment`" in prompt and "Bernadette's" in prompt
     assert "Lori-Dee or Sophie" in prompt
     assert "do not hand over again" in prompt
-    assert "shall I pop you in" in prompt
+    assert "shall I pop you in" in prompt and prompt.count("to confirm then") >= 3
+    assert "# Pictures and quotes" in prompt and "give me a little time to have a think" in prompt and "quote;" in prompt
+    assert "# Tattoos" in prompt and "consultation" in prompt
     assert "card details" in prompt
     assert "Only say \"all booked" in persona_text
+
+
+def test_tattoo_questions_go_to_carmens_whatsapp_when_configured(persona_text, salon_config_json, monkeypatch):
+    from bot.prompt import build_system_prompt
+
+    cfg = SalonConfig.from_json(salon_config_json)
+    monkeypatch.delenv("CARMEN_WHATSAPP", raising=False)
+    without = build_system_prompt(persona_text, cfg)
+    assert "WhatsApp number is not configured" in without and "07" not in without.split("# Tattoos")[1].split("# Pictures")[0]
+    monkeypatch.setenv("CARMEN_WHATSAPP", "07700 900123")
+    with_number = build_system_prompt(persona_text, cfg)
+    assert ("\"Hey lovely, to discuss this further you can talk to me directly on WhatsApp, I can "
+            "respond much quicker on there if that's ok? 07700 900123 x\"") in with_number
 
 
 # -- cancelling ---------------------------------------------------------------

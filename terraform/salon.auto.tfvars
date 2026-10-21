@@ -12,6 +12,18 @@ salon = {
   phone                = "01743 669166"
   general_booking_link = "https://www.fresha.com/book-now/tlg-beauty-limited-xexbl23r/all-offer?share=true&pId=1453889"
   venue_url            = "https://www.fresha.com/en-GB/a/the-looking-glass-beauty-shrewsbury-roushill-xa3bpl74"
+  # Fresha "team members" that are not people clients can book, whatever
+  # services Fresha lists them on (user, 2026-10-21). The bot never offers
+  # or books them and leaves them out of the team it knows. Matched on the
+  # name, case-insensitive, either way round (so "ebekah Cooke" matches
+  # "Rebekah Cooke").
+  not_bookable_staff = ["SJP Accountants", "Danny Cooke", "Rebekah Cooke"]
+  # People the bot must never offer or book for a given service, even though
+  # Fresha lists them on it (user, 2026-10-21: Carmen does not do makeup).
+  # Service name as Fresha spells it; first names.
+  not_bookable_for = {
+    "Make up by the lash goblin" = ["Carmen"]
+  }
   # Fresha hours (what clients can actually book). The website shows 9:30 starts; confirm which is right.
   opening_hours = {
     monday    = "Closed"

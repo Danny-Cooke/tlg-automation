@@ -1,4 +1,4 @@
-"""The `book_appointment` tool: put an agreed nail or hair appointment into Fresha.
+"""The `book_appointment` tool: put an agreed appointment into Fresha.
 
 What the model sends: the service's exact name from the salon details, the
 team member's first name, the date and the start time, plus the client's
@@ -7,10 +7,11 @@ act on: "Booked: ..." or a reason it could not book and what to do instead.
 
 Guards, in order:
 
-1. Nails and hair only (decisions 2026-10-21). Anything outside the two
-   nail and two hair categories is refused and the model is told to give
-   the Fresha link. A service Fresha flags as needing a patch test is
-   refused too (colour), and handed over to Lori-Dee.
+1. Everything on the menu except a tattoo itself: nails, hair, beauty,
+   lashes, aesthetics, and for tattoos only Carmen's free consultation
+   (decisions 2026-10-21). Anything else is refused and the model is told
+   to give the Fresha link. A service Fresha flags as needing a patch test
+   is refused too, and handed over (no service carries that flag today).
 2. The person must be on the team list with a Fresha id, and must do that
    service according to Fresha's catalog.
 3. The client must already be a Fresha client, matched by name: exactly one
@@ -49,7 +50,13 @@ BOOKABLE_CATEGORIES = {
     "Nails by TLG": "nails",
     "Hair by Lori-dee": "hair",
     "Sophie cooper": "hair",
+    "Tattoos by Skin deep canvas": "tattoos",
+    "Beauty - TLG": "beauty",
+    "Lashes by Amber": "beauty",
+    "Bernadettes ReFresh aethetics": "aesthetics",
 }
+# Categories where only some services may be booked in chat (normalised names).
+ONLY_THESE = {"Tattoos by Skin deep canvas": frozenset({"consultation"})}
 CATALOG_CACHE_SECONDS = 600
 HAND_OVER = "Hand over to Jess (kind: booking) with the service, person, date, time and client name; tell the client the girls will pop it in and send a confirmation."
 
@@ -257,12 +264,32 @@ def _validate(req: Request, cfg: SalonConfig, now: dt.datetime) -> str:
     if listed is None:
         return f"'{req.service}' is not a service in the salon details. Use the exact name from the list."
     if listed.category not in BOOKABLE_CATEGORIES:
-        return (f"'{listed.name}' is {listed.category}, and the bot only books nails and hair for now. "
+        return (f"'{listed.name}' is {listed.category}, which the bot does not book in chat. "
                 "Give the client the booking link for it and hand over if a slot was agreed.")
+    if not bookable(listed.category, listed.name):
+        return (f"'{listed.name}' is a tattoo, and the only tattoo appointment the bot books is the free "
+                "consultation with Carmen. Offer that, or give the booking link, and hand over (kind: quote) "
+                "if they want a price or a design.")
     member = cfg.staff_named(req.person)
     if member is None or not member.employee_id:
         return f"'{req.person}' is not on the team list. Use a first name from the team."
+    if listed.staff and not any(_same_person(member.name, n) for n in listed.staff):
+        others = ", ".join(listed.staff)
+        return (f"{member.name} is not booked for '{listed.name}' here; it is done by {others}. "
+                "Offer one of them, or give the booking link.")
     return ""
+
+
+def _same_person(a: str, b: str) -> bool:
+    a, b = _norm(a), _norm(b)
+    return a == b or a.split()[0] == b.split()[0]
+
+
+def bookable(category: str, service_name: str) -> bool:
+    if category not in BOOKABLE_CATEGORIES:
+        return False
+    only = ONLY_THESE.get(category)
+    return only is None or _norm(service_name) in only
 
 
 def area_of(category: str) -> str:
@@ -290,7 +317,7 @@ def _find_service(f: Fresha, employee_id: str, name: str) -> Service | None:
     """The Fresha pricing level for this service, as this person does it."""
     want = _norm(name)
     for s in _catalog(f):
-        if s.category in BOOKABLE_CATEGORIES and _norm(s.name) == want and employee_id in s.employee_ids:
+        if bookable(s.category, s.name) and _norm(s.name) == want and employee_id in s.employee_ids:
             return s
     return None
 

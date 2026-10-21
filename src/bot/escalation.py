@@ -60,14 +60,18 @@ def format_telegram(convo: Conversation, page_id: str, *, area: str = "", kind: 
     return "\n".join(lines)
 
 
+EMAIL_ONLY_KINDS = frozenset({"spam", "shadow draft"})
+
+
 def notify(
     convo: Conversation, reason: str, last_user_text: str, *,
     to: str = "", area: str = "", kind: str = "", bot_quiet: bool = True, sns=None, telegram=None,
 ) -> None:
     """Email the escalation topic and post the one-liner to the team's Telegram group.
-    Spam goes to email only; nobody wants sellers buzzing their phone."""
+    Telegram is the point where the bot cannot continue, not a running
+    commentary (user, 2026-10-21): spam and shadow-mode drafts go to email only."""
     page_id = os.environ.get("META_PAGE_ID", "")
-    if kind != "spam":
+    if kind not in EMAIL_ONLY_KINDS:
         poster = telegram or _telegram().post_handover
         try:
             poster(format_telegram(convo, page_id, area=area, kind=kind, reason=reason))
@@ -92,17 +96,12 @@ def notify(
 
 
 def notify_booking(convo: Conversation, summary: str, appointment_id: str, *, kind: str = "booked by the bot", area: str = "nails",
-                   sns=None, telegram=None) -> None:
-    """The bot has just put an appointment into Fresha, or taken one out: tell
-    the team group in the usual one-line shape, and the ops topic for the
-    record. Best effort."""
+                   sns=None) -> None:
+    """The bot has just put an appointment into Fresha, or taken one out: the
+    ops topic gets it for the record. Nothing goes to Telegram: a booking the
+    bot completed needs nobody (user, 2026-10-21), and Fresha's own diary and
+    notifications tell the team. Best effort."""
     page_id = os.environ.get("META_PAGE_ID", "")
-    text = format_telegram(convo, page_id, area=area, kind=kind, reason=f"{summary} (Fresha {appointment_id})")
-    poster = telegram or _telegram().post_handover
-    try:
-        poster(text)
-    except Exception:  # noqa: BLE001
-        log.exception("Telegram booking post failed")
     topic_arn = os.environ.get("OPS_TOPIC_ARN")
     if not topic_arn:
         log.info("OPS_TOPIC_ARN not set; booking not emailed: %s", summary)
@@ -111,6 +110,7 @@ def notify_booking(convo: Conversation, summary: str, appointment_id: str, *, ki
     verb = kind.split(" by ")[0].capitalize()  # Booked / Cancelled
     body = "\n".join([
         f"{kind.capitalize()}: {summary}",
+        f"Area: {area}",
         f"Fresha appointment: {appointment_id}",
         f"Channel: {convo.channel}",
         f"Client: {who}",
