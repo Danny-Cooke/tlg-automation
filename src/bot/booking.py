@@ -135,6 +135,87 @@ def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, sa
             "Tell the client it is in and that Fresha will text or email them to confirm with their card details.")
 
 
+LIVE_STATUSES = frozenset({"UNCONFIRMED", "CONFIRMED", "ARRIVED", "STARTED"})
+FEE_HAND_OVER = "Hand over to Jess (kind: cancellation or rebooking) with the appointment details; tell the client the girls will sort it."
+
+
+def cancel(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, save=None, notify=None,
+           session=None, fresha: Fresha | None = None, now: dt.datetime | None = None) -> str:
+    """The `cancel_appointment` tool. Finds the client's future appointment on
+    the given date (and time, if given), and cancels it with Fresha's
+    notification on when Fresha says there is nothing to charge. When a fee
+    applies the bot does not decide about money: it hands over."""
+    date = str(args.get("date") or "").strip()
+    time_ = _normalise_time(str(args.get("time") or ""))
+    client_name = str(args.get("client_name") or convo.client_name or "").strip()
+    now = now or dt.datetime.now(dt.timezone.utc)
+    if not client_name:
+        return "The client's name is not known. Ask for it, then cancel."
+    if date:
+        try:
+            if dt.date.fromisoformat(date) < now.date():
+                return f"{date} is in the past; work the date out from today's date in the context."
+        except ValueError:
+            return f"Date {date!r} is not YYYY-MM-DD."
+    session = session or fresha_session.get()
+    if session is None:
+        log.warning("cancel_appointment: no Fresha session")
+        return "Cannot reach Fresha right now. " + FEE_HAND_OVER
+    f = fresha or Fresha(session)
+
+    try:
+        client, why = _match_client(f, client_name)
+        if client is None:
+            return why.replace(HAND_OVER, FEE_HAND_OVER)
+        live = [u for u in f.upcoming(client.id) if u.status in LIVE_STATUSES]
+        if not live:
+            return f"Fresha shows no upcoming appointments for {client.name}. Ask them to check the date, or hand over."
+        if not date:
+            return "Which one? " + _list(live)
+        on_day = [u for u in live if u.date == date and (not time_ or u.time == time_)]
+        if not on_day:
+            return f"Nothing on {date}{' at ' + time_ if time_ else ''} for {client.name}. Their upcoming appointments: " + _list(live)
+        if len(on_day) > 1:
+            return "More than one that day; ask which: " + _list(on_day)
+        appt = on_day[0]
+        summary = f"{appt.service} with {appt.person}, {_pretty(appt.date, appt.time)}, for {client.name}"
+        fee = f.cancellation_fee(appt.appointment_id)
+        if fee:
+            return (f"Cancelling {summary} now carries a £{fee} cancellation fee under the salon's policy, "
+                    "so the bot does not cancel it. " + FEE_HAND_OVER)
+        if dry_run:
+            log.info("cancel_appointment dry run: %s", summary)
+            return f"Would have cancelled (not live): {summary}. Tell the client it is cancelled and Fresha will confirm by message."
+        f.cancel(appt.appointment_id, notify=True, enforce=False)
+    except SessionRejected:
+        log.warning("cancel_appointment: Fresha rejected the session")
+        return "Cannot reach Fresha right now. " + FEE_HAND_OVER
+    except FreshaError as e:
+        log.warning("cancel_appointment: %s", e)
+        return "Fresha refused the cancellation. " + FEE_HAND_OVER
+
+    for b in convo.bookings:
+        if b.get("appointment_id") == appt.appointment_id:
+            b["cancelled_at"] = int(time.time())
+    convo.bookings.append({
+        "appointment_id": appt.appointment_id, "service": appt.service, "person": appt.person, "date": appt.date,
+        "time": appt.time, "client_id": client.id, "client_name": client.name, "cancelled_at": int(time.time()),
+    }) if not any(b.get("appointment_id") == appt.appointment_id for b in convo.bookings) else None
+    if save:
+        save(convo)
+    if notify:
+        try:
+            notify(convo, summary, appt.appointment_id, kind="cancelled by the bot")
+        except Exception:  # noqa: BLE001
+            log.exception("Cancellation notification failed")
+    log.info("CANCELLED %s for %s: %s", appt.appointment_id, convo.sender_id, summary)
+    return f"Cancelled: {summary} (Fresha appointment {appt.appointment_id}). Tell the client it is cancelled and Fresha will send them a message confirming."
+
+
+def _list(rows) -> str:
+    return "; ".join(f"{u.service} with {u.person}, {_pretty(u.date, u.time)}" for u in rows)
+
+
 # -- pieces --------------------------------------------------------------------
 
 
@@ -212,6 +293,8 @@ def _match_client(f: Fresha, name: str):
 
 def _already_booked(convo: Conversation, req: Request) -> str:
     for b in convo.bookings:
+        if b.get("cancelled_at"):
+            continue  # a cancelled slot may be booked again
         if b.get("date") == req.date and b.get("time") == req.time and _norm(b.get("service", "")) == _norm(req.service):
             return f"{b.get('service')} with {b.get('person')}, {_pretty(req.date, req.time)} (Fresha appointment {b.get('appointment_id')})"
     return ""

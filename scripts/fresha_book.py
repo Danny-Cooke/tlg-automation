@@ -97,6 +97,16 @@ def cmd_view(f: Fresha, a) -> None:
     show(f.view(a.id))
 
 
+def cmd_upcoming(f: Fresha, a) -> None:
+    rows = f.upcoming(a.client, first=a.limit)
+    print(f"{len(rows)} upcoming appointment(s) for client {a.client}")
+    for u in rows:
+        print(f"  {u.appointment_id}  {u.date} {u.time}  {u.service} with {u.person}  £{u.price}  {u.status}")
+    if a.fee:
+        for u in rows:
+            print(f"  fee to cancel {u.appointment_id} now: {f.cancellation_fee(u.appointment_id) or 'none'}")
+
+
 def cmd_cancel(f: Fresha, a) -> None:
     print("cancelled", f.cancel(a.id, notify=a.notify))
 
@@ -136,6 +146,9 @@ def main(argv=None) -> int:
     s.add_argument("--dry-run", action="store_true", help="quote and conflict-check only")
     s.set_defaults(fn=cmd_book)
     s = sub.add_parser("view"); s.add_argument("id"); s.set_defaults(fn=cmd_view)
+    s = sub.add_parser("upcoming"); s.add_argument("client"); s.add_argument("--limit", type=int, default=10)
+    s.add_argument("--fee", action="store_true", help="also ask Fresha what cancelling each one now would charge")
+    s.set_defaults(fn=cmd_upcoming)
     s = sub.add_parser("cancel"); s.add_argument("id"); s.add_argument("--notify", action="store_true"); s.set_defaults(fn=cmd_cancel)
 
     a = p.parse_args(argv)

@@ -313,3 +313,14 @@ service outside the two Fresha nail categories ("Senior Nail Services -
 TLG" and "Nails by TLG", 25 services between them), and the bot says so in Jess's
 voice and offers the Fresha link instead. Widening the list is a one-line
 change once the first week of nail bookings has been watched.
+
+## 2026-10-21: the bot cancels free cancellations itself; fees stay with the team
+
+The user's ruling, after the first live booking: the bot should handle
+cancellations too. It cancels one of the client's upcoming appointments
+when Fresha's own enforcement check says there is nothing to charge, with
+the cancellation notification on. When Fresha reports a fee the bot does
+not cancel, does not discuss the fee, and hands over, because the humans
+decide whether to waive it. Moving a booking is a cancel plus a new
+booking, both confirmed with the client; a move that would carry a fee is
+a hand-over.

@@ -15,3 +15,8 @@ Remove an item once it is settled and update the source file.
    link to Fresha? Both work from the same file.
 6. **Google Calendar sync.** Export only for everyone, or two-way for the
    independents? See `docs/calendar-sync.md` for the trade-off.
+7. **Cancellation window.** Answered 2026-10-21 from Fresha's payment policy
+   page: free until 24 hours before the appointment starts (counted back from
+   the appointment, not from booking), inside that 100% of the price, no-show
+   100%. Now in `terraform/salon.auto.tfvars`. Still open: 124 services have
+   custom no-show settings; which, and what?

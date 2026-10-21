@@ -1,8 +1,10 @@
 """Fresha dashboard GraphQL operations, verbatim from the 2026-10-20 recording.
 
 Generated from .local/fresha-ops.json by hand; do not edit the query texts,
-Fresha accepts them exactly as its own web app sends them. Each entry is
-(kind, operationName, query) where kind is "query" or "mutation".
+Fresha accepts them exactly as its own web app sends them. One exception:
+CustomerOverviewUpcomingAppointmentQuery had `first: 1` written into the
+text; it takes a `$first` variable here (checked live 2026-10-21). Each entry
+is (kind, operationName, query) where kind is "query" or "mutation".
 """
 
 OPS = {
@@ -284,6 +286,97 @@ OPS = {
           }
         }
       }
+    }
+  }
+}"""),
+    "CustomerOverviewUpcomingAppointmentQuery": ("query", "CustomerOverviewUpcomingAppointmentQuery", """query CustomerOverviewUpcomingAppointmentQuery($customerId: ID!, $first: Int!) {
+  __typename
+  appointments: Appointments_appointments(
+    first: $first
+    customerId: $customerId
+    onlyFuture: true
+    order: {field: START_DATETIME, direction: ASC}
+  ) {
+    __typename
+    edges {
+      __typename
+      node {
+        __typename
+        ...CustomerAppointmentCard
+      }
+      cursor
+    }
+  }
+}
+fragment CustomerAppointmentCard on Appointments_Appointment {
+  __typename
+  id
+  status
+  statusLabelId
+  startWallClock
+  locationId
+  primaryBookingId
+  salesOrderId
+  customerId
+  preferredNote {
+    __typename
+    note {
+      __typename
+      id
+      legacyRef
+      body
+      attachments {
+        __typename
+        id
+      }
+    }
+    totalNoteCount
+  }
+  consultationForms {
+    __typename
+    id
+    status
+  }
+  bookings {
+    __typename
+    id
+    priceType
+    price
+    startWallClock
+    startDatetime
+    endDatetime
+    orderItem {
+      __typename
+      salePrice
+      quantity
+    }
+    bookingServiceAddOns {
+      __typename
+      serviceAddOnId
+      orderItem {
+        __typename
+        quantity
+        salePrice
+      }
+      serviceAddOn {
+        __typename
+        name
+      }
+    }
+    servicePricingLevelId
+    service {
+      __typename
+      name
+      servicePricingLevels {
+        __typename
+        id
+        name
+      }
+    }
+    employee {
+      __typename
+      firstName
+      lastName
     }
   }
 }"""),

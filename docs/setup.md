@@ -195,7 +195,14 @@ nothing, answering "Would have booked ..." so the drafts read right. In
 categories only; the client must already be on Fresha under the name the
 bot has; anything else is a hand-over with the details, as before.
 
-Every booking the bot makes is posted to the Telegram group as
+Cancelling works the same way through a `cancel_appointment` tool: the bot
+confirms which appointment, asks Fresha whether cancelling now carries a fee,
+cancels with Fresha's notification when it is free, and hands over to the
+team when a fee applies, so nobody but the team ever decides about money.
+`python scripts/fresha_book.py upcoming <client id> --fee` shows what the
+tool sees for a client.
+
+Every booking or cancellation the bot makes is posted to the Telegram group as
 `Nails: booked by the bot: <client>: FB` with the slot and Fresha id, and
 emailed to the ops topic. Fresha itself sends the client the confirmation
 with the card step, exactly as for a dashboard booking (proved 2026-10-21).

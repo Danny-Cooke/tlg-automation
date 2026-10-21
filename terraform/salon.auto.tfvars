@@ -33,6 +33,11 @@ salon = {
     Hair colour services need a patch test at least 24 hours before the appointment.
     Clients can also book a group appointment on the same Fresha link.
     Prices marked "from" depend on consultation, length or thickness.
+    Cancellation policy (Fresha, applies to every booking): free to cancel until 24 hours before
+    the appointment start time, counted back from the appointment, not from when it was booked;
+    inside those 24 hours the full price is charged as a late cancellation fee, and a no-show is
+    charged the full price. So an appointment booked for later today or tomorrow morning is
+    already inside the window. Fresha takes card details at booking to cover this.
     Tiny Tattoo Tuesdays: fine-line tattoos up to 3x3 inches for a reduced price, Tuesdays only.
     The salon has an Alice in Wonderland / steampunk theme ("Where Beauty Meets Alchemy").
     Children's pamper parties are called "Mini Hatters Pamper" at The Little Looking Glass.

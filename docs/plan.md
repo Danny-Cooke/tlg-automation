@@ -109,10 +109,12 @@ name, Fresha's own clash check before the write, an idempotency key per
 conversation and slot (so no queue is needed), the booking recorded on the
 conversation, a Telegram post and an ops email per booking, dry run outside
 live mode. The persona and prompt now read the slot back, ask "shall I pop
-you in?", and only say booked when the tool said Booked. Not yet: creating
-new clients (mutation unrecorded), reschedule, the three-days-to-expiry
-Telegram nag. Next: first live booking through Messenger with the trigger
-word, then a watched week.
+you in?", and only say booked when the tool said Booked. First live booking through Messenger the same day (Biab with Carmen, booked,
+confirmed by email, cancelled). Cancel tool added the same afternoon: lists
+the client's upcoming appointments, cancels free ones with Fresha's
+notification, hands over when Fresha reports a fee. Not yet: creating new
+clients (mutation unrecorded), the three-days-to-expiry Telegram nag. Next: a watched week with the trigger word, then the Telegram group id, then
+new clients.
 
 Behaviour as stated by the user, 2026-10-20 (planning, not yet built):
 

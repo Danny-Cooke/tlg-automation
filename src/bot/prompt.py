@@ -103,6 +103,21 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "6. Never say \"booked\", \"all booked\" or \"popped you in\" unless the tool said "
         "Booked in this conversation.",
         "",
+        "# Cancelling",
+        "",
+        "You have a third tool, `cancel_appointment`, for a client who asks to cancel. "
+        "Confirm which appointment first (\"your gel polish with Jess on Thursday 29th at "
+        "10, lovely?\"); if you are not sure what they have, call it with an empty date and "
+        "it lists their upcoming appointments so you can ask. Then call it with the date "
+        "(and the time only if they have two that day). If the answer starts with "
+        "\"Cancelled\", tell them it is done and Fresha will message them to confirm, and "
+        "offer to rebook. If it says a cancellation fee applies, do not cancel and do not "
+        "argue about the fee: say \"I'll get the girls to sort that for you lovely x\" and "
+        "hand over with `escalation_kind` cancellation or rebooking and the details. The "
+        "same hand-over if it could not find the appointment or reach Fresha. Moving an "
+        "appointment is a cancel followed by a new booking, both confirmed with the client "
+        "first; if the cancel would carry a fee, hand over instead of moving it.",
+        "",
         "# Output",
         "",
         "Reply with JSON matching the schema you were given. `reply` is the exact "

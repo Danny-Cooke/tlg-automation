@@ -80,6 +80,19 @@ class Booking:
 
 
 @dataclass(frozen=True)
+class Upcoming:
+    """One future appointment of a client, as the dashboard's client card lists them."""
+    appointment_id: str
+    status: str                # UNCONFIRMED, CONFIRMED, CANCELLED, ...
+    date: str                  # YYYY-MM-DD, salon wall clock
+    time: str                  # HH:MM
+    service: str
+    person: str                # employee first name
+    price: str = ""
+    customer_id: str = ""
+
+
+@dataclass(frozen=True)
 class Quote:
     strategy: str              # NO_PROTECTION, CARD_CONFIRMATION, ...
     cancellation_fee: str
@@ -267,6 +280,39 @@ class Fresha:
     def view(self, appointment_id: str) -> dict:
         return self.graphql("viewAppointment", {"id": appointment_id}).get("appointment") or {}
 
+    def upcoming(self, customer_id: str, *, first: int = 10) -> list[Upcoming]:
+        """A client's future appointments, soonest first (the client card's query
+        with its page size made a variable)."""
+        data = self.graphql("CustomerOverviewUpcomingAppointmentQuery", {"customerId": customer_id, "first": first})
+        out: list[Upcoming] = []
+        for edge in (data.get("appointments") or {}).get("edges") or []:
+            node = edge.get("node") or {}
+            bookings = node.get("bookings") or []
+            first_booking = bookings[0] if bookings else {}
+            wall = str(node.get("startWallClock") or "")  # "2026-10-29T10:00:00[Europe/London]"
+            emp = first_booking.get("employee") or {}
+            out.append(Upcoming(
+                appointment_id=str(node.get("id", "")), status=str(node.get("status", "")),
+                date=wall[:10], time=wall[11:16],
+                service=" + ".join((b.get("service") or {}).get("name", "").strip() for b in bookings) or "appointment",
+                person=str(emp.get("firstName") or "").strip().title(),
+                price=str(first_booking.get("price") or ""), customer_id=str(node.get("customerId", "")),
+            ))
+        return out
+
+    def cancellation_fee(self, appointment_id: str) -> str:
+        """What Fresha would charge to cancel now: "" when nothing (its NO_FEE
+        answer), else the amount as a string. Same call the dashboard makes
+        when the cancel dialog opens; it charges nothing by itself."""
+        data = self.graphql("initializeAppointmentProtectionEnforcement",
+                            {"input": {"action": "CANCELLATION", "appointmentId": appointment_id}}, tolerate=NO_FEE)
+        enforcement = (data.get("initializeAppointmentProtectionEnforcement") or {}).get("appointmentProtectionEnforcement") or {}
+        amount = str(enforcement.get("protectionAmount") or "")
+        try:
+            return amount if float(amount) > 0 else ""
+        except ValueError:
+            return ""
+
     # -- writes ----------------------------------------------------------------
 
     def create(self, *, customer_id: str, pricing_level_id: str, price: str, duration_s: int, employee_id: str,
@@ -306,11 +352,13 @@ class Fresha:
         log.info("Fresha booked appointment %s (%s %s, level %s, staff %s)", appt, date, start, pricing_level_id, employee_id)
         return Booking(appointment_id=str(appt), booking_id=str(payload.get("primaryBookingId", "")), warnings=warnings)
 
-    def cancel(self, appointment_id: str, *, notify: bool = False) -> str:
+    def cancel(self, appointment_id: str, *, notify: bool = False, enforce: bool = True) -> str:
         """Cancel without charging, the dashboard's two-step way. Never takes a
-        fee: the salon decides fees by hand."""
-        self.graphql("initializeAppointmentProtectionEnforcement",
-                     {"input": {"action": "CANCELLATION", "appointmentId": appointment_id}}, tolerate=NO_FEE)
+        fee: the salon decides fees by hand. `enforce=False` skips the first
+        step when `cancellation_fee` was just called for this appointment."""
+        if enforce:
+            self.graphql("initializeAppointmentProtectionEnforcement",
+                         {"input": {"action": "CANCELLATION", "appointmentId": appointment_id}}, tolerate=NO_FEE)
         data = self.graphql("cancelAppointmentWithNoCharge", {"input": {
             "appointmentId": appointment_id,
             "cancellationOptions": {"cancelFutureAppointments": False},

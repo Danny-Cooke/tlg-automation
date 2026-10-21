@@ -250,10 +250,9 @@ def tools(convo: Conversation | None = None, store: ConversationStore | None = N
     if cfg.venue_url:
         out["check_availability"] = lambda args: run_availability(args, cfg)
     if convo is not None and os.environ.get("FRESHA_SESSION_PARAM"):
-        out["book_appointment"] = lambda args: booking.book(
-            args, cfg=cfg, convo=convo, dry_run=MODE != "live",
-            save=store.save if store else None, notify=escalation.notify_booking,
-        )
+        common = dict(cfg=cfg, convo=convo, dry_run=MODE != "live", save=store.save if store else None, notify=escalation.notify_booking)
+        out["book_appointment"] = lambda args: booking.book(args, **common)
+        out["cancel_appointment"] = lambda args: booking.cancel(args, **common)
     return out
 
 

@@ -91,11 +91,12 @@ def notify(
     log.info("Escalated %s", json.dumps({"sender_id": convo.sender_id, "reason": reason}))
 
 
-def notify_booking(convo: Conversation, summary: str, appointment_id: str, *, sns=None, telegram=None) -> None:
-    """The bot has just put an appointment into Fresha: tell the team group in
-    the usual one-line shape, and the ops topic for the record. Best effort."""
+def notify_booking(convo: Conversation, summary: str, appointment_id: str, *, kind: str = "booked by the bot", sns=None, telegram=None) -> None:
+    """The bot has just put an appointment into Fresha, or taken one out: tell
+    the team group in the usual one-line shape, and the ops topic for the
+    record. Best effort."""
     page_id = os.environ.get("META_PAGE_ID", "")
-    text = format_telegram(convo, page_id, area="nails", kind="booked by the bot", reason=f"{summary} (Fresha {appointment_id})")
+    text = format_telegram(convo, page_id, area="nails", kind=kind, reason=f"{summary} (Fresha {appointment_id})")
     poster = telegram or _telegram().post_handover
     try:
         poster(text)
@@ -106,15 +107,16 @@ def notify_booking(convo: Conversation, summary: str, appointment_id: str, *, sn
         log.info("OPS_TOPIC_ARN not set; booking not emailed: %s", summary)
         return
     who = convo.client_name or convo.sender_id
+    verb = kind.split(" by ")[0].capitalize()  # Booked / Cancelled
     body = "\n".join([
-        f"Booked by the bot: {summary}",
+        f"{kind.capitalize()}: {summary}",
         f"Fresha appointment: {appointment_id}",
         f"Channel: {convo.channel}",
         f"Client: {who}",
         f"Open inbox: {business_suite_link(convo.channel, page_id)}",
     ])
     try:
-        (sns or _sns()).publish(TopicArn=topic_arn, Subject=f"[TLG bot] Booked: {summary}"[:100], Message=body)
+        (sns or _sns()).publish(TopicArn=topic_arn, Subject=f"[TLG bot] {verb}: {summary}"[:100], Message=body)
     except Exception:  # noqa: BLE001
         log.exception("Booking email failed")
 

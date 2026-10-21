@@ -119,7 +119,33 @@ BOOKING_TOOL = {
     },
 }
 
-TOOL_DEFINITIONS = {"check_availability": AVAILABILITY_TOOL, "book_appointment": BOOKING_TOOL}
+CANCEL_TOOL = {
+    "name": "cancel_appointment",
+    "description": (
+        "Cancel one of the client's upcoming appointments in the salon's Fresha diary. Call it "
+        "only after the client has asked to cancel and you have confirmed which appointment "
+        "(day, and time if they have more than one that day). Without a date it lists their "
+        "upcoming appointments so you can ask which. It answers 'Cancelled: ...' when done, "
+        "or says why it did not cancel: a cancellation fee applies, nothing found, or Fresha "
+        "could not be reached. Never tell the client it is cancelled unless the answer starts "
+        "with 'Cancelled'."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "date": {"type": "string", "description": "YYYY-MM-DD of the appointment to cancel; empty to list their upcoming appointments."},
+            "time": {"type": "string", "description": "Start time HH:MM, only needed when they have two appointments that day."},
+            "client_name": {
+                "type": "string",
+                "description": "The client's full name as Fresha would have it: their profile name from the context unless they gave a different one in chat.",
+            },
+        },
+        "required": ["date", "time", "client_name"],
+        "additionalProperties": False,
+    },
+}
+
+TOOL_DEFINITIONS = {"check_availability": AVAILABILITY_TOOL, "book_appointment": BOOKING_TOOL, "cancel_appointment": CANCEL_TOOL}
 
 SAFE_REPLY = "Thanks for your message. Let me check that with the team and come back to you shortly."
 

@@ -142,6 +142,27 @@ Step 2's variables are `{"input": {"action": "CANCELLATION", "appointmentId":
 "..."}}`. The cancel screen's "Send a cancellation notification" tick box is
 `sendNotification` in step 3.
 
+## A client's upcoming appointments, and whether cancelling costs
+
+`CustomerOverviewUpcomingAppointmentQuery {customerId}` is the client
+card's "next appointment" query: `Appointments_appointments(first: 1,
+customerId, onlyFuture: true, order START_DATETIME asc)`. The recorded text
+had `first: 1` hard-coded; `src/bot/fresha_ops.py` carries it with a
+`$first` variable instead, and Fresha accepted that (checked live
+2026-10-21, nine rows back). `onlyFuture` still includes cancelled
+appointments, so filter on `status` (UNCONFIRMED, CONFIRMED, CANCELLED seen).
+Each node has `startWallClock` ("2026-10-29T10:00:00[Europe/London]"),
+`bookings[].service.name`, `bookings[].employee.firstName/lastName`,
+`bookings[].price`.
+
+`initializeAppointmentProtectionEnforcement {action: CANCELLATION,
+appointmentId}` is the fee signal: the `NO_FEE` error means cancelling is
+free now; otherwise `appointmentProtectionEnforcement.protectionAmount` is
+what the salon's policy would charge. On an already-cancelled appointment it
+errors with "Appointment already cancelled". The bot's cancel tool cancels
+only in the `NO_FEE` case and hands over otherwise, so the team keeps every
+fee decision.
+
 ## Availability
 
 Query `availableTimeSlots` returns, per date, `closed` and a list of

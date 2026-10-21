@@ -232,7 +232,7 @@ def test_handler_offers_booking_only_with_a_session_parameter_and_a_conversation
     assert set(handler.tools(convo())) == {"check_availability"}
     monkeypatch.setenv("FRESHA_SESSION_PARAM", "/tlg/test/fresha/session")
     assert set(handler.tools()) == {"check_availability"}
-    assert set(handler.tools(convo())) == {"check_availability", "book_appointment"}
+    assert set(handler.tools(convo())) == {"check_availability", "book_appointment", "cancel_appointment"}
     handler.salon.cache_clear()
 
 
@@ -300,3 +300,122 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
     assert "shall I pop you in" in prompt
     assert "card details" in prompt
     assert "Only say \"all booked" in persona_text
+
+
+# -- cancelling ---------------------------------------------------------------
+
+
+UP = [
+    fresha.Upcoming("1332159791", "UNCONFIRMED", "2026-10-29", "10:00", "Gel polish", "Jess", "34.00", "279113349"),
+    fresha.Upcoming("1332196579", "CANCELLED", "2026-10-27", "11:30", "Biab", "Carmen", "40.00", "279113349"),
+    fresha.Upcoming("1332200000", "CONFIRMED", "2026-10-29", "14:00", "Biab", "Sav", "40.00", "279113349"),
+]
+
+
+class CancelFresha(FakeFresha):
+    def __init__(self, upcoming=UP, fee="", **kw):
+        super().__init__(**kw)
+        self.upcoming_rows, self.fee, self.cancelled, self.fee_checked = list(upcoming), fee, [], []
+
+    def upcoming(self, customer_id, *, first=10):
+        return self.upcoming_rows
+
+    def cancellation_fee(self, appointment_id):
+        self.fee_checked.append(appointment_id)
+        return self.fee
+
+    def cancel(self, appointment_id, *, notify=False, enforce=True):
+        self.cancelled.append((appointment_id, notify, enforce))
+        return appointment_id
+
+
+def run_cancel(cfg, f=None, c=None, dry_run=False, **kw):
+    f = f or CancelFresha()
+    c = c or convo()
+    a = {"date": "2026-10-29", "time": "10:00", "client_name": "Danny Cooke", **kw.pop("args", {})}
+    return booking.cancel(a, cfg=cfg, convo=c, dry_run=dry_run, session=SESSION, fresha=f, now=NOW, **kw), f, c
+
+
+def test_cancels_a_free_appointment_with_notification(cfg):
+    saved, pinged = [], []
+    out, f, c = run_cancel(cfg, save=saved.append, notify=lambda convo, summary, appt, kind="": pinged.append((summary, appt, kind)))
+    assert out.startswith("Cancelled: Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke (Fresha appointment 1332159791)")
+    assert f.fee_checked == ["1332159791"] and f.cancelled == [("1332159791", True, False)]
+    assert c.bookings[-1]["appointment_id"] == "1332159791" and c.bookings[-1]["cancelled_at"]
+    assert saved == [c] and pinged == [("Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke", "1332159791", "cancelled by the bot")]
+
+
+def test_a_fee_means_hand_over_not_cancel(cfg):
+    out, f, _ = run_cancel(cfg, f=CancelFresha(fee="34.00"))
+    assert "£34.00 cancellation fee" in out and "Hand over to Jess (kind: cancellation or rebooking)" in out
+    assert f.cancelled == []
+
+
+def test_cancel_finds_the_right_one(cfg):
+    out, f, _ = run_cancel(cfg, args={"time": ""})
+    assert out.startswith("More than one that day") and "Gel polish with Jess" in out and "Biab with Sav" in out and f.cancelled == []
+    out, f, _ = run_cancel(cfg, args={"time": "14:00"})
+    assert out.startswith("Cancelled: Biab with Sav")
+    out, f, _ = run_cancel(cfg, args={"date": "2026-10-27", "time": ""})  # that one is already cancelled
+    assert out.startswith("Nothing on 2026-10-27") and "Gel polish with Jess, Thu 29 Oct 10am" in out
+    out, f, _ = run_cancel(cfg, args={"date": "", "time": ""})
+    assert out.startswith("Which one?") and "Biab with Carmen" not in out
+    out, f, _ = run_cancel(cfg, f=CancelFresha(upcoming=[]))
+    assert "no upcoming appointments" in out
+
+
+def test_cancel_dry_run_and_errors(cfg):
+    out, f, _ = run_cancel(cfg, dry_run=True)
+    assert out.startswith("Would have cancelled (not live)") and f.cancelled == []
+    out, f, _ = run_cancel(cfg, f=CancelFresha(clients=[]))
+    assert out.startswith("No Fresha client") and "cancellation or rebooking" in out
+    assert "in the past" in run_cancel(cfg, args={"date": "2026-10-01"})[0]
+    assert "name is not known" in run_cancel(cfg, c=convo(client_name=""), args={"client_name": ""})[0]
+
+    class Broken(CancelFresha):
+        def cancel(self, *a, **kw):
+            raise fresha.FreshaError("Appointment already cancelled")
+
+    out, f, _ = run_cancel(cfg, f=Broken())
+    assert out.startswith("Fresha refused the cancellation")
+
+
+def test_a_cancelled_slot_can_be_booked_again(cfg):
+    c = convo()
+    run(cfg, c=c)
+    run_cancel(cfg, c=c)
+    out, f, _ = run(cfg, c=c)
+    assert out.startswith("Booked") and f.created
+
+
+def test_fresha_upcoming_and_fee_parse_the_dashboard_shapes():
+    from test_fresha import Http
+
+    node = {"id": "1332159791", "status": "UNCONFIRMED", "startWallClock": "2026-10-29T10:00:00[Europe/London]", "customerId": "279113349",
+            "bookings": [{"price": "34.00", "service": {"name": "Gel polish "}, "employee": {"firstName": "jess", "lastName": "preston"}}]}
+    http = Http({"CustomerOverviewUpcomingAppointmentQuery": {"data": {"appointments": {"edges": [{"node": node}]}}}})
+    rows = fresha.Fresha(SESSION, http).upcoming("279113349", first=5)
+    assert rows == [fresha.Upcoming("1332159791", "UNCONFIRMED", "2026-10-29", "10:00", "Gel polish", "Jess", "34.00", "279113349")]
+    assert json.loads(http.calls[0][2]["data"]["variables"]) == {"customerId": "279113349", "first": 5}
+
+    no_fee = Http({"initializeAppointmentProtectionEnforcement": {"errors": [{"message": "x", "extensions": {"code": "NO_FEE"}}], "data": None}})
+    assert fresha.Fresha(SESSION, no_fee).cancellation_fee("1") == ""
+    fee = Http({"initializeAppointmentProtectionEnforcement": {"data": {"initializeAppointmentProtectionEnforcement": {"appointmentProtectionEnforcement": {"protectionAmount": "34.00"}}}}})
+    assert fresha.Fresha(SESSION, fee).cancellation_fee("1") == "34.00"
+
+
+def test_handler_offers_cancel_with_the_booking_tool(monkeypatch):
+    monkeypatch.setenv("SALON_CONFIG_JSON", json.dumps(CONFIG))
+    monkeypatch.setenv("FRESHA_SESSION_PARAM", "/tlg/test/fresha/session")
+    handler.salon.cache_clear()
+    assert set(handler.tools(convo())) == {"check_availability", "book_appointment", "cancel_appointment"}
+    handler.salon.cache_clear()
+    assert set(brain.CANCEL_TOOL["input_schema"]["required"]) == {"date", "time", "client_name"}
+
+
+def test_prompt_and_persona_carry_the_cancel_rules(persona_text, salon_config_json):
+    from bot.prompt import build_system_prompt
+
+    prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
+    assert "# Cancelling" in prompt and "`cancel_appointment`" in prompt and "cancellation fee applies" in prompt
+    assert "never discuss or waive the fee" in persona_text
