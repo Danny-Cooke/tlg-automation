@@ -20,12 +20,12 @@ log = logging.getLogger(__name__)
 MODEL = os.environ.get("CLAUDE_MODEL", "claude-opus-5-5")
 EFFORT = os.environ.get("CLAUDE_EFFORT", "low")
 MAX_TOKENS = 1024  # replies are two or three sentences; the JSON wrapper is small
-MAX_TOOL_ROUNDS = 4  # a lookup or two, then the booking; more than this is a loop
+MAX_TOOL_ROUNDS = 5  # a move is check, availability, book, cancel; more than this is a loop
 
 ESCALATE_TO = ["", "jess", "carmen", "lori-dee"]
 AREAS = ["", "nails", "hair", "tattoos", "aesthetics", "beauty", "general"]
 # The team's own words for why a thread is being handed over (user, 2026-10-20).
-ESCALATION_KINDS = ["", "complaint", "booking", "cancellation or rebooking", "can't assist anymore", "spam"]
+ESCALATION_KINDS = ["", "complaint", "booking", "cancellation or rebooking", "cancellation fee", "can't assist anymore", "spam"]
 
 REPLY_SCHEMA = {
     "type": "object",
@@ -49,7 +49,7 @@ REPLY_SCHEMA = {
         "escalation_kind": {
             "type": "string",
             "enum": ESCALATION_KINDS,
-            "description": "Why: complaint; booking (a slot agreed in chat that needs putting in); cancellation or rebooking; can't assist anymore (anything else you cannot handle); spam. Empty if not escalating.",
+            "description": "Why: complaint; booking (a slot agreed in chat that the tool could not put in); cancellation or rebooking (one the tool could not do); cancellation fee (a client inside the 24-hour window who is unsure or asks not to pay; Jess decides, the bot goes quiet); can't assist anymore (anything else you cannot handle); spam. Empty if not escalating.",
         },
         "suggested_booking_link": {
             "type": "string",
@@ -127,8 +127,8 @@ CANCEL_TOOL = {
         "(day, and time if they have more than one that day). Without a date it lists their "
         "upcoming appointments so you can ask which. It answers 'Cancelled: ...' when done, "
         "or says why it did not cancel: a cancellation fee applies, nothing found, or Fresha "
-        "could not be reached. Never tell the client it is cancelled unless the answer starts "
-        "with 'Cancelled'."
+        "could not be reached. With check_only it only reports whether cancelling would be free. "
+        "Never tell the client it is cancelled unless the answer starts with 'Cancelled'."
     ),
     "input_schema": {
         "type": "object",
@@ -139,8 +139,12 @@ CANCEL_TOOL = {
                 "type": "string",
                 "description": "The client's full name as Fresha would have it: their profile name from the context unless they gave a different one in chat.",
             },
+            "check_only": {
+                "type": "boolean",
+                "description": "True to only find the appointment and ask Fresha whether cancelling it now is free, without cancelling. Use this first when moving an appointment.",
+            },
         },
-        "required": ["date", "time", "client_name"],
+        "required": ["date", "time", "client_name", "check_only"],
         "additionalProperties": False,
     },
 }

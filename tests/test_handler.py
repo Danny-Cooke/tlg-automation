@@ -237,7 +237,7 @@ def test_booking_handover_keeps_the_bot_talking(wired, monkeypatch):
     assert store.items["psid1"].handed_to_jess is False
     handler.process_message(inbound("actually can we do thursday", mid="m2"), store)
     assert calls["sent"][-1] == ("psid1", "Still here x")
-    assert handler.LOCKING_KINDS == {"complaint", "can't assist anymore", ""}
+    assert handler.LOCKING_KINDS == {"complaint", "cancellation fee", "can't assist anymore", ""}
 
 
 def test_shadow_mode_never_sends_to_client(wired, monkeypatch):

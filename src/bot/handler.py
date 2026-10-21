@@ -54,7 +54,8 @@ TEST_TRIGGER = os.environ.get("MESSAGE_TEST_TRIGGER", "joshsmells")
 REPLY_DELAY_SECONDS = float(os.environ.get("REPLY_DELAY_SECONDS", "10"))
 # Hand-over kinds after which the bot stays quiet on the thread. The rest
 # (booking, cancellation or rebooking, spam) notify the team and carry on.
-LOCKING_KINDS = frozenset({"complaint", "can't assist anymore", ""})
+# A cancellation-fee plea locks too: Jess decides about money (user, 2026-10-21).
+LOCKING_KINDS = frozenset({"complaint", "cancellation fee", "can't assist anymore", ""})
 SALON_TZ = zoneinfo.ZoneInfo(os.environ.get("SALON_TIMEZONE", "Europe/London"))
 
 

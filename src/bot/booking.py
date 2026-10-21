@@ -144,10 +144,14 @@ def cancel(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, 
     """The `cancel_appointment` tool. Finds the client's future appointment on
     the given date (and time, if given), and cancels it with Fresha's
     notification on when Fresha says there is nothing to charge. When a fee
-    applies the bot does not decide about money: it hands over."""
+    applies the bot does not decide about money: it warns and the client or
+    Jess decides. `check_only` stops after the fee check, for a move: the bot
+    books the new slot first and cancels the old one after, so a failed
+    booking never leaves the client with nothing."""
     date = str(args.get("date") or "").strip()
     time_ = _normalise_time(str(args.get("time") or ""))
     client_name = str(args.get("client_name") or convo.client_name or "").strip()
+    check_only = bool(args.get("check_only"))
     now = now or dt.datetime.now(dt.timezone.utc)
     if not client_name:
         return "The client's name is not known. Ask for it, then cancel."
@@ -181,8 +185,16 @@ def cancel(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, 
         summary = f"{appt.service} with {appt.person}, {_pretty(appt.date, appt.time)}, for {client.name}"
         fee = f.cancellation_fee(appt.appointment_id)
         if fee:
-            return (f"Cancelling {summary} now carries a £{fee} cancellation fee under the salon's policy, "
-                    "so the bot does not cancel it. " + FEE_HAND_OVER)
+            return (f"Not cancelled: {summary} is inside the 24-hour window, so cancelling now carries a £{fee} "
+                    "cancellation fee under the salon's policy, and the bot never cancels when a fee applies. "
+                    "Warn the client of the fee and ask if they are sure. If they are unsure, or ask not to pay it, "
+                    "say you will just check with Jess and hand over with escalation_kind 'cancellation fee'; "
+                    "the thread then goes quiet for Jess. If they say cancel anyway, do not call this tool again: "
+                    "tell them the fee will apply and that the quickest way is the link in their Fresha "
+                    "confirmation, which lets them cancel it themselves, and say you hope to see them again soon.")
+        if check_only:
+            return (f"Free to cancel: {summary} (Fresha appointment {appt.appointment_id}) is outside the 24-hour window, "
+                    "nothing charged. Not cancelled yet: book the new slot first if this is a move, then call again without check_only.")
         if dry_run:
             log.info("cancel_appointment dry run: %s", summary)
             return f"Would have cancelled (not live): {summary}. Tell the client it is cancelled and Fresha will confirm by message."

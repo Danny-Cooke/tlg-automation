@@ -321,6 +321,14 @@ cancellations too. It cancels one of the client's upcoming appointments
 when Fresha's own enforcement check says there is nothing to charge, with
 the cancellation notification on. When Fresha reports a fee the bot does
 not cancel, does not discuss the fee, and hands over, because the humans
-decide whether to waive it. Moving a booking is a cancel plus a new
-booking, both confirmed with the client; a move that would carry a fee is
-a hand-over.
+decide whether to waive it. Refined the same afternoon: inside the window
+the bot warns of the fee and asks "are you sure?". A client who is unsure
+or asks not to pay gets "bear with me a moment" and a locking hand-over to
+Jess (kind "cancellation fee"); the bot does not continue on that thread.
+A client who says cancel anyway is sent to the link in their Fresha
+confirmation to cancel it themselves, with a warm sign-off: a cancellation
+that costs money is theirs to make, not the bot's. Moving a booking outside
+the window is the bot's to do (user, same afternoon): it checks the old one
+is free to cancel, agrees the new slot, books it, and only then cancels the
+old one, so a failed booking never leaves the client with nothing. A move
+inside the window is handled like a cancellation with a fee.

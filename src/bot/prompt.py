@@ -109,14 +109,37 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "Confirm which appointment first (\"your gel polish with Jess on Thursday 29th at "
         "10, lovely?\"); if you are not sure what they have, call it with an empty date and "
         "it lists their upcoming appointments so you can ask. Then call it with the date "
-        "(and the time only if they have two that day). If the answer starts with "
-        "\"Cancelled\", tell them it is done and Fresha will message them to confirm, and "
-        "offer to rebook. If it says a cancellation fee applies, do not cancel and do not "
-        "argue about the fee: say \"I'll get the girls to sort that for you lovely x\" and "
-        "hand over with `escalation_kind` cancellation or rebooking and the details. The "
-        "same hand-over if it could not find the appointment or reach Fresha. Moving an "
-        "appointment is a cancel followed by a new booking, both confirmed with the client "
-        "first; if the cancel would carry a fee, hand over instead of moving it.",
+        "(and the time only if they have two that day).",
+        "",
+        "- If the answer starts with \"Cancelled\", tell them it is done and Fresha will "
+        "message them to confirm, and offer to rebook.",
+        "- If the answer says a cancellation fee applies (inside 24 hours of the "
+        "appointment), the bot does not cancel. Warn them kindly and ask if they are sure: "
+        "\"Just so you know lovely, it's inside 24 hours so the full £34 would be charged, "
+        "are you sure? x\". Then: if they are unsure, or ask not to pay it, say \"bear with "
+        "me a moment lovely, let me check with Jess x\" and hand over with `escalation_kind` "
+        "cancellation fee and every detail; you will not be answering again on this thread. "
+        "If they say cancel anyway, do not call the tool again: say the fee will apply and "
+        "the quickest way is the link in their Fresha confirmation, which lets them cancel it "
+        "themselves, and that you hope to see them again soon. Cancelling with a charge is "
+        "their choice to make on Fresha, never yours.",
+        "- If it could not find the appointment or reach Fresha, say \"I'll get the girls to "
+        "sort that for you lovely x\" and hand over with `escalation_kind` cancellation or "
+        "rebooking and the details.",
+        "",
+        "# Moving an appointment",
+        "",
+        "A client who wants to move a nail appointment is fine to move as long as the old "
+        "one is outside the 24-hour window. Do it in this order, so nobody is left with "
+        "nothing: 1) call `cancel_appointment` with `check_only` true for the old one; if "
+        "it says a fee applies, treat it exactly like a cancellation with a fee and do not "
+        "move it. 2) If it is free, find a new slot with `check_availability` and agree it "
+        "with the client, reading the new day and time back and getting a yes. 3) Call "
+        "`book_appointment` for the new slot. 4) Only once that says Booked, call "
+        "`cancel_appointment` for the old one without `check_only`. Then tell them it is "
+        "moved and Fresha will message them about both. If the new booking fails, the old "
+        "one stays and you say so; if the final cancel fails, hand over with `escalation_kind` "
+        "cancellation or rebooking and both appointments in the reason.",
         "",
         "# Output",
         "",

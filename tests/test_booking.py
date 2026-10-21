@@ -347,7 +347,7 @@ def test_cancels_a_free_appointment_with_notification(cfg):
 
 def test_a_fee_means_hand_over_not_cancel(cfg):
     out, f, _ = run_cancel(cfg, f=CancelFresha(fee="34.00"))
-    assert "£34.00 cancellation fee" in out and "Hand over to Jess (kind: cancellation or rebooking)" in out
+    assert out.startswith("Not cancelled:") and "£34.00" in out and "'cancellation fee'" in out
     assert f.cancelled == []
 
 
@@ -410,7 +410,7 @@ def test_handler_offers_cancel_with_the_booking_tool(monkeypatch):
     handler.salon.cache_clear()
     assert set(handler.tools(convo())) == {"check_availability", "book_appointment", "cancel_appointment"}
     handler.salon.cache_clear()
-    assert set(brain.CANCEL_TOOL["input_schema"]["required"]) == {"date", "time", "client_name"}
+    assert set(brain.CANCEL_TOOL["input_schema"]["required"]) == {"date", "time", "client_name", "check_only"}
 
 
 def test_prompt_and_persona_carry_the_cancel_rules(persona_text, salon_config_json):
@@ -418,4 +418,44 @@ def test_prompt_and_persona_carry_the_cancel_rules(persona_text, salon_config_js
 
     prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
     assert "# Cancelling" in prompt and "`cancel_appointment`" in prompt and "cancellation fee applies" in prompt
-    assert "never discuss or waive the fee" in persona_text
+    assert "Never waive, argue or decide a fee" in persona_text
+
+
+def test_fee_answer_scripts_the_three_way_conversation(cfg):
+    out, f, _ = run_cancel(cfg, f=CancelFresha(fee="34.00"))
+    assert out.startswith("Not cancelled:") and "£34.00" in out and "24-hour" in out
+    assert "are sure" in out and "'cancellation fee'" in out and "Fresha confirmation" in out
+    assert f.cancelled == []
+
+
+def test_cancellation_fee_hand_over_locks_the_thread():
+    assert "cancellation fee" in brain.ESCALATION_KINDS
+    assert "cancellation fee" in handler.LOCKING_KINDS
+    assert "cancellation or rebooking" not in handler.LOCKING_KINDS
+
+
+def test_prompt_and_persona_carry_the_fee_script(persona_text, salon_config_json):
+    from bot.prompt import build_system_prompt
+
+    prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
+    for phrase in ["are you sure", "bear with me a moment", "link in their Fresha confirmation", "their choice to make on Fresha"]:
+        assert phrase in prompt, phrase
+    assert "Never waive, argue or decide a fee" in persona_text
+
+
+def test_check_only_reports_the_window_without_cancelling(cfg):
+    out, f, c = run_cancel(cfg, args={"check_only": True})
+    assert out.startswith("Free to cancel: Gel polish with Jess, Thu 29 Oct 10am") and "1332159791" in out
+    assert f.cancelled == [] and c.bookings == []
+    out, f, _ = run_cancel(cfg, f=CancelFresha(fee="34.00"), args={"check_only": True})
+    assert out.startswith("Not cancelled:") and f.cancelled == []
+    assert "check_only" in brain.CANCEL_TOOL["input_schema"]["required"]
+
+
+def test_prompt_and_persona_carry_the_move_order(persona_text, salon_config_json):
+    from bot.prompt import build_system_prompt
+
+    prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
+    assert "# Moving an appointment" in prompt
+    assert prompt.index("`check_only` true for the old one") < prompt.index("`book_appointment` for the new slot") < prompt.index("without `check_only`")
+    assert "book the new one, then cancel\n  the old one, in that order" in persona_text
