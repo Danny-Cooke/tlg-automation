@@ -63,7 +63,7 @@ Variables: `MESSAGE_TEST_MODE` (`true`: only messages starting with the
 trigger word are answered, so only the tester hears from the bots; `false`:
 everyone is answered), `BOT_MODE` (`simple`, the default, then `shadow`,
 then `live`), `ESCALATION_EMAILS` (JSON list, Jess, from shadow mode on) and
-`CARMENS_PHONE` (her WhatsApp number as clients should dial it; tattoo questions
+`CARMEN_PHONE` (her WhatsApp number as clients should dial it; tattoo questions
 beyond a consultation are sent there in her words; empty means the bot uses
 the holding line instead).
 
