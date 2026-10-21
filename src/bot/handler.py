@@ -18,7 +18,7 @@ BOT_MODE decides how a message is answered:
 
 In the Claude modes the bot knows the client's name (Meta's profile call,
 once per thread), can look up real availability on Fresha's public booking
-flow, and in live mode can put an agreed nail appointment into Fresha with
+flow, and in live mode can put an agreed nail or hair appointment into Fresha with
 the owner's stored session (bot/booking.py). In shadow mode the booking tool
 checks everything and writes nothing.
 """

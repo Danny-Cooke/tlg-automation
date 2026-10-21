@@ -108,7 +108,10 @@ from the laptop (`scripts/fresha_book.py`), and `src/bot/booking.py`, the
 name, Fresha's own clash check before the write, an idempotency key per
 conversation and slot (so no queue is needed), the booking recorded on the
 conversation, a Telegram post and an ops email per booking, dry run outside
-live mode. The persona and prompt now read the slot back, ask "shall I pop
+live mode. Widened to hair the same afternoon (decision 2026-10-21): the two
+hair categories book with Lori-Dee or Sophie in Lori-Dee's register, colour
+needing a patch test is refused and handed to Lori-Dee, and the Telegram
+line says Hair or Nails from the service's category. The persona and prompt now read the slot back, ask "shall I pop
 you in?", and only say booked when the tool said Booked. First live booking through Messenger the same day (Biab with Carmen, booked,
 confirmed by email, cancelled). Cancel tool added the same afternoon: lists
 the client's upcoming appointments, cancels free ones with Fresha's
@@ -135,7 +138,7 @@ Behaviour as stated by the user, 2026-10-20 (planning, not yet built):
 
 Decided 2026-10-20: the bot uses the owner's own Fresha login (see
 decisions). Decided 2026-10-21: the first version books nails only (see
-decisions); hair and tattoos stay link-out and escalation. Open before
+decisions), widened to hair the same afternoon; tattoos stay link-out and escalation. Open before
 build: the payment policy to send
 (Fresha's default is card confirmation with a cancellation fee equal to the
 price); whether the bot may ask for email and phone in chat, as the team

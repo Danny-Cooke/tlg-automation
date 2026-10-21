@@ -17,15 +17,22 @@ CONFIG = {
     "services": [
         {"category": "Senior Nail Services - TLG", "name": "Gel polish", "price": "from £34", "duration": "1 hour", "staff": ["Jess", "Sav"]},
         {"category": "Hair by Lori-dee", "name": "Dry cut", "price": "£30", "duration": "45 mins", "staff": ["Lori-Dee"]},
+        {"category": "Sophie cooper", "name": "Curling hair", "price": "£30", "duration": "45 mins", "staff": ["Sophie", "Lori-Dee"]},
+        {"category": "Tattoos by Skin deep canvas", "name": "Small tattoo", "price": "from £50", "duration": "1 hour", "staff": ["Carmen"]},
     ],
     "staff": [
         {"name": "Jess", "role": "Manager", "employee_id": "3440861"},
         {"name": "Sav", "role": "Nail tech", "employee_id": "5029221"},
         {"name": "Lori-Dee", "role": "Hairdresser", "employee_id": "3440849"},
+        {"name": "Sophie", "role": "Hair stylist", "employee_id": "5630580"},
+        {"name": "Carmen", "role": "Nail & Tattoo Tech", "employee_id": "3440872"},
         {"name": "Lissy", "role": "Apprentice"},
     ],
 }
 GEL = fresha.Service("22563223", "Gel polish", "Senior Nail Services - TLG", "25845686", "34.00", "STARTS_AT", 3600, ("3440861", "5029221"))
+DRY_CUT = fresha.Service("22563300", "Dry cut", "Hair by Lori-dee", "25845700", "30.00", "FIXED", 2700, ("3440849",))
+CURLS = fresha.Service("22563301", "Curling hair", "Sophie cooper", "25845701", "30.00", "FIXED", 2700, ("5630580", "3440849"))
+TATTOO = fresha.Service("22563302", "Small tattoo", "Tattoos by Skin deep canvas", "25845702", "50.00", "STARTS_AT", 3600, ("3440872",))
 DANNY = fresha.Client("279113349", "Danny Cooke", "+44", "d@example.com")
 
 
@@ -84,7 +91,7 @@ def run(cfg, f=None, c=None, dry_run=False, **kw):
 
 def test_books_and_records_and_tells_the_team(cfg):
     saved, pinged = [], []
-    out, f, c = run(cfg, save=saved.append, notify=lambda convo, summary, appt: pinged.append((summary, appt)))
+    out, f, c = run(cfg, save=saved.append, notify=lambda convo, summary, appt, **kw: pinged.append((summary, appt)))
     assert out.startswith("Booked: Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke (Fresha appointment 1332159791)")
     assert "card details" in out
     create = f.created[0]
@@ -117,11 +124,38 @@ def test_dry_run_checks_everything_and_writes_nothing(cfg):
     assert f.created == [] and c.bookings == []
 
 
-def test_only_nails_are_booked(cfg):
-    out, f, _ = run(cfg, args={"service": "Dry cut", "person": "Lori-Dee"})
-    assert "only books nails" in out and f.created == []
+def test_only_nails_and_hair_are_booked(cfg):
+    out, f, _ = run(cfg, args={"service": "Small tattoo", "person": "Carmen"}, f=FakeFresha(services=[TATTOO]))
+    assert "only books nails and hair" in out and f.created == []
     out, f, _ = run(cfg, args={"service": "Unicorn wash"})
     assert "not a service in the salon details" in out
+
+
+def test_hair_is_booked_with_lori_dee_or_sophie(cfg):
+    posted = []
+
+    def notify(convo, summary, appointment_id, **kw):
+        posted.append((summary, kw))
+
+    out, f, c = run(cfg, args={"service": "Dry cut", "person": "Lori-Dee"}, f=FakeFresha(services=[DRY_CUT]), notify=notify)
+    assert out.startswith("Booked: Dry cut with Lori-Dee, Thu 29 Oct 10am, for Danny Cooke")
+    assert f.created[0]["employee_id"] == "3440849" and f.created[0]["pricing_level_id"] == "25845700"
+    assert posted[0][1]["area"] == "hair"
+
+    booking.forget_catalog()
+    out, f, c = run(cfg, args={"service": "Curling hair", "person": "Sophie"}, f=FakeFresha(services=[CURLS]), notify=notify)
+    assert out.startswith("Booked: Curling hair with Sophie") and f.created[0]["employee_id"] == "5630580"
+    assert posted[1][1]["area"] == "hair"
+
+    booking.forget_catalog()
+    out, f, _ = run(cfg, args={"service": "Dry cut", "person": "Sophie"}, f=FakeFresha(services=[DRY_CUT]))
+    assert "does not list 'Dry cut' for Sophie" in out and f.created == []
+
+
+def test_hair_colour_with_a_patch_test_hands_over_to_lori_dee(cfg):
+    colour = fresha.Service("1", "Dry cut", "Hair by Lori-dee", "9", "30.00", "FIXED", 2700, ("3440849",), patch_test=True)
+    out, f, _ = run(cfg, args={"service": "Dry cut", "person": "Lori-Dee"}, f=FakeFresha(services=[colour]))
+    assert "patch test" in out and "Hand over to Lori-Dee" in out and f.created == []
 
 
 def test_person_must_be_on_the_team_with_a_fresha_id(cfg):
@@ -287,6 +321,8 @@ def test_booking_notification_shape(monkeypatch):
 
     escalation.notify_booking(convo(), "Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke", "1332159791", sns=Sns(), telegram=posted.append)
     assert posted[0].splitlines()[0] == "Nails: booked by the bot: Danny Cooke: FB"
+    escalation.notify_booking(convo(), "Dry cut with Lori-Dee, Thu 29 Oct 10am, for Danny Cooke", "2", area="hair", kind="cancelled by the bot", sns=Sns(), telegram=posted.append)
+    assert posted[1].splitlines()[0] == "Hair: cancelled by the bot: Danny Cooke: FB"
     assert "asset_id=page1" in posted[0] and "Fresha 1332159791" in posted[0]
     assert published[0]["Subject"].startswith("[TLG bot] Booked: Gel polish with Jess")
     assert "Fresha appointment: 1332159791" in published[0]["Message"]
@@ -296,7 +332,8 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
     from bot.prompt import build_system_prompt
 
     prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
-    assert "# Booking nails" in prompt and "`book_appointment`" in prompt
+    assert "# Booking nails and hair" in prompt and "`book_appointment`" in prompt
+    assert "Lori-Dee or Sophie" in prompt
     assert "shall I pop you in" in prompt
     assert "card details" in prompt
     assert "Only say \"all booked" in persona_text
@@ -338,7 +375,7 @@ def run_cancel(cfg, f=None, c=None, dry_run=False, **kw):
 
 def test_cancels_a_free_appointment_with_notification(cfg):
     saved, pinged = [], []
-    out, f, c = run_cancel(cfg, save=saved.append, notify=lambda convo, summary, appt, kind="": pinged.append((summary, appt, kind)))
+    out, f, c = run_cancel(cfg, save=saved.append, notify=lambda convo, summary, appt, kind="", **kw: pinged.append((summary, appt, kind)))
     assert out.startswith("Cancelled: Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke (Fresha appointment 1332159791)")
     assert f.fee_checked == ["1332159791"] and f.cancelled == [("1332159791", True, False)]
     assert c.bookings[-1]["appointment_id"] == "1332159791" and c.bookings[-1]["cancelled_at"]

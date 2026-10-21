@@ -95,12 +95,13 @@ AVAILABILITY_TOOL = {
 BOOKING_TOOL = {
     "name": "book_appointment",
     "description": (
-        "Put one agreed nail appointment into the salon's Fresha diary for a client Fresha "
+        "Put one agreed nail or hair appointment into the salon's Fresha diary for a client Fresha "
         "already knows. Call it only after the client has said yes to a specific service, "
         "person, date and time that you confirmed back to them in one message. It answers "
         "'Booked: ...' when the appointment is in, or says why it could not book and what to "
         "do instead; never tell the client it is booked unless the answer starts with 'Booked'. "
-        "Nails only: hair, tattoos, beauty and aesthetics are not booked here."
+        "Nails and hair only: tattoos, beauty and aesthetics are not booked here, and neither "
+        "is hair colour that needs a patch test."
     ),
     "input_schema": {
         "type": "object",

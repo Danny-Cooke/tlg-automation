@@ -1,4 +1,4 @@
-"""The `book_appointment` tool: put an agreed nail appointment into Fresha.
+"""The `book_appointment` tool: put an agreed nail or hair appointment into Fresha.
 
 What the model sends: the service's exact name from the salon details, the
 team member's first name, the date and the start time, plus the client's
@@ -7,8 +7,10 @@ act on: "Booked: ..." or a reason it could not book and what to do instead.
 
 Guards, in order:
 
-1. Nails only (decision 2026-10-21). Anything outside the two nail
-   categories is refused and the model is told to give the Fresha link.
+1. Nails and hair only (decisions 2026-10-21). Anything outside the two
+   nail and two hair categories is refused and the model is told to give
+   the Fresha link. A service Fresha flags as needing a patch test is
+   refused too (colour), and handed over to Lori-Dee.
 2. The person must be on the team list with a Fresha id, and must do that
    service according to Fresha's catalog.
 3. The client must already be a Fresha client, matched by name: exactly one
@@ -41,7 +43,13 @@ from .state import Conversation
 
 log = logging.getLogger(__name__)
 
-NAIL_CATEGORIES = frozenset({"Senior Nail Services - TLG", "Nails by TLG"})
+# Fresha category -> the team's area word, for the Telegram line. Spelled as Fresha spells them.
+BOOKABLE_CATEGORIES = {
+    "Senior Nail Services - TLG": "nails",
+    "Nails by TLG": "nails",
+    "Hair by Lori-dee": "hair",
+    "Sophie cooper": "hair",
+}
 CATALOG_CACHE_SECONDS = 600
 HAND_OVER = "Hand over to Jess (kind: booking) with the service, person, date, time and client name; tell the client the girls will pop it in and send a confirmation."
 
@@ -90,7 +98,8 @@ def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, sa
         if service is None:
             return f"Fresha does not list '{req.service}' for {member.name}. Offer someone who does it, or give the Fresha link."
         if service.patch_test:
-            return f"'{service.name}' needs a patch test first, so it is not booked in chat. " + HAND_OVER
+            who = "Lori-Dee" if area_of(service.category) == "hair" else "Jess"
+            return f"'{service.name}' needs a patch test first, so it is not booked in chat. " + HAND_OVER.replace("Jess", who)
 
         client, why = _match_client(f, req.client_name)
         if client is None:
@@ -127,7 +136,7 @@ def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, sa
         save(convo)  # the write happened; remember it even if the reply fails
     if notify:
         try:
-            notify(convo, summary, booking.appointment_id)
+            notify(convo, summary, booking.appointment_id, area=area_of(service.category))
         except Exception:  # noqa: BLE001 - the team's ping must never undo a booking
             log.exception("Booking notification failed")
     log.info("BOOKED %s for %s: %s", booking.appointment_id, convo.sender_id, summary)
@@ -217,7 +226,7 @@ def cancel(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, 
         save(convo)
     if notify:
         try:
-            notify(convo, summary, appt.appointment_id, kind="cancelled by the bot")
+            notify(convo, summary, appt.appointment_id, kind="cancelled by the bot", area=area_of_service(cfg, appt.service))
         except Exception:  # noqa: BLE001
             log.exception("Cancellation notification failed")
     log.info("CANCELLED %s for %s: %s", appt.appointment_id, convo.sender_id, summary)
@@ -247,13 +256,23 @@ def _validate(req: Request, cfg: SalonConfig, now: dt.datetime) -> str:
     listed = _config_service(cfg, req.service)
     if listed is None:
         return f"'{req.service}' is not a service in the salon details. Use the exact name from the list."
-    if listed.category not in NAIL_CATEGORIES:
-        return (f"'{listed.name}' is {listed.category}, and the bot only books nails for now. "
+    if listed.category not in BOOKABLE_CATEGORIES:
+        return (f"'{listed.name}' is {listed.category}, and the bot only books nails and hair for now. "
                 "Give the client the booking link for it and hand over if a slot was agreed.")
     member = cfg.staff_named(req.person)
     if member is None or not member.employee_id:
         return f"'{req.person}' is not on the team list. Use a first name from the team."
     return ""
+
+
+def area_of(category: str) -> str:
+    return BOOKABLE_CATEGORIES.get(category, "general")
+
+
+def area_of_service(cfg: SalonConfig, service_name: str) -> str:
+    """The area word for a service named the way Fresha names it (an upcoming appointment)."""
+    listed = _config_service(cfg, service_name)
+    return area_of(listed.category) if listed else "general"
 
 
 def _config_service(cfg: SalonConfig, name: str):
@@ -271,7 +290,7 @@ def _find_service(f: Fresha, employee_id: str, name: str) -> Service | None:
     """The Fresha pricing level for this service, as this person does it."""
     want = _norm(name)
     for s in _catalog(f):
-        if s.category in NAIL_CATEGORIES and _norm(s.name) == want and employee_id in s.employee_ids:
+        if s.category in BOOKABLE_CATEGORIES and _norm(s.name) == want and employee_id in s.employee_ids:
             return s
     return None
 

@@ -91,12 +91,13 @@ def notify(
     log.info("Escalated %s", json.dumps({"sender_id": convo.sender_id, "reason": reason}))
 
 
-def notify_booking(convo: Conversation, summary: str, appointment_id: str, *, kind: str = "booked by the bot", sns=None, telegram=None) -> None:
+def notify_booking(convo: Conversation, summary: str, appointment_id: str, *, kind: str = "booked by the bot", area: str = "nails",
+                   sns=None, telegram=None) -> None:
     """The bot has just put an appointment into Fresha, or taken one out: tell
     the team group in the usual one-line shape, and the ops topic for the
     record. Best effort."""
     page_id = os.environ.get("META_PAGE_ID", "")
-    text = format_telegram(convo, page_id, area="nails", kind=kind, reason=f"{summary} (Fresha {appointment_id})")
+    text = format_telegram(convo, page_id, area=area, kind=kind, reason=f"{summary} (Fresha {appointment_id})")
     poster = telegram or _telegram().post_handover
     try:
         poster(text)

@@ -314,6 +314,30 @@ TLG" and "Nails by TLG", 25 services between them), and the bot says so in Jess'
 voice and offers the Fresha link instead. Widening the list is a one-line
 change once the first week of nail bookings has been watched.
 
+## 2026-10-21: hair is booked too, with Lori-Dee or Sophie, in Lori-Dee's register
+
+The user's ruling, the same afternoon, after the nails flow booked and
+cancelled cleanly through Messenger: make it work for hair with Lori-Dee or
+Sophie. Consequences:
+
+- The booking tool accepts the two hair categories as Fresha spells them,
+  "Hair by Lori-dee" (Lori-Dee only) and "Sophie cooper" (Sophie or
+  Lori-Dee, a few extension services list the whole team). Who does what
+  still comes from Fresha's catalog, so Sophie is only booked for services
+  Fresha lists her on.
+- Colour stays out of chat for now: Fresha flags the services that need a
+  patch test and the tool refuses those, handing over to Lori-Dee rather
+  than Jess. Colour quotes from pictures were already a hand-over.
+- No Sophie persona. The user's words: "when booking in Sophie, it's Lori's
+  persona". The hair register in `persona/jess.md` (Hiya, calmer, one x) is
+  used whether the appointment is with Lori-Dee or Sophie, and the bot still
+  never says who it is. This keeps the 2026-10-20 one-persona decision.
+- The Telegram line and ops email carry the area the booking belongs to
+  ("Hair: booked by the bot: ..."), worked out from the service's Fresha
+  category; cancellations look the service up the same way.
+
+Tattoos, beauty and aesthetics remain link-out and escalation.
+
 ## 2026-10-21: the bot cancels free cancellations itself; fees stay with the team
 
 The user's ruling, after the first live booking: the bot should handle
