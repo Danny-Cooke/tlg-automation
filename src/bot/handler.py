@@ -17,8 +17,10 @@ BOT_MODE decides how a message is answered:
     live    reply with Claude; hand over to a person when the bot says so.
 
 In the Claude modes the bot knows the client's name (Meta's profile call,
-once per thread) and can look up real availability on Fresha's public
-booking flow. It cannot book: when a slot is agreed it hands over.
+once per thread), can look up real availability on Fresha's public booking
+flow, and in live mode can put an agreed nail appointment into Fresha with
+the owner's stored session (bot/booking.py). In shadow mode the booking tool
+checks everything and writes nothing.
 """
 from __future__ import annotations
 
@@ -31,7 +33,7 @@ import time
 import zoneinfo
 from functools import lru_cache
 
-from . import availability, brain, escalation, fresha_session, meta
+from . import availability, booking, brain, escalation, fresha_session, meta
 from .config import SalonConfig, load_persona
 from .prompt import build_system_prompt
 from .state import Conversation, ConversationStore
@@ -194,7 +196,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
             escalate_to="jess", area="general", escalation_kind="can't assist anymore",
         )
     else:
-        reply = brain.ask(system_prompt(), convo.history, user_text, context=context_block(convo), tools=tools())
+        reply = brain.ask(system_prompt(), convo.history, user_text, context=context_block(convo), tools=tools(convo, store))
 
     convo.record_turn(msg.message_id, user_text, reply.reply)
     store.save(convo)  # seen before the wait, so a Meta retry is a duplicate
@@ -239,12 +241,20 @@ def context_block(convo: Conversation, now: dt.datetime | None = None) -> str:
     return " ".join(lines)
 
 
-def tools() -> dict[str, brain.ToolRunner]:
-    """What the model may call. Availability needs the venue URL and staff ids from the salon config."""
+def tools(convo: Conversation | None = None, store: ConversationStore | None = None) -> dict[str, brain.ToolRunner]:
+    """What the model may call. Availability needs the venue URL and staff ids
+    from the salon config. Booking needs the Fresha session parameter and a
+    conversation to book for; it only writes in live mode."""
     cfg = salon()
-    if not cfg.venue_url:
-        return {}
-    return {"check_availability": lambda args: run_availability(args, cfg)}
+    out: dict[str, brain.ToolRunner] = {}
+    if cfg.venue_url:
+        out["check_availability"] = lambda args: run_availability(args, cfg)
+    if convo is not None and os.environ.get("FRESHA_SESSION_PARAM"):
+        out["book_appointment"] = lambda args: booking.book(
+            args, cfg=cfg, convo=convo, dry_run=MODE != "live",
+            save=store.save if store else None, notify=escalation.notify_booking,
+        )
+    return out
 
 
 def run_availability(args: dict, cfg: SalonConfig, http=None) -> str:

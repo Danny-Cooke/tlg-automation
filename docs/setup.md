@@ -186,6 +186,37 @@ know the cookie works from Lambda's address and not just the laptop. Each login 
 week costs nothing; a missed month means the bot stops booking and goes
 back to the Fresha link and a hand-over until the next run.
 
+## 4e. Booking from chat (nails only)
+
+With the session parameter in place the bot has a `book_appointment` tool
+(`src/bot/booking.py`). In `shadow` mode it runs every check and writes
+nothing, answering "Would have booked ..." so the drafts read right. In
+`live` mode it writes to Fresha. Scope, by decision 2026-10-21: the two nail
+categories only; the client must already be on Fresha under the name the
+bot has; anything else is a hand-over with the details, as before.
+
+Every booking the bot makes is posted to the Telegram group as
+`Nails: booked by the bot: <client>: FB` with the slot and Fresha id, and
+emailed to the ops topic. Fresha itself sends the client the confirmation
+with the card step, exactly as for a dashboard booking (proved 2026-10-21).
+
+To try it by hand without Messenger, the same code is driven from the
+laptop:
+
+```bash
+python scripts/fresha_book.py clients cooke
+python scripts/fresha_book.py services --nails --staff 3440861
+python scripts/fresha_book.py slots --level 25845686 --staff 3440861 --date 2026-10-29 --minutes 60
+python scripts/fresha_book.py book --client <id> --level 25845686 --staff 3440861 --date 2026-10-29 --time 10:00 --minutes 60 --price 34
+python scripts/fresha_book.py cancel <appointment id> --notify
+```
+
+First live run: `BOT_MODE=live`, `MESSAGE_TEST_MODE=true`, message the Page
+with the trigger word and ask for nails with Jess on a day she works; say
+yes when the bot reads the slot back. Check the Fresha calendar, the
+Telegram group and the confirmation email, then cancel from the dashboard
+or with the script.
+
 ## 5. Clearing a hand-over
 
 When the bot hands over a complaint or something it cannot handle, it stays

@@ -302,3 +302,14 @@ staff account for the bot. Consequences: bookings the bot makes show as
 made by the owner; the monthly code goes to the owner's email; the owner
 runs the script. If the owner logs in on another new device, that is a
 separate session and does not affect the bot's.
+
+## 2026-10-21: the bot's first bookings are nails only
+
+The user's ruling: test the booking flow with nail services first. Hair
+stays a link to Fresha and an escalation to Lori-Dee (colour needs a patch
+test and a consultation; cuts come later once nails are proven), tattoos
+stay with Carmen. Consequence for the build: the booking tool refuses any
+service outside the two Fresha nail categories ("Senior Nail Services -
+TLG" and "Nails by TLG", 25 services between them), and the bot says so in Jess's
+voice and offers the Fresha link instead. Widening the list is a one-line
+change once the first week of nail bookings has been watched.

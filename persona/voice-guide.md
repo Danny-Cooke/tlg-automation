@@ -8,7 +8,8 @@ Nothing here is invented: every pattern below is what Jess, Lori-Dee and
 Carmen already do. Examples are lightly tidied real replies.
 
 The bot loads this file after `jess.md`. The rules in `jess.md` win where
-they differ (the bot cannot book, so it links instead of taking details).
+they differ (the bot books nails only, through its booking tool, and links
+or hands over for everything else instead of taking details).
 
 ## 1. Who is talking
 

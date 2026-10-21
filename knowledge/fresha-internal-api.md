@@ -222,6 +222,28 @@ Other employee ids are in `knowledge/fresha.md` and
 services come from `pricingCatalogList` or the public flow; the menu export
 does not carry them yet.
 
+## Booked from code (2026-10-21)
+
+`src/bot/fresha.py` (operation texts in `src/bot/fresha_ops.py`, driven by
+`scripts/fresha_book.py`) replayed the dashboard's calls with the stored
+session and no browser: client search found four Cookes, the catalog query
+listed the 25 nail pricing levels, `availableTimeSlots` gave Jess's and
+Sav's real gaps for the next eleven days, the protection quote came back
+`CARD_CONFIRMATION` with a £34 fee, and `createAppointmentByEmployee`
+booked appointment 1332159791 (Gel polish, Jess, 2026-10-29 10:00, client
+279113349), status `UNCONFIRMED`. Jess's employee record is "Jess Preston".
+The client got Fresha's booking confirmation with a "confirm" call to
+action (the card step), so a code-made booking with `DEFAULT_SETTINGS`
+triggers the same card-confirmation flow as a dashboard one. Cancelled from
+code the same day with `sendNotification: true`; status read back
+`CANCELLED`. The 2026-10-20 dashboard test, cancelled after eleven seconds,
+produced no email, so a notification is probably held briefly and dropped
+on cancel.
+
+The catalog query (`pricingCatalogList`, 100 per page, cursor paging) is the
+source of pricing level ids, list prices and durations; the two nail
+categories are "Senior Nail Services - TLG" and "Nails by TLG".
+
 ## Payment policy
 
 The create flow queried `appointment_calculateAppointmentProtectionFees` and

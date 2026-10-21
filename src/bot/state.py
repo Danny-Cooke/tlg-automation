@@ -23,6 +23,7 @@ class Conversation:
     handed_to_jess: bool = False
     seen_message_ids: list[str] = field(default_factory=list)
     client_name: str = ""
+    bookings: list[dict] = field(default_factory=list)  # appointments the bot put into Fresha for this thread
 
     def has_seen(self, message_id: str) -> bool:
         return bool(message_id) and message_id in self.seen_message_ids
@@ -71,6 +72,7 @@ class ConversationStore:
             handed_to_jess=bool(item.get("handed_to_jess", False)),
             seen_message_ids=list(item.get("seen_message_ids", [])),
             client_name=item.get("client_name", ""),
+            bookings=[dict(b) for b in item.get("bookings", [])],
         )
 
     def save(self, convo: Conversation) -> None:
@@ -82,6 +84,7 @@ class ConversationStore:
                 "handed_to_jess": convo.handed_to_jess,
                 "seen_message_ids": convo.seen_message_ids,
                 "client_name": convo.client_name,
+                "bookings": convo.bookings,
                 "updated_at": int(time.time()),
                 "expires_at": int(time.time()) + TTL_DAYS * 86400,
             }

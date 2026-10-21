@@ -33,7 +33,7 @@ def wired(monkeypatch):
     calls = {"ask": [], "sent": [], "escalated": [], "noticed": [], "profile": [], "context": []}
     monkeypatch.setattr(handler, "secrets", lambda: {"page_token": "tok", "app_secret": "s", "verify_token": "v"})
     monkeypatch.setattr(handler, "system_prompt", lambda: "SYSTEM")
-    monkeypatch.setattr(handler, "tools", lambda: {"check_availability": lambda args: "nothing free"})
+    monkeypatch.setattr(handler, "tools", lambda *a: {"check_availability": lambda args: "nothing free"})
     monkeypatch.setattr(handler, "MODE", "simple")
     monkeypatch.setattr(handler, "TEST_MODE", False)
     monkeypatch.setattr(handler, "CHANNEL", "")

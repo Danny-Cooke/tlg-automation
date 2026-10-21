@@ -91,6 +91,34 @@ def notify(
     log.info("Escalated %s", json.dumps({"sender_id": convo.sender_id, "reason": reason}))
 
 
+def notify_booking(convo: Conversation, summary: str, appointment_id: str, *, sns=None, telegram=None) -> None:
+    """The bot has just put an appointment into Fresha: tell the team group in
+    the usual one-line shape, and the ops topic for the record. Best effort."""
+    page_id = os.environ.get("META_PAGE_ID", "")
+    text = format_telegram(convo, page_id, area="nails", kind="booked by the bot", reason=f"{summary} (Fresha {appointment_id})")
+    poster = telegram or _telegram().post_handover
+    try:
+        poster(text)
+    except Exception:  # noqa: BLE001
+        log.exception("Telegram booking post failed")
+    topic_arn = os.environ.get("OPS_TOPIC_ARN")
+    if not topic_arn:
+        log.info("OPS_TOPIC_ARN not set; booking not emailed: %s", summary)
+        return
+    who = convo.client_name or convo.sender_id
+    body = "\n".join([
+        f"Booked by the bot: {summary}",
+        f"Fresha appointment: {appointment_id}",
+        f"Channel: {convo.channel}",
+        f"Client: {who}",
+        f"Open inbox: {business_suite_link(convo.channel, page_id)}",
+    ])
+    try:
+        (sns or _sns()).publish(TopicArn=topic_arn, Subject=f"[TLG bot] Booked: {summary}"[:100], Message=body)
+    except Exception:  # noqa: BLE001
+        log.exception("Booking email failed")
+
+
 def notify_new_message(convo: Conversation, text: str, timestamp_ms: int = 0, *, reply: str | None = None, sns=None) -> None:
     """Simple mode: tell the ops topic (you, not Jess) what arrived and what went back."""
     topic_arn = os.environ.get("OPS_TOPIC_ARN")

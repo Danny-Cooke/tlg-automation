@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 MODEL = os.environ.get("CLAUDE_MODEL", "claude-opus-5-5")
 EFFORT = os.environ.get("CLAUDE_EFFORT", "low")
 MAX_TOKENS = 1024  # replies are two or three sentences; the JSON wrapper is small
-MAX_TOOL_ROUNDS = 3  # a lookup per person or date range; more than this is a loop
+MAX_TOOL_ROUNDS = 4  # a lookup or two, then the booking; more than this is a loop
 
 ESCALATE_TO = ["", "jess", "carmen", "lori-dee"]
 AREAS = ["", "nails", "hair", "tattoos", "aesthetics", "beauty", "general"]
@@ -92,6 +92,35 @@ AVAILABILITY_TOOL = {
     },
 }
 
+BOOKING_TOOL = {
+    "name": "book_appointment",
+    "description": (
+        "Put one agreed nail appointment into the salon's Fresha diary for a client Fresha "
+        "already knows. Call it only after the client has said yes to a specific service, "
+        "person, date and time that you confirmed back to them in one message. It answers "
+        "'Booked: ...' when the appointment is in, or says why it could not book and what to "
+        "do instead; never tell the client it is booked unless the answer starts with 'Booked'. "
+        "Nails only: hair, tattoos, beauty and aesthetics are not booked here."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "service": {"type": "string", "description": "Exact service name as listed in the salon details."},
+            "person": {"type": "string", "description": "Team member's first name from the team list."},
+            "date": {"type": "string", "description": "YYYY-MM-DD, worked out from today's date in the context."},
+            "time": {"type": "string", "description": "Start time, 24-hour HH:MM, e.g. 13:30."},
+            "client_name": {
+                "type": "string",
+                "description": "The client's full name as Fresha would have it: their profile name from the context unless they gave a different one in chat.",
+            },
+        },
+        "required": ["service", "person", "date", "time", "client_name"],
+        "additionalProperties": False,
+    },
+}
+
+TOOL_DEFINITIONS = {"check_availability": AVAILABILITY_TOOL, "book_appointment": BOOKING_TOOL}
+
 SAFE_REPLY = "Thanks for your message. Let me check that with the team and come back to you shortly."
 
 ToolRunner = Callable[[dict], str]
@@ -149,7 +178,7 @@ def ask(
         "fallbacks": "default",
     }
     if tools:
-        request["tools"] = [AVAILABILITY_TOOL] if "check_availability" in tools else []
+        request["tools"] = [TOOL_DEFINITIONS[name] for name in TOOL_DEFINITIONS if name in tools]
 
     for _round in range(MAX_TOOL_ROUNDS + 1):
         try:

@@ -100,8 +100,19 @@ keeps the trusted-device cookie in a local profile so the SMS step happens
 once a year, and writes the session cookie to Secrets Manager. The bot
 Lambda replays the dashboard's calls over plain HTTP with that cookie, and
 posts to Telegram three days before the session runs out and on any 401.
-Then: booking queue (SQS) with idempotency key per conversation and slot,
-Jess notified of every booking at first, shadow-mode week.
+Built 2026-10-21: `src/bot/fresha.py` (client search, catalog,
+availability, clash check, payment quote, create, cancel; operation texts
+in `fresha_ops.py`), proved by booking and cancelling a real appointment
+from the laptop (`scripts/fresha_book.py`), and `src/bot/booking.py`, the
+`book_appointment` tool: nails only, existing clients matched by exact
+name, Fresha's own clash check before the write, an idempotency key per
+conversation and slot (so no queue is needed), the booking recorded on the
+conversation, a Telegram post and an ops email per booking, dry run outside
+live mode. The persona and prompt now read the slot back, ask "shall I pop
+you in?", and only say booked when the tool said Booked. Not yet: creating
+new clients (mutation unrecorded), reschedule, the three-days-to-expiry
+Telegram nag. Next: first live booking through Messenger with the trigger
+word, then a watched week.
 
 Behaviour as stated by the user, 2026-10-20 (planning, not yet built):
 
@@ -121,8 +132,9 @@ Behaviour as stated by the user, 2026-10-20 (planning, not yet built):
   the owner's own PSID). Instagram needs `instagram_manage_messages`.
 
 Decided 2026-10-20: the bot uses the owner's own Fresha login (see
-decisions). Open before build: which staff and services the bot may book (hair colour needs a
-patch test and Lori-Dee's consultation first); the payment policy to send
+decisions). Decided 2026-10-21: the first version books nails only (see
+decisions); hair and tattoos stay link-out and escalation. Open before
+build: the payment policy to send
 (Fresha's default is card confirmation with a cancellation fee equal to the
 price); whether the bot may ask for email and phone in chat, as the team
 does, to create or match the Fresha client; what "add nail art" means

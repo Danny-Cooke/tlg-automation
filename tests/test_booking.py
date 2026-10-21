@@ -1,0 +1,302 @@
+"""The book_appointment tool: guards, the write, the record, the team ping."""
+import datetime as dt
+import json
+
+import pytest
+
+from bot import booking, brain, escalation, fresha, fresha_session, handler
+from bot.config import SalonConfig
+from bot.state import Conversation
+
+NOW = dt.datetime(2026, 10, 21, 12, 0, tzinfo=dt.timezone.utc)
+SESSION = fresha_session.Session(cookie="SECRET", expires_at=None)
+
+CONFIG = {
+    "salon_name": "TLG", "address": "", "phone": "", "opening_hours": {}, "general_booking_link": "https://fresha/tlg",
+    "venue_url": "https://www.fresha.com/a/tlg",
+    "services": [
+        {"category": "Senior Nail Services - TLG", "name": "Gel polish", "price": "from £34", "duration": "1 hour", "staff": ["Jess", "Sav"]},
+        {"category": "Hair by Lori-dee", "name": "Dry cut", "price": "£30", "duration": "45 mins", "staff": ["Lori-Dee"]},
+    ],
+    "staff": [
+        {"name": "Jess", "role": "Manager", "employee_id": "3440861"},
+        {"name": "Sav", "role": "Nail tech", "employee_id": "5029221"},
+        {"name": "Lori-Dee", "role": "Hairdresser", "employee_id": "3440849"},
+        {"name": "Lissy", "role": "Apprentice"},
+    ],
+}
+GEL = fresha.Service("22563223", "Gel polish", "Senior Nail Services - TLG", "25845686", "34.00", "STARTS_AT", 3600, ("3440861", "5029221"))
+DANNY = fresha.Client("279113349", "Danny Cooke", "+44", "d@example.com")
+
+
+class FakeFresha:
+    """Stands in for bot.fresha.Fresha: scripted answers, recorded writes."""
+
+    def __init__(self, clients=(DANNY,), services=(GEL,), conflicts=(), create_error=None):
+        self.clients, self.services, self.conflict_list = list(clients), list(services), list(conflicts)
+        self.create_error, self.created, self.searched = create_error, [], []
+
+    def catalog(self, **kw):
+        return self.services
+
+    def find_clients(self, query, *, limit=10):
+        self.searched.append(query)
+        return [c for c in self.clients if query.casefold() in c.name.casefold()]
+
+    def conflicts(self, *a):
+        return self.conflict_list
+
+    def create(self, **kw):
+        if self.create_error:
+            raise self.create_error
+        self.created.append(kw)
+        return fresha.Booking("1332159791", "1799522735", ())
+
+
+@pytest.fixture
+def cfg():
+    return SalonConfig.from_json(json.dumps(CONFIG))
+
+
+@pytest.fixture(autouse=True)
+def fresh_catalog():
+    booking.forget_catalog()
+    yield
+    booking.forget_catalog()
+
+
+def convo(**kw):
+    fields = {"sender_id": "psid1", "channel": "messenger", "client_name": "Danny Cooke", **kw}
+    return Conversation(**fields)
+
+
+def args(**over):
+    base = {"service": "Gel polish", "person": "Jess", "date": "2026-10-29", "time": "10:00", "client_name": "Danny Cooke"}
+    return {**base, **over}
+
+
+def run(cfg, f=None, c=None, dry_run=False, **kw):
+    f = f or FakeFresha()
+    c = c or convo()
+    out = booking.book(args(**kw.pop("args", {})), cfg=cfg, convo=c, dry_run=dry_run, session=SESSION, fresha=f, now=NOW, **kw)
+    return out, f, c
+
+
+def test_books_and_records_and_tells_the_team(cfg):
+    saved, pinged = [], []
+    out, f, c = run(cfg, save=saved.append, notify=lambda convo, summary, appt: pinged.append((summary, appt)))
+    assert out.startswith("Booked: Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke (Fresha appointment 1332159791)")
+    assert "card details" in out
+    create = f.created[0]
+    assert create["customer_id"] == "279113349" and create["pricing_level_id"] == "25845686" and create["employee_id"] == "3440861"
+    assert create["price"] == "34" and create["duration_s"] == 3600 and (create["date"], create["start"]) == ("2026-10-29", "10:00")
+    assert len(create["idempotency_key"]) == 21
+    assert c.bookings[0]["appointment_id"] == "1332159791" and c.bookings[0]["client_id"] == "279113349"
+    assert saved == [c]  # remembered before anything else can go wrong
+    assert pinged == [("Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke", "1332159791")]
+
+
+def test_idempotency_key_is_stable_per_conversation_and_slot():
+    req = booking.Request("Gel polish", "Jess", "2026-10-29", "10:00", "Danny Cooke")
+    a = booking.idempotency_key("psid1", req, "25845686")
+    assert a == booking.idempotency_key("psid1", req, "25845686") and len(a) == 21
+    assert a != booking.idempotency_key("psid2", req, "25845686")
+    assert a != booking.idempotency_key("psid1", booking.Request("Gel polish", "Jess", "2026-10-29", "10:30", "Danny Cooke"), "25845686")
+
+
+def test_same_slot_twice_in_one_conversation_is_not_booked_again(cfg):
+    out, f, c = run(cfg)
+    out2, f2, _ = run(cfg, c=c)
+    assert out2.startswith("Already booked earlier in this conversation") and "1332159791" in out2
+    assert f2.created == []
+
+
+def test_dry_run_checks_everything_and_writes_nothing(cfg):
+    out, f, c = run(cfg, dry_run=True)
+    assert out.startswith("Would have booked (not live): Gel polish with Jess, Thu 29 Oct 10am")
+    assert f.created == [] and c.bookings == []
+
+
+def test_only_nails_are_booked(cfg):
+    out, f, _ = run(cfg, args={"service": "Dry cut", "person": "Lori-Dee"})
+    assert "only books nails" in out and f.created == []
+    out, f, _ = run(cfg, args={"service": "Unicorn wash"})
+    assert "not a service in the salon details" in out
+
+
+def test_person_must_be_on_the_team_with_a_fresha_id(cfg):
+    out, f, _ = run(cfg, args={"person": "Lissy"})
+    assert "not on the team list" in out
+    out, f, _ = run(cfg, f=FakeFresha(services=[fresha.Service("1", "Gel polish", "Senior Nail Services - TLG", "9", "34.00", "FIXED", 3600, ("5029221",))]))
+    assert "does not list 'Gel polish' for Jess" in out and f.created == []
+
+
+def test_client_matching_rules(cfg):
+    out, f, _ = run(cfg, f=FakeFresha(clients=[]))
+    assert out.startswith("No Fresha client called 'Danny Cooke'") and "Hand over to Jess" in out
+    out, f, _ = run(cfg, f=FakeFresha(clients=[DANNY, fresha.Client("2", "Danny Cooke")]))
+    assert "More than one Fresha client" in out
+    out, f, _ = run(cfg, f=FakeFresha(clients=[fresha.Client("2", "Danny Cooke", blocked=True)]))
+    assert "blocked" in out
+    # A near miss is not a match: "Danny Cooke" must not book "Danny Cooker"
+    out, f, _ = run(cfg, f=FakeFresha(clients=[fresha.Client("3", "Danny Cooker")]))
+    assert out.startswith("No Fresha client") and f.created == []
+    # The profile name is the default; the model may override it with what the client said
+    out, f, c = run(cfg, c=convo(client_name="Dan C"), args={"client_name": "Danny Cooke"})
+    assert out.startswith("Booked")
+
+
+def test_a_clash_means_no_booking(cfg):
+    out, f, _ = run(cfg, f=FakeFresha(conflicts=[{"conflictType": "EMPLOYEE_HAS_EXISTING_APPOINTMENT"}]))
+    assert "not free any more (EMPLOYEE_HAS_EXISTING_APPOINTMENT)" in out and f.created == []
+
+
+def test_bad_inputs_are_explained_not_booked(cfg):
+    assert "in the past" in run(cfg, args={"date": "2026-10-01"})[0]
+    assert "not YYYY-MM-DD" in run(cfg, args={"date": "29/10/2026"})[0]
+    assert "not HH:MM" in run(cfg, args={"time": "ten"})[0]
+    assert "Need the service" in run(cfg, args={"service": ""})[0]
+    assert "name is not known" in run(cfg, c=convo(client_name=""), args={"client_name": ""})[0]
+
+
+def test_times_in_the_teams_shapes_are_understood():
+    for given, want in [("10:00", "10:00"), ("10.00", "10:00"), ("1000", "10:00"), ("10am", "10:00"), ("1.30pm", "13:30"),
+                        ("13:30", "13:30"), ("12pm", "12:00"), ("12am", "00:00"), ("9", "09:00")]:
+        assert booking._normalise_time(given) == want, given
+
+
+def test_no_session_or_rejected_session_hands_over(cfg, monkeypatch):
+    monkeypatch.setattr(fresha_session, "get", lambda **kw: None)
+    out = booking.book(args(), cfg=cfg, convo=convo(), dry_run=False, now=NOW)
+    assert out.startswith("Cannot book right now") and "Hand over to Jess" in out
+
+    out, f, _ = run(cfg, f=FakeFresha(create_error=fresha.SessionRejected("401")))
+    assert "rejected the salon's login" in out
+    out, f, _ = run(cfg, f=FakeFresha(create_error=fresha.FreshaError("boom")))
+    assert "Fresha refused the request" in out
+
+
+def test_patch_test_services_are_not_booked_in_chat(cfg):
+    pt = fresha.Service("1", "Gel polish", "Senior Nail Services - TLG", "9", "34.00", "FIXED", 3600, ("3440861",), patch_test=True)
+    out, f, _ = run(cfg, f=FakeFresha(services=[pt]))
+    assert "patch test" in out and f.created == []
+
+
+def test_catalog_is_fetched_once_per_container(cfg):
+    class Counting(FakeFresha):
+        calls = 0
+
+        def catalog(self, **kw):
+            Counting.calls += 1
+            return self.services
+
+    f = Counting()
+    run(cfg, f=f)
+    run(cfg, f=f, args={"time": "11:00"})
+    assert Counting.calls == 1
+
+
+def test_price_shape_matches_the_dashboard():
+    assert booking._price_for_fresha("34.00") == "34"
+    assert booking._price_for_fresha("1.50") == "1.50"
+
+
+# -- wiring -------------------------------------------------------------------
+
+
+def test_brain_sends_both_tool_definitions_when_offered():
+    from types import SimpleNamespace
+
+    final = json.dumps({"reply": "hi", "escalate": False, "escalation_reason": "", "escalate_to": "", "area": "", "escalation_kind": "", "suggested_booking_link": ""})
+    response = SimpleNamespace(content=[SimpleNamespace(type="text", text=final)], stop_reason="end_turn", stop_details=None)
+
+    class FakeClient:
+        def __init__(self):
+            self.requests = []
+            self.beta = SimpleNamespace(messages=SimpleNamespace(create=self.create))
+
+        def create(self, **kw):
+            self.requests.append(kw)
+            return response
+
+    client = FakeClient()
+    brain.ask("SYSTEM", [], "hi", tools={"check_availability": lambda a: "", "book_appointment": lambda a: ""}, client=client)
+    assert client.requests[0]["tools"] == [brain.AVAILABILITY_TOOL, brain.BOOKING_TOOL]
+    assert set(brain.BOOKING_TOOL["input_schema"]["required"]) == {"service", "person", "date", "time", "client_name"}
+
+
+def test_handler_offers_booking_only_with_a_session_parameter_and_a_conversation(monkeypatch):
+    monkeypatch.setenv("SALON_CONFIG_JSON", json.dumps(CONFIG))
+    handler.salon.cache_clear()
+    monkeypatch.delenv("FRESHA_SESSION_PARAM", raising=False)
+    assert set(handler.tools(convo())) == {"check_availability"}
+    monkeypatch.setenv("FRESHA_SESSION_PARAM", "/tlg/test/fresha/session")
+    assert set(handler.tools()) == {"check_availability"}
+    assert set(handler.tools(convo())) == {"check_availability", "book_appointment"}
+    handler.salon.cache_clear()
+
+
+def test_handler_booking_tool_is_a_dry_run_outside_live_mode(monkeypatch):
+    monkeypatch.setenv("SALON_CONFIG_JSON", json.dumps(CONFIG))
+    monkeypatch.setenv("FRESHA_SESSION_PARAM", "/tlg/test/fresha/session")
+    handler.salon.cache_clear()
+    seen = {}
+
+    def fake_book(args, **kw):
+        seen.update(kw)
+        return "ok"
+
+    monkeypatch.setattr(booking, "book", fake_book)
+    monkeypatch.setattr(handler, "MODE", "shadow")
+    handler.tools(convo())["book_appointment"](args())
+    assert seen["dry_run"] is True and seen["notify"] is escalation.notify_booking
+    monkeypatch.setattr(handler, "MODE", "live")
+    handler.tools(convo())["book_appointment"](args())
+    assert seen["dry_run"] is False
+    handler.salon.cache_clear()
+
+
+def test_state_round_trips_bookings():
+    from bot.state import ConversationStore
+
+    class Table:
+        def __init__(self):
+            self.items = {}
+
+        def put_item(self, Item):
+            self.items[Item["sender_id"]] = Item
+
+        def get_item(self, Key):
+            return {"Item": self.items.get(Key["sender_id"])}
+
+    store = ConversationStore(Table())
+    c = convo()
+    c.bookings.append({"appointment_id": "1", "service": "Gel polish", "date": "2026-10-29", "time": "10:00"})
+    store.save(c)
+    assert store.load("psid1").bookings == c.bookings
+
+
+def test_booking_notification_shape(monkeypatch):
+    monkeypatch.setenv("META_PAGE_ID", "page1")
+    monkeypatch.setenv("OPS_TOPIC_ARN", "arn:ops")
+    posted, published = [], []
+
+    class Sns:
+        def publish(self, **kw):
+            published.append(kw)
+
+    escalation.notify_booking(convo(), "Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke", "1332159791", sns=Sns(), telegram=posted.append)
+    assert posted[0].splitlines()[0] == "Nails: booked by the bot: Danny Cooke: FB"
+    assert "asset_id=page1" in posted[0] and "Fresha 1332159791" in posted[0]
+    assert published[0]["Subject"].startswith("[TLG bot] Booked: Gel polish with Jess")
+    assert "Fresha appointment: 1332159791" in published[0]["Message"]
+
+
+def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_json):
+    from bot.prompt import build_system_prompt
+
+    prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
+    assert "# Booking nails" in prompt and "`book_appointment`" in prompt
+    assert "shall I pop you in" in prompt
+    assert "card details" in prompt
+    assert "Only say \"all booked" in persona_text

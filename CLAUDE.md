@@ -33,7 +33,9 @@ is for how the user likes to work, not for salon facts.
 
 - The user is an AWS DevOps engineer. Default to AWS and Terraform; explain
   salon systems (Fresha, Meta), not AWS.
-- Fresha has no write API. The bot links to Fresha, it never books.
+- Fresha has no public write API. The bot books nails through Fresha's
+  internal dashboard API with the owner's stored session (`src/bot/fresha.py`,
+  `knowledge/fresha-internal-api.md`); everything else it links to Fresha.
 - Fresha category names are kept exactly as Fresha spells them.
 - Run `python -m pytest -q` and `terraform validate` before calling work done.
 - Nothing is committed unless the user asks.
