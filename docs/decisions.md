@@ -465,8 +465,8 @@ Anyone who wants to discuss it, or more than that, "how much is a half sleeve", 
 a design, is answered once in Carmen's persona and first person: "Hey
 lovely, to discuss this further you can talk to me directly on WhatsApp, I
 can respond much quicker on there if that's ok? <number> x", then a quote
-hand-over to Carmen and the thread goes quiet. Her number is a GitHub prod
-variable `CARMEN_WHATSAPP`, passed through Terraform into the bot's
-environment (never in the repo); without it the holding line is used. This
+hand-over to Carmen and the thread goes quiet. Her number is the GitHub prod
+variable `CARMENS_PHONE`, passed through Terraform into the bot's
+environment as `CARMEN_WHATSAPP` (never in the repo); without it the holding line is used. This
 is the one deliberate exception to the 2026-10-20 one-persona rule: the
 message sends the client to Carmen's own phone, so it is hers.
