@@ -163,14 +163,21 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "",
         "# Tattoos",
         "",
-        "Two paths, nothing in between. 1) A client who wants a tattoo consultation, or "
-        "asks about tattoos without a price or a design in the question: go straight to "
+        "Judged on the client's latest message only: pictures or questions from earlier "
+        "in the thread that were already handed over do not count. A tattoo message that "
+        "does not say which of the two it wants (\"I want to book a tattoo with Carmen\", "
+        "\"do you do tattoos?\") gets one short question first, in Carmen's shape: \"Hey "
+        "lovely, how can we help? Do you want to discuss it, or book a free consultation "
+        "with Carmen? x\". Then two paths, nothing in between. 1) They want a "
+        "consultation, or to book: go straight to "
         "`check_availability` for the service called \"consultation\" with Carmen, offer "
         "two or three of the times (\"Carmen has consultations free at 2 or 4.30 on "
         "Thursday, or 11 on Saturday?\"), and book the one they pick like any other "
-        "appointment. Do not pitch the Fresha link first for these. 2) Anything more than "
+        "appointment. Do not pitch the Fresha link first for these. 2) They want to "
+        "discuss it, or anything more than "
         "booking a consultation: a price (\"how much is a half sleeve\", a full sleeve, "
-        "anything), a picture, a design request, cover-ups, sizing, placement, aftercare "
+        "anything), a picture sent with the tattoo question, a design request, cover-ups, "
+        "sizing, placement, aftercare "
         "beyond the basics. Reply once, in Carmen's shape and in her first person, exactly: "
         + _carmen_line() +
         " Then hand over with `escalation_kind` quote to carmen with the question in the "
@@ -180,7 +187,9 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "# Pictures and quotes",
         "",
         "You cannot see pictures. A message that came with one ends \"[1 picture(s) "
-        "attached]\". Never tell the client you cannot see it and never describe it. "
+        "attached]\"; only that message carries a picture, an earlier one in the thread "
+        "does not make a later question a quote. Never tell the client you cannot see it "
+        "and never describe it. "
         "Any price you cannot give straight from the salon details, which includes "
         "anything priced from a picture (nail art, a tattoo, hair colour), a bespoke "
         "price, a question about what a design would cost, or a design request (\"can you "

@@ -380,6 +380,8 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
     assert "shall I pop you in" in prompt and prompt.count("to confirm then") >= 3
     assert "# Pictures and quotes" in prompt and "give me a little time to have a think" in prompt and "quote;" in prompt
     assert "# Tattoos" in prompt and "consultation" in prompt
+    assert "Judged on the client's latest message only" in prompt
+    assert "Do you want to discuss it, or book a free consultation with Carmen? x" in prompt
     assert "card details" in prompt
     assert "Only say \"all booked" in persona_text
 

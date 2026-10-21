@@ -456,9 +456,12 @@ The sync still writes what Fresha says; the override is the bot's.
 
 ## 2026-10-21: tattoo questions go to Carmen's WhatsApp, in her words
 
-The user's ruling: a client who wants a tattoo consultation is offered
-Carmen's free consultation times straight away and booked in. Anyone who
-wants more than that, "how much is a half sleeve", a full sleeve, a picture,
+The user's ruling: a tattoo message that does not say what it wants ("I
+want to book a tattoo with Carmen") gets one question first, "how can we
+help? Do you want to discuss it, or book a free consultation?" (refined
+the same evening after the first test). A client who wants the
+consultation is offered Carmen's free times straight away and booked in.
+Anyone who wants to discuss it, or more than that, "how much is a half sleeve", a full sleeve, a picture,
 a design, is answered once in Carmen's persona and first person: "Hey
 lovely, to discuss this further you can talk to me directly on WhatsApp, I
 can respond much quicker on there if that's ok? <number> x", then a quote
