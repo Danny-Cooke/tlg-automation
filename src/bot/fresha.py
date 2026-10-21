@@ -280,9 +280,11 @@ class Fresha:
     def view(self, appointment_id: str) -> dict:
         return self.graphql("viewAppointment", {"id": appointment_id}).get("appointment") or {}
 
-    def upcoming(self, customer_id: str, *, first: int = 10) -> list[Upcoming]:
+    def upcoming(self, customer_id: str, *, first: int = 100) -> list[Upcoming]:
         """A client's future appointments, soonest first (the client card's query
-        with its page size made a variable)."""
+        with its page size made a variable). Cancelled ones are in the page too,
+        so the page is large: with 10, a client with ten cancelled future
+        appointments looked like they had none (seen live 2026-10-21)."""
         data = self.graphql("CustomerOverviewUpcomingAppointmentQuery", {"customerId": customer_id, "first": first})
         out: list[Upcoming] = []
         for edge in (data.get("appointments") or {}).get("edges") or []:

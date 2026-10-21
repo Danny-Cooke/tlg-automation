@@ -150,7 +150,10 @@ customerId, onlyFuture: true, order START_DATETIME asc)`. The recorded text
 had `first: 1` hard-coded; `src/bot/fresha_ops.py` carries it with a
 `$first` variable instead, and Fresha accepted that (checked live
 2026-10-21, nine rows back). `onlyFuture` still includes cancelled
-appointments, so filter on `status` (UNCONFIRMED, CONFIRMED, CANCELLED seen).
+appointments, so filter on `status` (UNCONFIRMED, CONFIRMED, CANCELLED seen),
+and ask for a big page: the bot sends `first: 100` because with 10 a client
+with ten cancelled future appointments ahead of a live one looked as if
+they had nothing booked (seen live 2026-10-21 on the owner's test client).
 Each node has `startWallClock` ("2026-10-29T10:00:00[Europe/London]"),
 `bookings[].service.name`, `bookings[].employee.firstName/lastName`,
 `bookings[].price`.

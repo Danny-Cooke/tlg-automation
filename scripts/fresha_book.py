@@ -146,7 +146,7 @@ def main(argv=None) -> int:
     s.add_argument("--dry-run", action="store_true", help="quote and conflict-check only")
     s.set_defaults(fn=cmd_book)
     s = sub.add_parser("view"); s.add_argument("id"); s.set_defaults(fn=cmd_view)
-    s = sub.add_parser("upcoming"); s.add_argument("client"); s.add_argument("--limit", type=int, default=10)
+    s = sub.add_parser("upcoming"); s.add_argument("client"); s.add_argument("--limit", type=int, default=100)
     s.add_argument("--fee", action="store_true", help="also ask Fresha what cancelling each one now would charge")
     s.set_defaults(fn=cmd_upcoming)
     s = sub.add_parser("cancel"); s.add_argument("id"); s.add_argument("--notify", action="store_true"); s.set_defaults(fn=cmd_cancel)

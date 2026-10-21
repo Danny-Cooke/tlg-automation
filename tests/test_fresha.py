@@ -192,3 +192,19 @@ def test_cancel_checks_the_echoed_id():
 def test_nanoid_shape():
     ids = {fresha.nanoid() for _ in range(50)}
     assert len(ids) == 50 and all(len(i) == 21 for i in ids)
+
+
+def test_upcoming_asks_for_a_big_page_and_reads_the_card():
+    http = Http({"CustomerOverviewUpcomingAppointmentQuery": {"data": {"appointments": {"edges": [
+        {"node": {"id": "11", "status": "CANCELLED", "startWallClock": "2026-10-23T11:00:00[Europe/London]", "customerId": "5",
+                  "bookings": [{"service": {"name": "Gel polish"}, "employee": {"firstName": "JESS"}, "price": "34.00"}]}},
+        {"node": {"id": "12", "status": "UNCONFIRMED", "startWallClock": "2026-10-29T11:00:00[Europe/London]", "customerId": "5",
+                  "bookings": [{"service": {"name": "Dry cut"}, "employee": {"firstName": "Lori-Dee"}, "price": "30.00"}]}},
+    ]}}}})
+    f = fresha.Fresha(SESSION, http)
+    rows = f.upcoming("5")
+    assert variables(http.calls[0]) == {"customerId": "5", "first": 100}  # cancelled ones are in the page too
+    assert [(r.appointment_id, r.status, r.date, r.time, r.service, r.person) for r in rows] == [
+        ("11", "CANCELLED", "2026-10-23", "11:00", "Gel polish", "Jess"),
+        ("12", "UNCONFIRMED", "2026-10-29", "11:00", "Dry cut", "Lori-Dee"),
+    ]
