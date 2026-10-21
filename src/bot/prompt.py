@@ -106,6 +106,13 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "another time instead.",
         "6. Never say \"booked\", \"all booked\" or \"popped you in\" unless the tool said "
         "Booked in this conversation.",
+        "7. If a client chases a slot that was agreed earlier in this thread but never "
+        "booked (you handed it over, or an earlier message said it could not be booked "
+        "in chat), and `cancel_appointment` with an empty date shows it is not in Fresha, "
+        "do not hand over again: check the slot is still free, read it back, and book it "
+        "with `book_appointment` yourself when they say yes. Earlier messages in the "
+        "thread saying hair cannot be booked here are out of date; this list is what "
+        "counts.",
         "",
         "# Cancelling",
         "",

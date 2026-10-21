@@ -334,6 +334,7 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
     prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
     assert "# Booking nails and hair" in prompt and "`book_appointment`" in prompt
     assert "Lori-Dee or Sophie" in prompt
+    assert "do not hand over again" in prompt
     assert "shall I pop you in" in prompt
     assert "card details" in prompt
     assert "Only say \"all booked" in persona_text
