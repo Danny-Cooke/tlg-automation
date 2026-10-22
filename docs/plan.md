@@ -251,8 +251,72 @@ detail; spam is email only, and so are bookings and cancellations the bot
 completed: the group is where the bot stops, not a running commentary. Token in Secrets Manager via the
 `TELEGRAM_BOT_TOKEN` secret; chat id discovered by the Lambda and cached in
 SSM (`TELEGRAM_CHAT_ID` variable overrides). Steps in `docs/setup.md` 4c.
-Next, when wanted: an "I've got it" button and a reply that unlocks the
-thread, both needing a Telegram webhook route on the API.
+Next: job 9 gives the thread back.
+
+### 9. Hand-back: Meta's handover protocol plus Telegram buttons (AGREED 2026-10-22, not built)
+
+The problem (user, 2026-10-22): the bot hands a thread to Jess, Carmen or
+Lori-Dee and goes quiet, but nothing ever gives it back except the owner
+running a DynamoDB command. Two mechanisms, built together, either one
+hands back:
+
+**A. Meta's handover protocol.** The bot app is the Page's *primary
+receiver*; Meta's own inbox (Business Suite) is the secondary. On a locking
+hand-over (complaint, cancellation fee, quote, can't assist) the bot locks
+the thread as now and also calls `POST /{page-id}/pass_thread_control` with
+the inbox as `target_app_id` (Page Inbox `263902037430900`, Instagram Inbox
+`1217981644879628`) and `metadata` naming the kind and who it is for. From
+then on the client's messages reach the bot on Meta's `standby` channel,
+which it ignores, so Meta itself keeps the bot quiet. The team reply from
+the inbox as they do today. Moving the conversation to **Done** in the inbox
+passes control back: Meta sends `pass_thread_control` on the
+`messaging_handovers` webhook with our app as `new_owner_app_id`, and the
+bot clears the lock. Verified from Meta's reference for the endpoint, app
+ids and webhook payload; "Done gives it back" is documented by two vendors
+built on the protocol, not on a Meta page I could reach, so the first live
+test confirms it. Needs: `messaging_handovers` (and `standby`) added to the
+fields `scripts/meta_setup.py` subscribes; a one-off operator step per
+channel (Page settings: Advanced Messaging, set the app as primary
+receiver; for Instagram, Page Setup > Instagram Conversation Routing, set
+the app as default) in `docs/setup.md`; the inbound parser to read
+`messaging_handovers` events; `meta.pass_thread_control` and
+`meta.take_thread_control`.
+
+**B. Buttons on the Telegram post.** Each locking hand-over's post carries
+two inline buttons: "I've got it" and "Done, bot can take over".
+"I've got it" edits the post to "<first name> has it, 18:42" (the tapper's
+Telegram name) and stores `handled_by` on the conversation item; the Done
+button stays. "Done" clears the lock, calls `take_thread_control` so the
+inbox no longer owns the thread, and edits the post to "Back with the bot".
+The Done-in-inbox route (A) edits the post the same way, so the group sees
+the hand-back whichever way it happened. Button taps are callback queries,
+delivered to the bot that owns the message regardless of privacy mode, so
+privacy mode stays on. Needs: a `POST /telegram` route on the existing API
+Gateway to the messenger bot Lambda (one route serves both channels; the
+64-byte `callback_data` carries action, channel and sender id); the request
+checked against `X-Telegram-Bot-Api-Secret-Token`, a Terraform-generated
+secret stored next to the bot token; `setWebhook` asserted by the deploy
+pipeline like the Meta registration, with `allowed_updates` of
+`callback_query`, `message` and `my_chat_member`; `answerCallbackQuery` on
+every tap so the spinner stops. Once a webhook is set `getUpdates` stops
+working, so chat-id discovery moves from polling to the incoming update:
+any update from a group caches the id in SSM, replacing
+`discover_group_chat_id`. The cached id already covers the live group.
+
+**Backstop.** A lock older than `HANDOVER_TTL_DAYS` (default 7) is treated as
+cleared, and the bot takes control back on the next client message; Meta's
+own control expires after 24 hours idle anyway. Logged when it happens.
+
+**Rules kept.** Only live mode passes control or locks (shadow never has).
+Non-locking hand-overs (booking, cancellation, spam) get no buttons and no
+thread-control call. Email is unchanged. Telegram not configured: route A
+alone. Assigning to a named person in Business Suite has no API, so the
+Telegram post plus "I've got it" is the assignment; Page labels could add a
+filter in the inbox later if wanted.
+
+**Not in this job, worth doing after:** recording the team's own replies
+(`message_echoes`) while the thread is with them, so the bot resumes
+knowing what Lori or Carmen told the client.
 
 ## Open questions for the user
 
