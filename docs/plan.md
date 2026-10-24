@@ -527,7 +527,7 @@ prompt; nothing written outside live mode. The desk's own defaults are
 kept for the rest of the form, so a client the bot adds is opted in to
 marketing like a walk-in. Not yet: a dry run on the live Page.
 
-### 14. Confirmation chaser: unconfirmed appointments 48 hours out get a text and an email (PROPOSED 2026-10-24, not built)
+### 14. Confirmation chaser: unconfirmed appointments 48 hours out get Fresha's reminder and a text (AGREED 2026-10-24, reminder call recorded, not built)
 
 The user's ask: "we have an issue with customers not confirming their
 appointments. I want another Lambda that looks at all appointments when
@@ -544,43 +544,63 @@ How it will work:
    is re-read live (`viewAppointment`, recorded) so a client who confirmed
    overnight is skipped, and cancelled ones are skipped. One chase per
    appointment, remembered on the client row (`chased` by appointment id).
-2. **What they get.** A text through the existing sender (TLGWATCH; a
-   reminder is transactional, so the sender fits as registered) and an
-   email from info@tlg-beauty.co.uk, both in Jess's voice: "Hi Sarah, just
-   checking you're still ok for gel polish with Jess on Thu 30th at 2pm?
-   Tap to confirm: tlg-beauty.co.uk/confirm/<token>. Need to change it?
-   Just message us x". No number or email the salon does not already hold.
-3. **Confirming.** The link lands on our API like the stop link does (one
-   more website redirect, `/confirm/*`), shows the appointment and a
-   "Yes, I'll be there" button; the button marks the appointment confirmed
-   in Fresha (the dashboard's status change, to be recorded once) and the
-   page says thanks. A "Need to change it?" line links to the salon's
-   Messenger. GET never changes anything, as with the stop link.
+2. **What they get (revised the same evening, user's idea).** The Lambda
+   presses Fresha's own "Send reminder" for each one
+   (`sendAppointmentProtectionReminder`, recorded), so Fresha re-sends its
+   card-confirmation request with its Confirm button by email (and
+   WhatsApp once that channel works). Then our text through the existing
+   sender, in Jess's voice: "Hi Sarah, just checking you're still ok for
+   gel polish with Jess on Thu 30th at 2pm? Fresha's just emailed you a
+   confirm link, give it a tap when you can. Need to change it? Just
+   message us x". No page, no link of our own, nothing to invent.
+3. **Confirming** is Fresha's: the client adds a card through Fresha's own
+   link and the appointment turns Confirmed. The chaser re-reads the
+   appointment next morning and reports who still has not.
 4. **Jess sees the day's chases** in the ops email (count and names), not
    Telegram; a client who still has not confirmed by the day before is a
    line in the same email the next morning, for the desk to ring.
+
+Looked at in Fresha the same evening (calendar, an appointment, its
+activity log and the "View message" copy of a sent notification):
+
+- Fresha already sends a "confirmation request" when an appointment is
+  made, by email and by WhatsApp, and a "confirmation" once the client
+  taps Confirm. For the appointment opened, both WhatsApp sends show
+  "failed to send"; the dashboard also loads a
+  `automatedMessages_messageAccountingZeroBalanceWarning` query, which
+  points at Fresha's paid message balance being empty. So clients get the
+  email only. Worth checking Marketing > Automated messages and the
+  message balance before anything is built: a top-up may be the cheapest
+  fix of all.
+- There is no "resend" on an appointment: the quick actions are note,
+  form, activity, repeat, group, rebook, reschedule, no-show, cancel.
+- The dashboard's copy of the sent email has the Confirm and Manage links
+  replaced with "#", so Fresha's real confirm link cannot be read back and
+  reused in our text. Our message can only point at Fresha's email, or at
+  our own confirm page (step 3).
+- The notification history is readable per appointment
+  (`GET customer-notifier-api.fresha.com/appointment-notifications-history/<appointment id>`:
+  type confirmation_required / confirmation, transport email / whatsapp,
+  status sent / error; `GET /messages/<uuid>` for the rendered copy), so
+  the chaser can tell who was asked and how, and skip anyone Fresha
+  reached by WhatsApp once that works.
 
 Prerequisites, none of them code:
 
 - **SMS sandbox exit** (the same AWS case as job 10 step 4; reminders are
   a transactional use and strengthen it). Until then texts only reach
   verified numbers, so the chaser can run email-only first.
-- **Email from the salon's domain.** Amazon SES in eu-west-2: verify
-  tlg-beauty.co.uk (three DNS records at Onyx, like the stop link
-  redirect), set the From as info@tlg-beauty.co.uk, and request
-  production access (SES starts in a sandbox that only emails verified
-  addresses). A day or two of waiting on AWS.
-- **One recording**: marking an appointment confirmed in the dashboard
-  (calendar, open an unconfirmed appointment, change status), with the
-  capture hook, as the fee save and the Add client call were.
-- **A decision**: Fresha's own automated reminders (Marketing, Automated
-  messages) may already send a confirmation request; worth checking so
-  clients do not get two. Ours can replace Fresha's SMS reminder at a
-  third of the price, or sit alongside its email.
+- **No email of our own is needed now**: Fresha's reminder is the email.
+  SES stays parked unless the salon wants a second email in Jess's voice.
+- **No status recording needed**: the client confirms through Fresha.
+- **Fresha's message balance.** Every WhatsApp confirmation request seen
+  so far failed to send, and the dashboard shows a zero-balance warning.
+  Topping up would make Fresha's own WhatsApp requests reach clients as
+  well as the email; worth doing whatever we build.
 
-Cost: about 2.5p a text and nothing for email; at ten a day under £1 a
-day. Build after the prerequisites: a chaser module in `src/clients/`,
-the confirm page beside the stop page, SES and the Lambda in Terraform,
+Cost: about 2.5p a text; Fresha's email reminder is free. Build once the
+SMS sandbox clears (email-only reminders can start before that): a
+chaser module in `src/clients/`, the Lambda and schedule in Terraform,
 tests, a dry run that lists who would be chased without sending.
 
 ## Open questions for the user

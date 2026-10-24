@@ -290,6 +290,17 @@ class Fresha:
         return Client(id=str(data["id"]), name=(a.get("name") or f"{first_name} {last_name}").strip(),
                       phone=a.get("contact-number") or phone_for_fresha(mobile_e164), email=a.get("email") or email)
 
+    def send_protection_reminder(self, appointment_id: str) -> str:
+        """Re-send Fresha's own card-confirmation request for an appointment,
+        as the dashboard's "Send reminder" does (recorded 2026-10-24). Fresha
+        emails (and, where its WhatsApp channel works, messages) the client
+        with its Confirm button. Returns the appointment id Fresha echoes."""
+        data = self.graphql("sendAppointmentProtectionReminder", {"input": {"appointmentId": str(appointment_id)}})
+        echoed = str(((data.get("sendAppointmentProtectionReminder") or {}).get("appointmentId")) or "")
+        if echoed != str(appointment_id):
+            raise FreshaError(f"send reminder: Fresha echoed {echoed!r} for {appointment_id}")
+        return echoed
+
     def client_record(self, client_id: str) -> dict:
         """The rest of the profile page in one GraphQL call (`clientRecord` in
         fresha_ops.py): patch tests, allergies, tags, badges, staff alert,

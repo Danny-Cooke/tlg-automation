@@ -76,6 +76,26 @@ def test_create_client_without_an_id_is_an_error():
     assert http.calls[-1][2]["json"]["data"]["relationships"]["referral-source"] == {"data": None}
 
 
+def test_send_reminder_replays_the_dashboards_mutation_and_checks_the_echo():
+    class Gql(JsonHttp):
+        def post(self, url, **kw):
+            self.calls.append(("POST", url, kw))
+            return Resp(200, {"data": {"sendAppointmentProtectionReminder": {"appointmentId": kw["data"] and json.loads(kw["data"]["variables"])["input"]["appointmentId"]}}})
+
+    http = Gql()
+    assert fresha.Fresha(SESSION, http).send_protection_reminder("1333772002") == "1333772002"
+    method, url, kw = http.calls[-1]
+    assert url == fresha.GRAPHQL and kw["params"]["_mutation"] == "sendAppointmentProtectionReminder"
+    assert json.loads(kw["data"]["variables"]) == {"input": {"appointmentId": "1333772002"}}
+
+    class Wrong(JsonHttp):
+        def post(self, url, **kw):
+            return Resp(200, {"data": {"sendAppointmentProtectionReminder": {"appointmentId": "1"}}})
+
+    with pytest.raises(fresha.FreshaError):
+        fresha.Fresha(SESSION, Wrong()).send_protection_reminder("1333772002")
+
+
 def test_find_client_by_phone_matches_on_digits_whatever_the_name():
     rows = {"data": [
         {"id": "1", "attributes": {"name": "Amy Pond", "contact-number": "+44 7700 900123", "email": "", "blocked": False}},

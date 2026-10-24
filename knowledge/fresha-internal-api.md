@@ -369,6 +369,35 @@ and the number is typed without its leading 0.
   Recorded by adding "TLG Bot Test" with the salon's own number and email;
   the user deletes that record.
 
+## Confirmation requests and the "Send reminder" button (recorded 2026-10-24)
+
+What "unconfirmed" means here: the salon's payment policy is card
+confirmation, so a new appointment shows "Requires card confirmation,
+confirmation by card requested" and Fresha asks the client to add a card.
+The appointment is Confirmed once they do. Fresha sends that request
+itself when the appointment is made (`confirmation_required`, by email
+and by WhatsApp) and a `confirmation` message once the client confirms.
+
+- `GET customer-notifier-api.fresha.com/appointment-notifications-history/<appointment id>`
+  (usual ids): `data[]` of `appointment-history-entries` with `metadata`
+  `{notification-id, status: sent|error, transport-method: email|whatsapp,
+  type: confirmation_required|confirmation}` and a timestamp. On the
+  appointments looked at, every WhatsApp send was `error`; the dashboard
+  also runs `automatedMessages_messageAccountingZeroBalanceWarning`, so
+  Fresha's paid message balance is the likely reason.
+- `GET customer-notifier-api.fresha.com/messages/<notification uuid>`:
+  the rendered copy (`attributes.content` HTML, `header`, `type`). The
+  Confirm and Manage links in the copy are replaced with "#", so the
+  client's real confirm link cannot be read back.
+- The ⋮ next to the payment-policy line on an appointment offers Send
+  reminder, Show policy, Edit policy, Remove policy. Send reminder is
+  mutation `sendAppointmentProtectionReminder` with `{"input":
+  {"appointmentId": "<id>"}}`, answer `{appointmentId}`. Fresha then
+  re-sends its card-confirmation request. Recorded on a real
+  appointment, button pressed by the user. The quick-actions menu at the
+  bottom of the drawer has no resend.
+- The bot replays it as `Fresha.send_protection_reminder` (plan job 14).
+
 ## Other APIs
 
 All under the same cookies and query-string ids:

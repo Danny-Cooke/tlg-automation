@@ -983,3 +983,17 @@ fragment TlgAppointment on Appointments_Appointment {
   }
 }
 """)
+
+
+# "Send reminder" next to "Requires card confirmation" on an appointment
+# (recorded 2026-10-24, clicked by the user): Fresha re-sends its own
+# card-confirmation request to the client. The confirmation chaser (plan
+# job 14) uses it instead of inventing a confirm link of our own.
+OPS["sendAppointmentProtectionReminder"] = ("mutation", "sendAppointmentProtectionReminder", """mutation sendAppointmentProtectionReminder($input: AppointmentProtection_SendAppointmentProtectionReminderInput!) {
+  __typename
+  sendAppointmentProtectionReminder: AppointmentProtection_sendAppointmentProtectionReminder(input: $input) {
+    __typename
+    appointmentId
+  }
+}
+""")
