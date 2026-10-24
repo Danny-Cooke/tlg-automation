@@ -618,12 +618,18 @@ So the clients row carries our own fields, never written by Fresha's side
 of the sync: `patch_tested`, `patch_test_basis`, `patch_test_date`,
 `patch_test_service`, `patch_test_set_at`. The sync fills them in order of
 trust: an active patch test on the Fresha record ("fresha record"), else
-the most recent past appointment, not cancelled and not a no-show, for a
-service Fresha flags as needing a patch test ("assumed from Brow Tint on
-2026-09-01 (completed)"). Which services count comes from Fresha's own
-"patch test required" tick, read from the catalog each run, so ticking a
-service in Fresha is all it takes to widen the assumption. The sync never
-clears the column, and an assumption never overwrites a record.
+the most recent past appointment, not cancelled and not a no-show, for
+any lash or brow service ("assumed from Brow Tint on 2026-09-01
+(completed)") or any service Fresha flags as needing a patch test. The
+user's words: "if someone has had some sort of lash or brow appointment
+then I want my column updating as a one off, done now, and if a future
+Lambda sync finds someone new and they have had a lash or brow service
+and/or the patch test in Fresha has been ticked then I want mine updating
+too." So: a lash or brow word in the service name counts (makeup and
+removals do not), plus Fresha's own "patch test required" tick read from
+the catalog each run. The one-off was run from the laptop against the
+mirrored history on 2026-10-24; the sync applies the same rule daily. The
+sync never clears the column, and an assumption never overwrites a record.
 
 Going forward, both columns update from one action at the desk: log the
 test on the client's profile in Fresha (Records, Patch tests). The next

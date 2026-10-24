@@ -271,16 +271,21 @@ def _appointment(n: dict) -> dict:
 # -- patch tests: what the row can prove, and what the salon assumes --------------
 
 DONE_STATUSES_NOT = ("CANCEL", "NO_SHOW", "NOSHOW")  # a past appointment with any other status counts as attended
+# Any lash or brow appointment counts as a patch test done (user, 2026-10-24),
+# whether or not Fresha flags the service; makeup and removals are not treatments.
+PATCH_TEST_KEYWORDS = ("lash", "brow")
+PATCH_TEST_EXCLUDE = ("make up", "makeup", "removal")
 
 
 def patch_test_evidence(fields: dict, required: set[str]) -> dict | None:
     """Our own patch-test column, worked out from Fresha's side of the row.
 
-    The salon's assumption (user, 2026-10-24): a client who has had a service
-    that needs a patch test has been patch tested. So, in order of trust:
-    an active patch test on the Fresha record; otherwise the most recent
-    past appointment, not cancelled and not a no-show, for a service whose
-    name is in `required` (the services Fresha flags as needing a test).
+    The salon's assumption (user, 2026-10-24): a client who has had a lash
+    or brow appointment, or any service Fresha flags as needing a patch
+    test, has been patch tested. So, in order of trust: an active patch test
+    on the Fresha record; otherwise the most recent past appointment, not
+    cancelled and not a no-show, for a service whose name is in `required`
+    (Fresha's tick) or carries a lash/brow word (not makeup, not a removal).
     Returns the fields to write, or None when there is nothing to go on.
     """
     for t in fields.get("patch_tests") or []:
@@ -294,7 +299,7 @@ def patch_test_evidence(fields: dict, required: set[str]) -> dict | None:
         if any(x in status for x in DONE_STATUSES_NOT):
             continue
         for s in a.get("services") or []:
-            if _norm(s.get("name")) in want:
+            if counts_as_patch_test(s.get("name"), want):
                 when = (s.get("start") or a.get("start") or "")[:10]
                 if best is None or when > best[0]:
                     best = (when, s.get("name") or "", status)
@@ -303,6 +308,15 @@ def patch_test_evidence(fields: dict, required: set[str]) -> dict | None:
     when, name, status = best
     return {"patch_tested": True, "patch_test_basis": f"assumed from {name} on {when} ({status.lower()})",
             "patch_test_date": when, "patch_test_service": name}
+
+
+def counts_as_patch_test(service_name, required_norm: set[str]) -> bool:
+    n = _norm(service_name)
+    if not n:
+        return False
+    if n in required_norm:
+        return True
+    return any(k in n for k in PATCH_TEST_KEYWORDS) and not any(x in n for x in PATCH_TEST_EXCLUDE)
 
 
 def _norm(text) -> str:

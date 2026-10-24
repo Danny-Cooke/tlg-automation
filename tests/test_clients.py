@@ -489,7 +489,12 @@ def test_patch_test_is_assumed_from_the_latest_attended_flagged_service():
     assert ev == {"patch_tested": True, "patch_test_basis": "assumed from brow  tint on 2026-06-01 (unconfirmed)",
                   "patch_test_date": "2026-06-01", "patch_test_service": "brow  tint"}
     assert model.patch_test_evidence({"past": past[4:], "patch_tests": []}, {"Brow Tint"}) is None
-    assert model.patch_test_evidence({"past": past, "patch_tests": []}, set()) is None
+    # Any lash or brow appointment counts even with nothing flagged in Fresha; makeup and removals do not.
+    assert model.patch_test_evidence({"past": past, "patch_tests": []}, set())["patch_test_service"] == "brow  tint"
+    for name, want in (("Lash lift and tint", True), ("Classic lash infill", True), ("Brow Wax", True), ("lash patch test", True),
+                       ("Make up by the lash goblin", False), ("Lash removal", False), ("Gel polish", False), ("", False)):
+        assert model.counts_as_patch_test(name, set()) is want, name
+    assert model.counts_as_patch_test("Gel polish", {"gel polish"}) is True
 
 
 def test_a_fresha_record_beats_the_assumption():
