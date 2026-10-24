@@ -475,8 +475,10 @@ def test_handover_fields_round_trip_through_the_table():
     store = ConversationStore(table=table)
     c = Conversation(sender_id="p")
     c.hand_over("carmen", "tattoos")
+    c.fresha_client_id, c.fresha_client_name = "305", "Amy Pond"
     store.save(c)
     back = store.load("p")
     assert back.handed_to == "carmen" and back.handed_area == "tattoos" and back.watching()
+    assert back.fresha_client_id == "305" and back.fresha_client_name == "Amy Pond"
     store.clear_handover("p")
     assert store.load("p").handed_to_jess is False and store.load("p").handed_to == ""

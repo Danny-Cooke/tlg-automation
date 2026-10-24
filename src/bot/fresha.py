@@ -35,6 +35,8 @@ log = logging.getLogger(__name__)
 GRAPHQL = "https://partners-api-gateway.fresha.com/graphql"
 CUSTOMERS = "https://customers-api.fresha.com/v2/customer-search"
 CUSTOMER = "https://customers-api.fresha.com/v2/customers/{id}"  # the full record, marketing ticks included
+CREATE_CLIENT = "https://customers-api.fresha.com/v2/customers"  # POST: the dashboard's "Add a new client" (recorded 2026-10-24)
+REFERRAL_SOURCES = "https://customers-api.fresha.com/referral-sources"  # the salon's list; "Walk-In" is the default
 STATISTICS = "https://partners-api.fresha.com/customers/{id}/statistics"  # Fresha's counters per client
 FORMS = "https://consultation-forms-api.fresha.com/requests"  # consultation forms requested of a client
 OWNER_ID = "1453889"       # __pid, the owner's Fresha user
@@ -101,6 +103,18 @@ class Quote:
     cancellation_fee: str
     deposit: str
     raw: dict = field(default_factory=dict, compare=False)
+
+
+def phone_for_fresha(mobile_e164: str) -> str:
+    """"+447700900123" the way the dashboard writes it: "+44 7700 900123"."""
+    d = _digits(mobile_e164)
+    if d.startswith("44") and len(d) == 12:
+        return f"+44 {d[2:6]} {d[6:]}"
+    return "+" + d if d else ""
+
+
+def _digits(text: str | None) -> str:
+    return "".join(ch for ch in (text or "") if ch.isdigit())
 
 
 def nanoid() -> str:
@@ -212,6 +226,69 @@ class Fresha:
         )
         self._check(resp)
         return resp.json()
+
+    def find_client_by_phone(self, mobile_e164: str) -> list[Client]:
+        """Clients whose number is this one, whatever name they are under. The
+        dashboard's search box takes a number; the match here is on digits."""
+        want = _digits(mobile_e164)
+        if len(want) < 10:
+            return []
+        rows = self.find_clients(phone_for_fresha(mobile_e164), limit=20) or self.find_clients(want[-10:], limit=20)
+        return [c for c in rows if _digits(c.phone).endswith(want[-10:])]
+
+    def referral_source_id(self) -> str:
+        """The salon's default referral source ("Walk-In"), as the dashboard
+        attaches to a new client. Empty if Fresha lists none."""
+        if getattr(self, "_referral_source_id", None) is not None:
+            return self._referral_source_id
+        resp = self.http.get(REFERRAL_SOURCES, params=self._ids(), cookies=self.session.cookies(),
+                             headers={**HEADERS, "accept": "application/vnd.api+json"}, timeout=20)
+        self._check(resp)
+        rows = [r for r in (resp.json().get("data") or []) if not (r.get("attributes") or {}).get("is-deleted")]
+        default = [r for r in rows if (r.get("attributes") or {}).get("is-default")] or rows
+        self._referral_source_id = str(default[0].get("id", "")) if default else ""
+        return self._referral_source_id
+
+    def create_client(self, *, first_name: str, last_name: str, mobile_e164: str, email: str) -> Client:
+        """Add a client exactly as the dashboard's "Add a new client" form does
+        (recorded 2026-10-24): the four fields the salon fills in, the form's
+        own defaults for the rest (notifications and marketing on, the default
+        referral source, no birthday, no address), creation source client_list."""
+        attributes = {
+            "first-name": first_name.strip(), "last-name": last_name.strip(), "gender": "", "pronoun": None,
+            "email": email.strip().lower(), "contact-number": phone_for_fresha(mobile_e164),
+            "additional-contact-number": None, "additional-email": "",
+            "birthday-day": None, "birthday-month": None, "birthday-year": None,
+            "enable-email-notifications": True, "enable-sms-notifications": True, "enable-whatsapp-notifications": True,
+            "accepts-marketing-notifications": True, "accepts-sms-marketing-notifications": True,
+            "accepts-whatsapp-marketing-notifications": True, "marketplace-appointment-confirmation-enabled": True,
+            "is-changed": True, "occupation": None, "nationality": None, "avatar-filename": "",
+            "referrer-reward-template-ids": None, "referee-reward-template-id": None, "tag-ids": [], "tag-names": [],
+            "selected-language-locale-code": "", "creation-source": "client_list",
+        }
+        source = self.referral_source_id()
+        relationships = {
+            "referral-source": {"data": {"attributes": {"id": source}, "type": "referral-source"}} if source else {"data": None},
+            "referred-by-customer": {"data": None},
+            "addresses": {"data": []},
+            "emergency-contacts": {"data": [
+                {"type": "emergency-contact", "attributes": {"type": kind, "full-name": "", "relationship": "", "contact-number": None,
+                                                             "email": "", "destroy": True}}
+                for kind in ("primary", "secondary")
+            ]},
+        }
+        resp = self.http.post(
+            CREATE_CLIENT, json={"data": {"type": "customer-create-requests", "attributes": attributes, "relationships": relationships}},
+            cookies=self.session.cookies(), headers={**HEADERS, "accept": "application/vnd.api+json", "content-type": "application/vnd.api+json"},
+            timeout=20,
+        )
+        self._check(resp)
+        data = (resp.json() or {}).get("data") or {}
+        if not data.get("id"):
+            raise FreshaError("create client: Fresha answered without an id")
+        a = data.get("attributes") or {}
+        return Client(id=str(data["id"]), name=(a.get("name") or f"{first_name} {last_name}").strip(),
+                      phone=a.get("contact-number") or phone_for_fresha(mobile_e164), email=a.get("email") or email)
 
     def client_record(self, client_id: str) -> dict:
         """The rest of the profile page in one GraphQL call (`clientRecord` in

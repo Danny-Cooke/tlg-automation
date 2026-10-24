@@ -656,3 +656,29 @@ the test, said kindly, because the record is what covers the salon. The
 sync marks them tested once the patch-test appointment has happened, so
 the question is asked once.
 
+## 2026-10-24: new clients are added in chat, phone first, with the desk's defaults
+
+The user's ask: "onboard a new client if they message and they are not
+already a customer", then the form fields: "we only need first name, last
+name, phone number and email; when we create the new client we drop the
+leading 0 from the phone number, it's +44 in the menu already." Built as
+plan job 13.
+
+- When a booking finds no Fresha client with the thread's name, the bot
+  no longer hands over. It asks once for mobile and email, then
+  `create_client` looks the number up first: a match under another name is
+  the same person and no record is added. Only a number nobody has gets a
+  new record, through the dashboard's own Add client call.
+- The rest of the form keeps the desk's defaults, including the three
+  marketing ticks on, so a client the bot adds is treated exactly like a
+  walk-in added at the desk. Flip in `Fresha.create_client` if the user
+  wants bot-added clients opted out until they say otherwise.
+- The referral source is the salon's default ("Walk-In", the only one).
+  Adding "Messenger" and "Instagram" sources in Fresha would let the desk
+  see where bot clients came from; the code picks the default source, so
+  that is a Fresha change plus one line.
+- The matched or created Fresha client id is kept on the conversation and
+  every later booking in that thread uses it, so a Messenger display name
+  that differs from the Fresha name stops mattering once the number is
+  known.
+

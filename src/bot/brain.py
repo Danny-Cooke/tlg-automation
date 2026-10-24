@@ -171,8 +171,29 @@ PATCH_TEST_TOOL = {
     },
 }
 
+CREATE_CLIENT_TOOL = {
+    "name": "create_client",
+    "description": (
+        "Onboard a client Fresha does not know, after `book_appointment` said there is no client with their name. "
+        "Call it with their first name, last name, mobile number and email, asked for in one message. It first looks the "
+        "number up: if Fresha already has it under another name it uses that record and adds nothing; otherwise it adds "
+        "the client. After it answers, book for them as normal."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "first_name": {"type": "string"},
+            "last_name": {"type": "string"},
+            "mobile": {"type": "string", "description": "UK mobile as the client gave it, e.g. 07700 900123."},
+            "email": {"type": "string"},
+        },
+        "required": ["first_name", "last_name", "mobile", "email"],
+        "additionalProperties": False,
+    },
+}
+
 TOOL_DEFINITIONS = {"check_availability": AVAILABILITY_TOOL, "patch_test_status": PATCH_TEST_TOOL, "book_appointment": BOOKING_TOOL,
-                    "cancel_appointment": CANCEL_TOOL}
+                    "cancel_appointment": CANCEL_TOOL, "create_client": CREATE_CLIENT_TOOL}
 
 SAFE_REPLY = "Hi lovely, give me a little time to have a think and I'll get back to you x"
 

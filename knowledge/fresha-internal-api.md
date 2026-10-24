@@ -327,6 +327,48 @@ the workspace's appointment-protection setting.
   `services_getServiceById`, saved by `services_updateServiceMutation`),
   which is what the catalog's `isPatchTestRequired` reflects.
 
+## Adding a client (recorded 2026-10-24)
+
+Clients list > Add > first name, last name, email, phone > Save. The form
+has more fields (birthday, gender, pronouns, addresses, emergency
+contacts); the salon fills in the four. The phone box has a +44 prefix
+and the number is typed without its leading 0.
+
+- While typing, the dashboard asks `GET customers-api.fresha.com/customer-duplicates/closest-duplicates-check?contact-number=<n>&email=<e>`
+  (usual ids too) and gets `{"meta": {"duplicates-check": false}}`: a yes
+  or no, never which client. `GET /customer-duplicates/existence-check`
+  (no params) answers `{"meta": {"existence-check": true}}`.
+- `GET customers-api.fresha.com/referral-sources` lists the salon's
+  sources: one, "Walk-In", id 10435303, `is-default`.
+- Save: `POST https://customers-api.fresha.com/v2/customers` (no query
+  string), JSON body `{"data": {"type": "customer-create-requests",
+  "attributes": {...}, "relationships": {...}}}`. Attributes as the form
+  sent them: `first-name`, `last-name`, `gender` "", `pronoun` null,
+  `email`, `contact-number` "+44 7700 900123" (space after the country
+  code and after four digits), `additional-contact-number` null,
+  `additional-email` "", `birthday-day/month/year` null,
+  `enable-email-notifications`, `enable-sms-notifications`,
+  `enable-whatsapp-notifications` true, `accepts-marketing-notifications`,
+  `accepts-sms-marketing-notifications`,
+  `accepts-whatsapp-marketing-notifications` true (the form's defaults:
+  every client added at the desk is opted in to marketing),
+  `marketplace-appointment-confirmation-enabled` true, `is-changed` true,
+  `occupation` null, `nationality` null, `avatar-filename` "",
+  `referrer-reward-template-ids` null, `referee-reward-template-id` null,
+  `tag-ids` [], `tag-names` [], `selected-language-locale-code` "",
+  `creation-source` "client_list". Relationships: `referral-source`
+  `{"data": {"attributes": {"id": "10435303"}, "type": "referral-source"}}`,
+  `referred-by-customer` `{"data": null}`, `addresses` `{"data": []}`,
+  `emergency-contacts` two empty entries (`type` primary and secondary,
+  `destroy` true). The answer is the new record, type `customers-v2`, with
+  its `id` and the attributes the v2 record carries.
+- The bot (`Fresha.create_client`) sends the same body with the four
+  fields filled and the default referral source looked up once. It never
+  creates a second record for a number Fresha already has: `find_client_by_phone`
+  searches the client list by the number first and matches on digits.
+  Recorded by adding "TLG Bot Test" with the salon's own number and email;
+  the user deletes that record.
+
 ## Other APIs
 
 All under the same cookies and query-string ids:
@@ -434,7 +476,6 @@ Consequences for the bot (see `docs/plan.md`, job 4):
 
 ## Still unknown
 
-- The create-client mutation, for a client the bot cannot find by search.
 - Reschedule: not recorded yet. Likely an update mutation on the booking.
 - Whether the session cookie's 30 days is also enforced server-side at
   exactly 30 days, or the server cuts it earlier on inactivity. The bot

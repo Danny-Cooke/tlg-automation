@@ -479,6 +479,54 @@ bot Lambdas' read access to the clients table. Decided by default: a client
 who says they were tested but has no record still gets the test, kindly.
 Not yet: a dry run against a test client on the live Page.
 
+### 13. New clients: onboard in chat when Fresha does not know them (BUILT 2026-10-24; bot stack)
+
+The user's ask: "onboard a new client if they message and they are not
+already a customer." Today the booking tool matches the client by exact
+name in Fresha and, when there is no match, hands over to Jess; the
+create-client call was never recorded (job 4, "not yet").
+
+How it will work:
+
+1. **Find them properly first.** The Messenger name is a display name, not
+   a record. Before creating anyone the bot asks for a mobile number (the
+   team already does) and matches on that, using Fresha's own duplicate
+   check (`customer-duplicates/existence-check`, seen in the profile
+   capture) and the client search. A match by phone under another name is
+   the same person: book them, no new record. Email is asked for as well,
+   because Fresha's card-confirmation message goes to one or the other.
+2. **Create them in Fresha** with a new tool, `create_client` (first name,
+   last name, mobile, email): the dashboard's "Add client" mutation, to be
+   recorded once from the profile page with the capture hook, then replayed
+   with the real details. Marketing ticks are left off; Fresha's own
+   booking message asks the client what they want. Referral source
+   "Messenger" or "Instagram" so the desk can see where they came from.
+3. **Then book as normal.** The new record is used straight away for the
+   appointment (and the patch-test flow if it is lashes or brows: a new
+   client has no test on record, so the test goes in first). The nightly
+   sync mirrors the new client into the clients table with a stop-link
+   token like everyone else.
+4. **Wording.** In Jess's voice: "Lovely, you're new to us! Can I grab your
+   mobile number and email so Fresha can send your confirmation through? x"
+   Asked once, both in one message; a client who will not give a number is
+   handed over to Jess (kind booking) with the slot, as now.
+5. **Guard rails.** The bot never creates a second record for a number or
+   email Fresha already has; it never edits an existing record; a failed
+   create hands over as now. Numbers are stored as Fresha formats them;
+   the bot never repeats a number back in chat beyond "the one ending 123".
+
+Built 2026-10-24 after the user pasted the form ("we only need first name,
+last name, phone number and email; drop the leading 0, it's +44 already")
+and the Add client call was recorded (`knowledge/fresha-internal-api.md`,
+"Adding a client"; test record "TLG Bot Test" for the user to delete).
+`Fresha.create_client` and `find_client_by_phone`; the `create_client`
+tool in `booking.py` (details checked, phone first, add only when nobody
+has the number, the Fresha client id kept on the conversation so the
+booking uses it by id from then on); the New clients section of the
+prompt; nothing written outside live mode. The desk's own defaults are
+kept for the rest of the form, so a client the bot adds is opted in to
+marketing like a walk-in. Not yet: a dry run on the live Page.
+
 ## Open questions for the user
 
 1. Prod only, or a dev stack as well?

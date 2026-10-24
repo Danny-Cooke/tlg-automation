@@ -287,6 +287,7 @@ def tools(convo: Conversation | None = None, store: ConversationStore | None = N
         common = dict(cfg=cfg, convo=convo, dry_run=MODE != "live", save=store.save if store else None, notify=escalation.notify_booking)
         out["book_appointment"] = lambda args: booking.book(args, **common)
         out["cancel_appointment"] = lambda args: booking.cancel(args, **common)
+        out["create_client"] = lambda args: booking.create_client(args, **common)
     if os.environ.get("CLIENTS_TABLE"):
         out["patch_test_status"] = patch_tests.status
     return out

@@ -219,6 +219,22 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "nails, carmen for tattoos, lori-dee for hair) with the question in the reason. "
         "You will not answer again on that thread; the team sends the price.",
         "",
+        "# New clients",
+        "",
+        "When `book_appointment` says there is no Fresha client with their name, they are "
+        "new to the salon or on Fresha under another name (user, 2026-10-24: onboard them). "
+        "Do not hand over. Ask once, warmly, for both things in one message: \"Lovely, you're "
+        "new to us! Can I grab your mobile number and email so Fresha can send your "
+        "confirmation through? x\" (if they have told you Fresha knows them by another name, "
+        "say that instead: \"what name will Fresha have you under lovely?\" and try the booking "
+        "again with it). With the number and email, call `create_client` with their first "
+        "name, last name (from their profile name unless they gave another), mobile and "
+        "email. It finds them by number if they already exist and otherwise adds them; "
+        "either way it tells you the name to book under, so call `book_appointment` again "
+        "straight away with that name. Never read a number or email back in full; \"the "
+        "number ending 123\" is enough. A client who will not give a number: hand over to "
+        "Jess with `escalation_kind` booking and the slot, as before.",
+        "",
         "# Patch tests",
         "",
         f"Every service marked [patch test needed] above (lash and brow treatments) needs a "

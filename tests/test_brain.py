@@ -162,4 +162,5 @@ def test_api_failure_is_a_safe_escalation():
 def test_patch_test_tool_and_kind_exist():
     assert "patch test" in brain.ESCALATION_KINDS
     assert brain.TOOL_DEFINITIONS["patch_test_status"]["input_schema"]["required"] == ["client_name"]
-    assert list(brain.TOOL_DEFINITIONS) == ["check_availability", "patch_test_status", "book_appointment", "cancel_appointment"]
+    assert list(brain.TOOL_DEFINITIONS) == ["check_availability", "patch_test_status", "book_appointment", "cancel_appointment", "create_client"]
+    assert brain.TOOL_DEFINITIONS["create_client"]["input_schema"]["required"] == ["first_name", "last_name", "mobile", "email"]

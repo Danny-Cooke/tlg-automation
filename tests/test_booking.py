@@ -193,7 +193,7 @@ def test_hand_written_exclusions_beat_fresha(cfg):
 
 def test_client_matching_rules(cfg):
     out, f, _ = run(cfg, f=FakeFresha(clients=[]))
-    assert out.startswith("No Fresha client called 'Danny Cooke'") and "Hand over to Jess" in out
+    assert out.startswith("No Fresha client called 'Danny Cooke'") and "`create_client`" in out  # onboarding, not a hand-over (job 13)
     out, f, _ = run(cfg, f=FakeFresha(clients=[DANNY, fresha.Client("2", "Danny Cooke")]))
     assert "More than one Fresha client" in out
     out, f, _ = run(cfg, f=FakeFresha(clients=[fresha.Client("2", "Danny Cooke", blocked=True)]))
@@ -295,7 +295,7 @@ def test_handler_offers_booking_only_with_a_session_parameter_and_a_conversation
     assert set(handler.tools(convo())) == {"check_availability"}
     monkeypatch.setenv("FRESHA_SESSION_PARAM", "/tlg/test/fresha/session")
     assert set(handler.tools()) == {"check_availability"}
-    assert set(handler.tools(convo())) == {"check_availability", "book_appointment", "cancel_appointment"}
+    assert set(handler.tools(convo())) == {"check_availability", "book_appointment", "cancel_appointment", "create_client"}
     handler.salon.cache_clear()
 
 
@@ -493,7 +493,7 @@ def test_handler_offers_cancel_with_the_booking_tool(monkeypatch):
     monkeypatch.setenv("SALON_CONFIG_JSON", json.dumps(CONFIG))
     monkeypatch.setenv("FRESHA_SESSION_PARAM", "/tlg/test/fresha/session")
     handler.salon.cache_clear()
-    assert set(handler.tools(convo())) == {"check_availability", "book_appointment", "cancel_appointment"}
+    assert set(handler.tools(convo())) == {"check_availability", "book_appointment", "cancel_appointment", "create_client"}
     handler.salon.cache_clear()
     assert set(brain.CANCEL_TOOL["input_schema"]["required"]) == {"date", "time", "client_name", "check_only"}
 

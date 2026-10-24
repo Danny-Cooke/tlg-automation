@@ -40,8 +40,9 @@ from dataclasses import dataclass
 
 from . import fresha_session, patch_tests
 from .config import SalonConfig
-from .fresha import Fresha, FreshaError, Service, SessionRejected
+from .fresha import Client, Fresha, FreshaError, Service, SessionRejected
 from .state import Conversation
+from clients.model import e164
 
 log = logging.getLogger(__name__)
 
@@ -126,7 +127,7 @@ def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, sa
                         f"ahead in this conversation. Book the service 'lash patch test' first (10 minutes, with Amber, Carmen or Jess, "
                         f"any free time in opening hours) at least {patch_tests.LEAD_HOURS:g} hours before this slot, then book this.")
 
-        client, why = _match_client(f, req.client_name)
+        client, why = _match_client(f, req.client_name, convo)
         if client is None:
             return why
 
@@ -169,6 +170,55 @@ def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, sa
             "Tell the client it is in and that Fresha will text or email them to confirm with their card details.")
 
 
+def create_client(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, save=None, notify=None,
+                  session=None, fresha: Fresha | None = None, now=None) -> str:
+    """The `create_client` tool (job 13): onboard a client Fresha does not
+    know. Finds them by mobile first, whatever name they are under, and only
+    adds a record when nobody has that number. Either way the thread then
+    books for that Fresha client by id, so the Messenger name no longer has
+    to match. Nothing is written outside live mode."""
+    first = str(args.get("first_name") or "").strip()
+    last = str(args.get("last_name") or "").strip()
+    mobile = e164(str(args.get("mobile") or ""))
+    email = str(args.get("email") or "").strip().lower()
+    if not first or not last:
+        return "Need the client's first name and last name."
+    if not mobile:
+        return "That mobile number does not look right. Ask for it again (a UK mobile, 11 digits starting 07, or with +44)."
+    if "@" not in email or "." not in email.split("@")[-1]:
+        return "That email address does not look right. Ask for it again."
+    session = session or fresha_session.get()
+    if session is None:
+        return "Cannot reach Fresha right now. " + HAND_OVER
+    f = fresha or Fresha(session)
+    try:
+        found = f.find_client_by_phone(mobile)
+        if found:
+            usable = [c for c in found if not c.blocked] or found
+            client = usable[0]
+            if client.blocked:
+                return f"The Fresha record with that number ('{client.name}') is blocked. " + HAND_OVER
+            convo.fresha_client_id, convo.fresha_client_name = client.id, client.name
+            if save:
+                save(convo)
+            return (f"Already a client: that number belongs to '{client.name}' on Fresha (client {client.id}). No record added. "
+                    f"Book for them now; use the name '{client.name}'.")
+        if dry_run:
+            return f"Would have created (not live): {first} {last} with that mobile and email. Carry on as if they were added."
+        client = f.create_client(first_name=first, last_name=last, mobile_e164=mobile, email=email)
+    except SessionRejected:
+        log.warning("create_client: Fresha rejected the session")
+        return "Cannot reach Fresha right now. " + HAND_OVER
+    except FreshaError as e:
+        log.warning("create_client: %s", e)
+        return "Fresha would not add the client. " + HAND_OVER
+    convo.fresha_client_id, convo.fresha_client_name = client.id, client.name
+    if save:
+        save(convo)
+    log.info("CREATED CLIENT %s for %s", client.id, convo.sender_id)
+    return f"Created: {client.name} on Fresha (client {client.id}). Book for them now; use the name '{client.name}'."
+
+
 LIVE_STATUSES = frozenset({"UNCONFIRMED", "CONFIRMED", "ARRIVED", "STARTED"})
 FEE_HAND_OVER = "Hand over to Jess (kind: cancellation or rebooking) with the appointment details; tell the client the girls will sort it."
 
@@ -202,7 +252,7 @@ def cancel(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, 
     f = fresha or Fresha(session)
 
     try:
-        client, why = _match_client(f, client_name)
+        client, why = _match_client(f, client_name, convo, onboard=False)
         if client is None:
             return why.replace(HAND_OVER, FEE_HAND_OVER)
         live = [u for u in f.upcoming(client.id) if u.status in LIVE_STATUSES]
@@ -353,13 +403,21 @@ def forget_catalog() -> None:
     _catalog_cache.clear()
 
 
-def _match_client(f: Fresha, name: str):
-    """(Client, "") when exactly one usable record carries this name, else (None, why)."""
+def _match_client(f: Fresha, name: str, convo: Conversation | None = None, *, onboard: bool = True):
+    """(Client, "") for the client this thread books for: the one matched by
+    phone or created earlier in the thread (job 13), else exactly one usable
+    record with this name; otherwise (None, why). `onboard` says what to do
+    about nobody: a booking onboards them, a cancellation hands over."""
+    if convo is not None and convo.fresha_client_id:
+        return Client(id=convo.fresha_client_id, name=convo.fresha_client_name or name), ""
     rows = f.find_clients(name, limit=20)
     exact = [c for c in rows if _norm(c.name) == _norm(name)]
     if not exact:
-        return None, (f"No Fresha client called '{name}'. They may be new or use a different name on Fresha; "
-                      "the bot cannot create clients yet. " + HAND_OVER)
+        if not onboard:
+            return None, f"No Fresha client called '{name}'. They may use a different name on Fresha. " + HAND_OVER
+        return None, (f"No Fresha client called '{name}'. They may be new, or on Fresha under another name. "
+                      "Ask for their mobile number and email (one message), then call `create_client`: it finds them by "
+                      "number or adds them, and the booking goes through after that.")
     if len(exact) > 1:
         return None, f"More than one Fresha client is called '{name}', so the bot cannot tell which to book. " + HAND_OVER
     client = exact[0]
