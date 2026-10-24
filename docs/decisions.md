@@ -604,3 +604,30 @@ posts the same line, and the `escalate_to` name on the line tells Jess
 who it concerns. Lori-Dee's hair threads are already hers in the inbox
 without a post needing to reach her.
 
+## 2026-10-24: our own patch-test column, assumed from history until Fresha has the record
+
+The first full client mirror found one patch test logged in Fresha across
+604 clients, so the team has not been recording them there. The user's
+ruling: "for clients in our list who have had services that require patch
+tests, I want you to indicate that the patch test has been done. This
+should be an additional patch test column. In future, any new clients that
+have patch tests done will need the Fresha patch test column and my column
+updating."
+
+So the clients row carries our own fields, never written by Fresha's side
+of the sync: `patch_tested`, `patch_test_basis`, `patch_test_date`,
+`patch_test_service`, `patch_test_set_at`. The sync fills them in order of
+trust: an active patch test on the Fresha record ("fresha record"), else
+the most recent past appointment, not cancelled and not a no-show, for a
+service Fresha flags as needing a patch test ("assumed from Brow Tint on
+2026-09-01 (completed)"). Which services count comes from Fresha's own
+"patch test required" tick, read from the catalog each run, so ticking a
+service in Fresha is all it takes to widen the assumption. The sync never
+clears the column, and an assumption never overwrites a record.
+
+Going forward, both columns update from one action at the desk: log the
+test on the client's profile in Fresha (Records, Patch tests). The next
+sync copies it and the basis becomes "fresha record". A patch-test
+appointment the bot books (job 12) also counts once it has happened,
+because the patch-test services are ticked as requiring one.
+

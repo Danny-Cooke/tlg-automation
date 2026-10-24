@@ -57,11 +57,26 @@ def lambda_handler(event: dict, context=None) -> dict:
         return {"error": str(exc)}
 
 
+def patch_test_services(f: fresha.Fresha) -> set[str]:
+    """Names of the services Fresha flags as needing a patch test (the tick on
+    the service's Settings page), read from the catalog each run."""
+    return {s.name for s in f.catalog() if s.patch_test}
+
+
 def run(f: fresha.Fresha, store: ClientStore, *, dry_run: bool = False, pause: float | None = None,
-        limit: int = 0, deadline: float | None = None, now: int | None = None) -> dict:
+        limit: int = 0, deadline: float | None = None, now: int | None = None, required: set[str] | None = None) -> dict:
     pause = PAUSE_SECONDS if pause is None else pause
     now = now or int(time.time())
     started = time.monotonic()
+    if required is None:
+        try:
+            required = patch_test_services(f)
+        except fresha.SessionRejected:
+            raise
+        except fresha.FreshaError as exc:  # the mirror still runs; the column just is not widened this time
+            log.warning("Could not read the catalog for patch-test services: %s", exc)
+            required = set()
+    patch_tested = 0
     ids: list[str] = []
     for row in iter_search(f):
         cid = str(row.get("id", ""))
@@ -90,8 +105,13 @@ def run(f: fresha.Fresha, store: ClientStore, *, dry_run: bool = False, pause: f
             log.warning("Profile fetch failed for client %s: %s", cid, exc)
             extra = {"record_error": str(exc)[:200]}
         client = dataclasses.replace(client, **extra)
+        evidence = model.patch_test_evidence(extra, required) if required else None
+        if evidence:
+            patch_tested += 1
         if not dry_run:
             store.upsert_from_fresha(client, now=now)
+            if evidence:
+                store.set_patch_tested(cid, evidence, now=now)
         if pause:
             time.sleep(pause)
 
@@ -103,6 +123,8 @@ def run(f: fresha.Fresha, store: ClientStore, *, dry_run: bool = False, pause: f
         "records": records,
         "record_errors": record_errors,
         "remaining": remaining,
+        "patch_test_services": sorted(required),
+        "patch_test_evidence": patch_tested,
         "marked_missing": len(gone),
         "seconds": round(time.monotonic() - started, 1),
         **({} if dry_run else store.summary()),

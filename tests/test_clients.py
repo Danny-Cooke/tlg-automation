@@ -21,9 +21,14 @@ class FakeTable:
     def __init__(self):
         self.items: dict[str, dict] = {}
 
-    def update_item(self, Key, UpdateExpression, ExpressionAttributeValues, ExpressionAttributeNames=None):
+    def update_item(self, Key, UpdateExpression, ExpressionAttributeValues, ExpressionAttributeNames=None, ConditionExpression=None):
         names = ExpressionAttributeNames or {}
         row = self.items.setdefault(Key["client_id"], {"client_id": Key["client_id"]})
+        if ConditionExpression:  # only the patch-test rule is used: a Fresha record is never replaced by an assumption
+            assert "patch_test_basis <> :record" in ConditionExpression
+            v = ExpressionAttributeValues
+            if row.get("patch_tested") and row.get("patch_test_basis") == v[":record"] and v[":b"] != v[":record"]:
+                raise Exception("An error occurred (ConditionalCheckFailedException) when calling the UpdateItem operation")
         assert UpdateExpression.startswith("SET ")
         for part in re.split(r",\s*(?![^()]*\))", UpdateExpression[4:]):  # commas inside if_not_exists(...) stay
             target, expr = [x.strip() for x in part.split(" = ", 1)]
@@ -121,9 +126,10 @@ class FreshaHttp:
     """Answers the client search in pages of `cap` whatever limit is asked for,
     each client's record, and the three profile-page calls. Records every URL."""
 
-    def __init__(self, clients: list[dict], *, cap=25, count=True, status=200, records=None, record_status=200):
+    def __init__(self, clients: list[dict], *, cap=25, count=True, status=200, records=None, record_status=200, flagged=()):
         self.clients, self.cap, self.count, self.status, self.calls = clients, cap, count, status, []
         self.records, self.record_status = records or {}, record_status
+        self.flagged = list(flagged)  # services Fresha flags as needing a patch test
 
     def get(self, url, **kw):
         self.calls.append(url)
@@ -147,6 +153,12 @@ class FreshaHttp:
         if self.record_status != 200:
             return Resp(self.record_status, {})
         data = kw["data"]
+        if data["operationName"] == "pricingCatalogList":
+            edges = [{"node": {"__typename": "Pricing_CatalogService", "id": str(i), "name": n, "categoryId": "c", "isPatchTestRequired": True,
+                               "employeeIds": ["1"], "servicePricingLevels": [{"id": f"l{i}", "price": {"listPrice": "16.00", "priceType": "FIXED"},
+                                                                               "maxDurationInSeconds": 1200}]}}
+                     for i, n in enumerate(self.flagged)]
+            return Resp(200, {"data": {"catalog": {"categories": [{"id": "c", "name": "Beauty - TLG"}], "edges": edges, "pageInfo": {}}}})
         assert data["operationName"] == "clientRecord" and kw["params"]["_query"] == "clientRecord"
         cid = json.loads(data["variables"])["customerId"]
         return Resp(200, {"data": self.records.get(cid) or record()})
@@ -266,6 +278,7 @@ def test_rejected_session_is_reported_not_raised(table, monkeypatch):
     monkeypatch.setenv("FRESHA_SESSION_PARAM", "/x")
     monkeypatch.setattr(fresha_session, "get", lambda **kw: SESSION)
     monkeypatch.setattr(fresha.Fresha, "client_page", lambda self, **kw: (_ for _ in ()).throw(fresha.SessionRejected("HTTP 401")))
+    monkeypatch.setattr(sync, "patch_test_services", lambda f: set())  # no real catalog call
     monkeypatch.setattr(sync, "ClientStore", lambda: ClientStore(table))
     sent = []
     monkeypatch.setenv("OPS_TOPIC_ARN", "arn:topic")
@@ -400,8 +413,8 @@ def test_sync_fetches_the_profile_page_and_stores_it(table):
     assert out["records"] == 1 and out["record_errors"] == 0 and out["remaining"] == 0
     assert row["patch_test_active"] is True and row["note_count"] == 1 and row["record_synced_at"] == 700 and row["synced_at"] == 700
     assert out["with_patch_tests"] == 1 and out["patch_test_active"] == 1 and out["with_notes"] == 1 and out["with_profile"] == 1
-    # One search page, then per client: record, GraphQL profile, statistics, forms.
-    assert [u.rsplit("/", 1)[1] for u in http.calls] == ["customer-search", "1", "graphql", "statistics", "requests"]
+    # The catalog (patch-test services), one search page, then per client: record, GraphQL profile, statistics, forms.
+    assert [u.rsplit("/", 1)[1] for u in http.calls] == ["graphql", "customer-search", "1", "graphql", "statistics", "requests"]
 
 
 def test_profile_failure_keeps_the_basic_row_and_says_why(table):
@@ -457,3 +470,58 @@ def test_profile_calls_send_what_the_dashboard_sends():
     assert f.client_statistics("9")["data"]["attributes"]["bookings-count"] == 3
     assert f.client_forms("9")["meta"]["all-count"] == 1
     assert http.calls == [fresha.GRAPHQL, "https://partners-api.fresha.com/customers/9/statistics", fresha.FORMS]
+
+
+# ---------------------------------------------------------------------------
+# our patch-test column (user, 2026-10-24)
+# ---------------------------------------------------------------------------
+
+
+def test_patch_test_is_assumed_from_the_latest_attended_flagged_service():
+    past = [
+        {"status": "COMPLETED", "start": "2026-03-01T10:00", "services": [{"name": "Brow Tint", "start": "2026-03-01T10:00"}]},
+        {"status": "CANCELLED", "start": "2026-09-01T10:00", "services": [{"name": "Brow Tint", "start": "2026-09-01T10:00"}]},
+        {"status": "NO_SHOW", "start": "2026-09-02T10:00", "services": [{"name": "Classic lashes", "start": "2026-09-02T10:00"}]},
+        {"status": "UNCONFIRMED", "start": "2026-06-01T10:00", "services": [{"name": "brow  tint", "start": "2026-06-01T10:00"}]},
+        {"status": "COMPLETED", "start": "2026-08-01T10:00", "services": [{"name": "Gel polish", "start": "2026-08-01T10:00"}]},
+    ]
+    ev = model.patch_test_evidence({"past": past, "patch_tests": []}, {"Brow Tint", "Classic lashes"})
+    assert ev == {"patch_tested": True, "patch_test_basis": "assumed from brow  tint on 2026-06-01 (unconfirmed)",
+                  "patch_test_date": "2026-06-01", "patch_test_service": "brow  tint"}
+    assert model.patch_test_evidence({"past": past[4:], "patch_tests": []}, {"Brow Tint"}) is None
+    assert model.patch_test_evidence({"past": past, "patch_tests": []}, set()) is None
+
+
+def test_a_fresha_record_beats_the_assumption():
+    fields = {"past": [{"status": "COMPLETED", "start": "2026-03-01", "services": [{"name": "Brow Tint"}]}],
+              "patch_tests": [{"active": False, "performed": "2024-01-01"}, {"active": True, "performed": "2026-10-01", "title": "Lash glue"}]}
+    ev = model.patch_test_evidence(fields, {"Brow Tint"})
+    assert ev["patch_test_basis"] == "fresha record" and ev["patch_test_date"] == "2026-10-01" and ev["patch_test_service"] == "Lash glue"
+
+
+def test_store_keeps_a_record_over_an_assumption_and_the_sync_never_clears_it(table):
+    store = ClientStore(table)
+    store.upsert_from_fresha(model.from_detail(detail("1", "Amy Pond")))
+    store.set_patch_tested("1", {"patch_test_basis": "assumed from Brow Tint on 2026-03-01 (completed)", "patch_test_date": "2026-03-01",
+                                 "patch_test_service": "Brow Tint"}, now=10)
+    row = table.items["1"]
+    assert row["patch_tested"] is True and row["patch_test_set_at"] == 10
+    store.set_patch_tested("1", {"patch_test_basis": "fresha record", "patch_test_date": "2026-10-01", "patch_test_service": "Lash glue"}, now=20)
+    assert row["patch_test_basis"] == "fresha record" and row["patch_test_date"] == "2026-10-01"
+    store.set_patch_tested("1", {"patch_test_basis": "assumed from Brow Tint on 2026-03-01 (completed)", "patch_test_date": "2026-03-01",
+                                 "patch_test_service": "Brow Tint"}, now=30)
+    assert row["patch_test_basis"] == "fresha record" and row["patch_test_set_at"] == 20  # the condition held
+    store.upsert_from_fresha(model.from_detail(detail("1", "Amy Pond")), now=40)
+    assert row["patch_tested"] is True  # Fresha's side of the sync never touches our column
+
+
+def test_sync_reads_the_flagged_services_from_fresha_and_fills_the_column(table):
+    recs = {"1": record(past=["Brow Tint"]), "2": record(past=["Gel polish"]), "3": record(patch_tests=[("Glue", False, "2027-01-01")])}
+    http = FreshaHttp([detail(c, f"Client {c}") for c in ("1", "2", "3")], records=recs, flagged=["Brow Tint", "Classic lashes"])
+    out = sync.run(fresha.Fresha(SESSION, http=http), ClientStore(table), pause=0, now=500)
+    assert out["patch_test_services"] == ["Brow Tint", "Classic lashes"] and out["patch_test_evidence"] == 2
+    assert out["patch_tested"] == 2 and out["patch_tested_from_record"] == 1
+    assert table.items["1"]["patch_test_basis"] == "assumed from Brow Tint on 2026-09-01 (completed)"
+    assert "patch_tested" not in table.items["2"] and table.items["3"]["patch_test_basis"] == "fresha record"
+    assert sync.patch_test_services(fresha.Fresha(SESSION, http=http)) == {"Brow Tint", "Classic lashes"}
+

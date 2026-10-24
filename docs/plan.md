@@ -433,12 +433,14 @@ How it will work:
    lead time between test and treatment is config
    (`salon.auto.tfvars`: `patch_test_lead_hours`, default 24, with a
    per-service override for the lash adhesive at 48 if Amber wants it).
-2. **"Have we patch tested you before?" is answered from Fresha first.**
-   A new read-only tool, `patch_test_status`, looks the client up and reads
-   their patch-test records (the `clientRecord` query, job 10): an active
-   test means book straight away, nothing to ask. No record means the bot
-   asks the client; "no" or "not sure" means a patch test is arranged.
-   "Yes, you did it last month" with no record: the bot still books the
+2. **"Have we patch tested you before?" is answered from our column
+   first** (`patch_tested` on the clients row, decision 2026-10-24: a
+   Fresha record, or assumed from a past appointment for a flagged
+   service). A new read-only tool, `patch_test_status`, looks the client
+   up in the table (and Fresha live when the row is missing): tested means
+   book straight away, nothing to ask. Not tested means the bot asks the
+   client; "no" or "not sure" means a patch test is arranged. "Yes, you
+   did it last month" with nothing on our side: the bot still books the
    test (the record is what covers the salon) and says so kindly, unless
    the user rules otherwise (decision needed).
 3. **The patch test is a real Fresha appointment.** Fresha needs a service

@@ -259,6 +259,10 @@ aws lambda invoke --function-name tlg-prod-client-sync --payload '{"dry_run": tr
 aws lambda invoke --function-name tlg-prod-client-sync --payload '{"limit": 5}'       --cli-binary-format raw-in-base64-out /dev/stdout   # the five stalest clients only, written
 ```
 
+The team's one habit that keeps the mirror right: when a patch test is
+done, log it on the client's profile in Fresha (Records, Patch tests).
+The next sync copies it into the row and our `patch_tested` column.
+
 The reply is a summary: clients in Fresha, rows, how many have a mobile,
 how many accept SMS marketing in Fresha, how many opted out with us, and
 `textable`, the number a blast would reach. Rows are in the DynamoDB table

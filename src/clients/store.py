@@ -12,7 +12,8 @@ from functools import lru_cache
 
 from . import model
 
-OURS = ("sms_opt_out", "opt_out_changed_at", "opt_out_source", "fresha_pending", "lists", "token", "sent")
+OURS = ("sms_opt_out", "opt_out_changed_at", "opt_out_source", "fresha_pending", "lists", "token", "sent",
+        "patch_tested", "patch_test_basis", "patch_test_date", "patch_test_service", "patch_test_set_at")
 
 
 class ClientStore:
@@ -98,6 +99,24 @@ class ClientStore:
             ExpressionAttributeValues={":v": bool(opted_out), ":now": now, ":src": source, ":t": True},
         )
 
+    def set_patch_tested(self, client_id: str, evidence: dict, *, now: int | None = None) -> None:
+        """Our patch-test column (user, 2026-10-24): set when Fresha's side of
+        the row shows a test or a service that needed one; never cleared by
+        the sync. A Fresha record replaces an assumption; an assumption never
+        replaces a record."""
+        now = now or int(time.time())
+        try:
+            self.table.update_item(
+                Key={"client_id": client_id},
+                UpdateExpression="SET patch_tested = :t, patch_test_basis = :b, patch_test_date = :d, patch_test_service = :s, patch_test_set_at = :now",
+                ConditionExpression="attribute_not_exists(patch_tested) OR patch_tested = :f OR :b = :record OR patch_test_basis <> :record",
+                ExpressionAttributeValues={":t": True, ":f": False, ":b": evidence.get("patch_test_basis", ""), ":d": evidence.get("patch_test_date", ""),
+                                           ":s": evidence.get("patch_test_service", ""), ":now": now, ":record": "fresha record"},
+            )
+        except Exception as exc:  # noqa: BLE001 - the row already holds a Fresha record; keep it
+            if "ConditionalCheckFailed" not in str(exc) and type(exc).__name__ != "ConditionalCheckFailedException":
+                raise
+
     def all_rows(self, *, projection: tuple[str, ...] = ()) -> list[dict]:
         kw: dict = {}
         if projection:
@@ -113,7 +132,7 @@ class ClientStore:
 
     SUMMARY_FIELDS = ("client_id", "in_fresha", "mobile", "accepts_sms_marketing", "sms_opt_out", "blocked", "fresha_pending",
                       "record_synced_at", "record_error", "patch_test_count", "patch_test_active", "allergy_count", "note_count",
-                      "appointment_count", "staff_alert")
+                      "appointment_count", "staff_alert", "patch_tested", "patch_test_basis")
 
     def summary(self) -> dict:
         rows = self.all_rows(projection=self.SUMMARY_FIELDS)  # the rows carry whole profiles; read only the counters
@@ -133,6 +152,8 @@ class ClientStore:
             "with_notes": sum(1 for r in rows if r.get("note_count")),
             "with_staff_alert": sum(1 for r in rows if r.get("staff_alert")),
             "with_appointments": sum(1 for r in rows if r.get("appointment_count")),
+            "patch_tested": sum(1 for r in rows if r.get("patch_tested")),
+            "patch_tested_from_record": sum(1 for r in rows if r.get("patch_tested") and r.get("patch_test_basis") == "fresha record"),
         }
 
 

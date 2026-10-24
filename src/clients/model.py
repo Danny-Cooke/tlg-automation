@@ -266,3 +266,44 @@ def _appointment(n: dict) -> dict:
         "note": note,
         "forms": [{"id": str(f.get("id") or ""), "status": str(f.get("status") or "")} for f in (n.get("consultationForms") or [])],
     }
+
+
+# -- patch tests: what the row can prove, and what the salon assumes --------------
+
+DONE_STATUSES_NOT = ("CANCEL", "NO_SHOW", "NOSHOW")  # a past appointment with any other status counts as attended
+
+
+def patch_test_evidence(fields: dict, required: set[str]) -> dict | None:
+    """Our own patch-test column, worked out from Fresha's side of the row.
+
+    The salon's assumption (user, 2026-10-24): a client who has had a service
+    that needs a patch test has been patch tested. So, in order of trust:
+    an active patch test on the Fresha record; otherwise the most recent
+    past appointment, not cancelled and not a no-show, for a service whose
+    name is in `required` (the services Fresha flags as needing a test).
+    Returns the fields to write, or None when there is nothing to go on.
+    """
+    for t in fields.get("patch_tests") or []:
+        if t.get("active"):
+            return {"patch_tested": True, "patch_test_basis": "fresha record", "patch_test_date": t.get("performed") or (t.get("created") or "")[:10],
+                    "patch_test_service": t.get("title") or ""}
+    want = {_norm(n) for n in required}
+    best = None
+    for a in fields.get("past") or []:
+        status = str(a.get("status") or "").upper()
+        if any(x in status for x in DONE_STATUSES_NOT):
+            continue
+        for s in a.get("services") or []:
+            if _norm(s.get("name")) in want:
+                when = (s.get("start") or a.get("start") or "")[:10]
+                if best is None or when > best[0]:
+                    best = (when, s.get("name") or "", status)
+    if best is None:
+        return None
+    when, name, status = best
+    return {"patch_tested": True, "patch_test_basis": f"assumed from {name} on {when} ({status.lower()})",
+            "patch_test_date": when, "patch_test_service": name}
+
+
+def _norm(text) -> str:
+    return re.sub(r"\s+", " ", str(text or "")).strip().casefold()
