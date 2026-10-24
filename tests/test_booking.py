@@ -140,7 +140,7 @@ def test_everything_but_a_tattoo_itself_is_booked(cfg):
     posted = []
     for service, person, fake, area in (("Brow wax", "Jess", BROWS, "beauty"), ("Lip filler", "Bernadette", FILLER, "aesthetics")):
         booking.forget_catalog()
-        out, f, _ = run(cfg, args={"service": service, "person": person}, f=FakeFresha(services=[fake]),
+        out, f, _ = run(cfg, args={"service": service, "person": person}, f=FakeFresha(services=[fake]), tested=lambda name: True,
                         notify=lambda convo, summary, appointment_id, **kw: posted.append(kw["area"]))
         assert out.startswith(f"Booked: {service} with {person}"), out
     assert posted == ["beauty", "aesthetics"]
@@ -236,10 +236,13 @@ def test_no_session_or_rejected_session_hands_over(cfg, monkeypatch):
     assert "Fresha refused the request" in out
 
 
-def test_patch_test_services_are_not_booked_in_chat(cfg):
+def test_a_service_fresha_flags_for_a_patch_test_goes_through_the_same_guard(cfg):
     pt = fresha.Service("1", "Gel polish", "Senior Nail Services - TLG", "9", "34.00", "FIXED", 3600, ("3440861",), patch_test=True)
-    out, f, _ = run(cfg, f=FakeFresha(services=[pt]))
-    assert "patch test" in out and f.created == []
+    out, f, _ = run(cfg, f=FakeFresha(services=[pt]), tested=lambda name: False)
+    assert "needs a patch test" in out and f.created == []
+    booking.forget_catalog()
+    out, f, _ = run(cfg, f=FakeFresha(services=[pt]), tested=lambda name: True)
+    assert out.startswith("Booked: Gel polish") and len(f.created) == 1
 
 
 def test_catalog_is_fetched_once_per_container(cfg):
@@ -557,3 +560,42 @@ def test_sophies_hair_clients_go_to_her_whatsapp_when_configured(persona_text, s
     assert ("\"Ok lovely, if you want to book in with Sophie it's best to message her directly on WhatsApp, "
             "here's her number: 07700 900456 x\"") in hair
     assert "Sent to Sophie's WhatsApp" in hair and "Lori-Dee's to deal with completely" in hair and "complaint about hair" in hair
+
+
+# -- patch tests before lash and brow treatments (plan job 12, 2026-10-24) ------
+
+
+def test_lash_or_brow_treatment_needs_the_column_or_a_test_booked_in_the_thread(cfg):
+    # Not tested, nothing booked: refused before Fresha is touched, told to book the test first.
+    out, f, _ = run(cfg, args={"service": "Brow wax", "person": "Jess"}, f=FakeFresha(services=[BROWS]), tested=lambda name: False)
+    assert out.startswith("'Brow wax' needs a patch test and Danny Cooke has none on record") and "'lash patch test' first" in out
+    assert "at least 24 hours before" in out and f.created == [] and f.searched == []
+
+    # The column says tested: booked as normal.
+    booking.forget_catalog()
+    out, f, _ = run(cfg, args={"service": "Brow wax", "person": "Jess"}, f=FakeFresha(services=[BROWS]), tested=lambda name: True)
+    assert out.startswith("Booked: Brow wax with Jess, Thu 29 Oct 10am") and len(f.created) == 1
+
+    # A patch test booked earlier in this conversation, two days before: booked.
+    c = convo(bookings=[{"service": "lash patch test", "person": "Amber", "date": "2026-10-27", "time": "10:00", "appointment_id": "9"}])
+    out, f, _ = run(cfg, c=c, args={"service": "Brow wax", "person": "Jess"}, f=FakeFresha(services=[BROWS]), tested=lambda name: False)
+    assert out.startswith("Booked: Brow wax") and len(f.created) == 1
+
+    # The same test the day of the treatment: too close, refused.
+    c = convo(bookings=[{"service": "lash patch test", "person": "Amber", "date": "2026-10-29", "time": "09:00", "appointment_id": "9"}])
+    out, f, _ = run(cfg, c=c, args={"service": "Brow wax", "person": "Jess"}, f=FakeFresha(services=[BROWS]), tested=lambda name: False)
+    assert "needs a patch test" in out and f.created == []
+
+    # Nails never ask.
+    booking.forget_catalog()
+    out, f, _ = run(cfg, tested=lambda name: False)
+    assert out.startswith("Booked: Gel polish")
+
+
+def test_prompt_carries_the_patch_test_flow(persona_text, salon_config_json):
+    from bot.prompt import build_system_prompt
+
+    prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
+    assert "# Patch tests" in prompt and "`patch_test_status`" in prompt and "Have we patch tested you before lovely" in prompt
+    assert "a quick patch test with Jess on Tuesday 28th at 11am, then lash lift and tint" in prompt
+    assert "[patch test needed]" in prompt and "patch test)" in prompt.split("# Output")[1]

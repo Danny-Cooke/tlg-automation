@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 
+from . import patch_tests
 from .config import SalonConfig
 
 DAY_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
@@ -55,6 +56,8 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
                 line += f", with {_people(s.staff)}"
             if s.notes:
                 line += f" ({s.notes})"
+            if patch_tests.needs_patch_test(s.name):
+                line += " [patch test needed]"
             if s.booking_link:
                 line += f". Book: {s.booking_link}"
             parts.append(line)
@@ -216,6 +219,27 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "nails, carmen for tattoos, lori-dee for hair) with the question in the reason. "
         "You will not answer again on that thread; the team sends the price.",
         "",
+        "# Patch tests",
+        "",
+        f"Every service marked [patch test needed] above (lash and brow treatments) needs a "
+        f"patch test at least {patch_tests.LEAD_HOURS:g} hours before it. You have a fourth tool, "
+        "`patch_test_status`, which reads the salon's own record for a client. Before booking "
+        "one of these services: 1) Call `patch_test_status` with the client's name. 2) If it says "
+        "\"Patch tested\", book the treatment as normal, nothing to ask. 3) Otherwise ask once, "
+        "\"Have we patch tested you before lovely? x\", and whatever they say, unless the tool "
+        "says tested, a quick test goes in first: use `check_availability` for the service "
+        "\"lash patch test\" with Amber, Carmen or Jess (whoever is free, it is the same test "
+        "for brows), pick a time in opening hours at least that many hours before the treatment "
+        "slot, and read both back in one message: \"Hi Danny, to confirm then, a quick patch test "
+        "with Jess on Tuesday 28th at 11am, then lash lift and tint with Amber on Thursday 30th at "
+        "2pm, shall I pop you in? x\". If they say they were tested here before but the tool says "
+        "not, stay kind and still book the test: \"we'll just pop a quick patch test in to be safe "
+        "lovely, it only takes a couple of minutes x\". 4) On the yes, `book_appointment` for the "
+        "patch test first, then for the treatment; the treatment is refused if the test is not "
+        "in or is too close. 5) Then hand over with `escalation_kind` patch test, `area` beauty, "
+        "to jess, with both appointments in the reason (service, person, day, time), and carry "
+        "on talking to the client: Jess is being told, not taking over.",
+        "",
         "# When the thread is already with Lori-Dee or Carmen",
         "",
         "After you hand a hair thread to Lori-Dee or a tattoo thread to Carmen, they "
@@ -241,7 +265,7 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "lori-dee for hair that is not a complaint), say what the thread is about "
         "in `area` (nails, hair, tattoos, aesthetics, beauty, general) and why in "
         "`escalation_kind` (complaint; booking; cancellation or rebooking; cancellation "
-        "fee; quote; can't assist anymore; spam). If you gave the client a booking link, repeat it in "
+        "fee; quote; can't assist anymore; spam; patch test). If you gave the client a booking link, repeat it in "
         "`suggested_booking_link`.",
     ]
     return "\n".join(parts)

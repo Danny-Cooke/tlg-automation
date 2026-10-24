@@ -637,3 +637,22 @@ sync copies it and the basis becomes "fresha record". A patch-test
 appointment the bot books (job 12) also counts once it has happened,
 because the patch-test services are ticked as requiring one.
 
+## 2026-10-24: lash and brow bookings check the patch-test column, and book the test first when there is none
+
+The user's ask: "when a customer books in for a lash or brow I want the
+bot to check their patch status and then book the appointment or, a patch
+test plus appointment." Built as plan job 12. The bot has a fourth tool,
+`patch_test_status`, which reads the salon's own patch-test column on the
+client list (a Fresha record, or assumed from a past lash or brow
+appointment). Tested: book as normal. Not tested: one question, then a
+10-minute "lash patch test" with Amber, Carmen or Jess at least 24 hours
+before the treatment, both read back in one message and booked test
+first. The booking tool enforces it in code: a lash or brow treatment (or
+anything Fresha flags) is refused unless the column says tested or a
+patch test is booked in the same conversation far enough ahead. Jess is
+told on Telegram with both appointments (kind "patch test"); the bot keeps
+talking. A client who says they were tested but has no record still gets
+the test, said kindly, because the record is what covers the salon. The
+sync marks them tested once the patch-test appointment has happened, so
+the question is asked once.
+

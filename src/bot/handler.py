@@ -33,7 +33,7 @@ import time
 import zoneinfo
 from functools import lru_cache
 
-from . import availability, booking, brain, escalation, fresha_session, meta
+from . import availability, booking, brain, escalation, fresha_session, meta, patch_tests
 from .config import SalonConfig, load_persona
 from .prompt import build_system_prompt
 from .state import Conversation, ConversationStore
@@ -287,6 +287,8 @@ def tools(convo: Conversation | None = None, store: ConversationStore | None = N
         common = dict(cfg=cfg, convo=convo, dry_run=MODE != "live", save=store.save if store else None, notify=escalation.notify_booking)
         out["book_appointment"] = lambda args: booking.book(args, **common)
         out["cancel_appointment"] = lambda args: booking.cancel(args, **common)
+    if os.environ.get("CLIENTS_TABLE"):
+        out["patch_test_status"] = patch_tests.status
     return out
 
 

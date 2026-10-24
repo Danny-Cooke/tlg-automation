@@ -25,7 +25,8 @@ MAX_TOOL_ROUNDS = 5  # a move is check, availability, book, cancel; more than th
 ESCALATE_TO = ["", "jess", "carmen", "lori-dee"]
 AREAS = ["", "nails", "hair", "tattoos", "aesthetics", "beauty", "general"]
 # The team's own words for why a thread is being handed over (user, 2026-10-20).
-ESCALATION_KINDS = ["", "complaint", "booking", "cancellation or rebooking", "cancellation fee", "quote", "can't assist anymore", "spam"]
+ESCALATION_KINDS = ["", "complaint", "booking", "cancellation or rebooking", "cancellation fee", "quote", "can't assist anymore", "spam",
+                    "patch test"]  # patch test: the bot booked a test and a treatment; Jess is told, the bot carries on (2026-10-24)
 
 REPLY_SCHEMA = {
     "type": "object",
@@ -150,7 +151,28 @@ CANCEL_TOOL = {
     },
 }
 
-TOOL_DEFINITIONS = {"check_availability": AVAILABILITY_TOOL, "book_appointment": BOOKING_TOOL, "cancel_appointment": CANCEL_TOOL}
+PATCH_TEST_TOOL = {
+    "name": "patch_test_status",
+    "description": (
+        "Whether the salon has a patch test on record for a client, from the salon's client list: a test logged in "
+        "Fresha, or assumed from a past lash or brow appointment. Read only. Call it before booking any lash or brow "
+        "treatment. 'Patch tested' means book as normal; anything else means a 10-minute 'lash patch test' is booked first."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "client_name": {
+                "type": "string",
+                "description": "The client's full name as Fresha would have it: their profile name from the context unless they gave a different one in chat.",
+            },
+        },
+        "required": ["client_name"],
+        "additionalProperties": False,
+    },
+}
+
+TOOL_DEFINITIONS = {"check_availability": AVAILABILITY_TOOL, "patch_test_status": PATCH_TEST_TOOL, "book_appointment": BOOKING_TOOL,
+                    "cancel_appointment": CANCEL_TOOL}
 
 SAFE_REPLY = "Hi lovely, give me a little time to have a think and I'll get back to you x"
 

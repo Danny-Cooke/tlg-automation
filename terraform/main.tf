@@ -204,6 +204,13 @@ data "aws_iam_policy_document" "bot" {
     resources = [aws_dynamodb_table.conversations.arn]
   }
 
+  # The patch-test column on the client list (plan job 12): read only.
+  statement {
+    sid       = "Clients"
+    actions   = ["dynamodb:Scan"]
+    resources = [aws_dynamodb_table.clients.arn]
+  }
+
   statement {
     sid       = "Notify"
     actions   = ["sns:Publish"]
@@ -305,6 +312,8 @@ resource "aws_lambda_function" "bot" {
       TELEGRAM_CHAT_ID           = var.telegram_chat_id
       FRESHA_SESSION_PARAM       = local.fresha_session_param
       CONVERSATIONS_TABLE        = aws_dynamodb_table.conversations.name
+      CLIENTS_TABLE              = aws_dynamodb_table.clients.name
+      PATCH_TEST_LEAD_HOURS      = tostring(var.patch_test_lead_hours)
       ESCALATION_TOPIC_ARN       = aws_sns_topic.escalations.arn
       OPS_TOPIC_ARN              = local.ops_topic_arn
       META_SECRET_ARN            = aws_secretsmanager_secret.meta[each.key].arn

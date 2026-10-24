@@ -17,7 +17,7 @@ def test_prompt_contains_persona_and_salon_facts(persona_text, salon_config_json
     assert "The Looking Glass" in prompt
     assert "### Nails" in prompt
     assert "Gel nails: £30, 45 min, with Jess or Amy (patch test not needed)" in prompt
-    assert "Lash lift: £45, 1 hr (patch test 48h before). Book: https://www.fresha.com/a/tlg?service=lashlift" in prompt
+    assert "Lash lift: £45, 1 hr (patch test 48h before) [patch test needed]. Book: https://www.fresha.com/a/tlg?service=lashlift" in prompt
     assert "Book with Amy: https://www.fresha.com/a/tlg?staff=amy" in prompt
     assert "Book with Jess" not in prompt  # no per-person link set, falls back to the main link
     assert "Free parking" in prompt

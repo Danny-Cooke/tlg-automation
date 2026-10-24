@@ -124,6 +124,12 @@ variable "carmen_whatsapp" {
   default     = ""
 }
 
+variable "patch_test_lead_hours" {
+  description = "How long before a lash or brow treatment its patch test must be (plan job 12). The bot books the test at least this far ahead."
+  type        = number
+  default     = 24
+}
+
 variable "sophie_whatsapp" {
   description = "Sophie's WhatsApp number, given to clients who want to book hair with her (user, 2026-10-24: no hair bookings in chat). Empty: the bot says Sophie will message them and hands over."
   type        = string

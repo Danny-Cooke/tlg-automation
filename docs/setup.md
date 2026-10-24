@@ -70,6 +70,10 @@ who want to book hair with Sophie are sent there in Jess's voice, because
 hair is never booked in chat; empty means the bot says Sophie will message
 them and hands over).
 
+`PATCH_TEST_LEAD_HOURS` is a Terraform variable (`patch_test_lead_hours`,
+default 24): how far before a lash or brow treatment the bot books the
+patch test.
+
 The bot stack applies once `TLG_APP1_SECRET` exists. The deploy then
 registers the webhooks with Meta itself (section 3) and prints the URLs.
 

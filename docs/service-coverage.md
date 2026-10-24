@@ -45,8 +45,8 @@ quoted as "from". "Quote" means the holding line and a quiet hand-over.
 | Nails by TLG | 6 | nails | yes | yes, Amber or Lissy | same | same |
 | Hair by Lori-dee | 41 | hair | listed prices yes; colour is a quote | never (ruling 2026-10-24) | anything beyond a listed price: "one for Lori", hand-over to Lori-Dee, thread locked for her to deal with in the inbox; complaints: Jess | booking tool refuses hair; prompt Hair section; `handler.locks` on area hair |
 | Sophie cooper | 29 | hair | as above | never | Sophie named: her WhatsApp line (`SOPHIE_PHONE`), hand-over, locked; complaints: Jess | same |
-| Beauty - TLG | 9 | beauty | yes | yes, whoever Fresha lists | health or skin questions: Jess | booking tool |
-| Lashes by Amber | 4 | beauty | yes (makeup "from £25") | yes, Amber | Jess | booking tool |
+| Beauty - TLG | 10 | beauty | yes | yes, whoever Fresha lists; lash and brow treatments only once the patch-test column says tested or a patch test is booked first (job 12) | health or skin questions: Jess; patch test booked: Jess told | booking tool, `patch_tests` guard |
+| Lashes by Amber | 5 | beauty | yes (makeup "from £25") | yes, Amber, lashes behind the patch-test guard | Jess | booking tool, `patch_tests` guard |
 | Bernadettes ReFresh aethetics | 60 | aesthetics | yes, from the list | yes, Bernadette | suitability, what to have, anything medical: hand-over (lands with Jess, see gap 6) | persona |
 | Tattoos by Skin deep canvas | 3 | tattoos | Tiny Tattoo prices are listed; everything else is a quote | the free consultation only | Carmen's WhatsApp line, then Carmen | `booking.ONLY_THESE`, prompt |
 

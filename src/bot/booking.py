@@ -38,7 +38,7 @@ import re
 import time
 from dataclasses import dataclass
 
-from . import fresha_session
+from . import fresha_session, patch_tests
 from .config import SalonConfig
 from .fresha import Fresha, FreshaError, Service, SessionRejected
 from .state import Conversation
@@ -91,7 +91,7 @@ class Request:
 
 
 def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, save=None, notify=None,
-         session=None, fresha: Fresha | None = None, now: dt.datetime | None = None) -> str:
+         session=None, fresha: Fresha | None = None, now: dt.datetime | None = None, tested=None) -> str:
     """Tool body. Returns text for the model; never raises for a business
     reason, only for a programming error (which brain reports as a failure)."""
     req = Request.from_args(args, convo)
@@ -114,9 +114,17 @@ def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, sa
         service = _find_service(f, member.employee_id, req.service)
         if service is None:
             return f"Fresha does not list '{req.service}' for {member.name}. Offer someone who does it, or give the Fresha link."
-        if service.patch_test:
-            who = "Lori-Dee" if area_of(service.category) == "hair" else "Jess"
-            return f"'{service.name}' needs a patch test first, so it is not booked in chat. " + HAND_OVER.replace("Jess", who)
+        if service.patch_test and area_of(service.category) == "hair":
+            return f"'{service.name}' needs a patch test first, so it is not booked in chat. " + HAND_OVER.replace("Jess", "Lori-Dee")
+        if patch_tests.needs_patch_test(service.name, service.patch_test):
+            # Lash and brow treatments (plan job 12): the client's patch-test
+            # column, or a patch test booked earlier in this thread far enough
+            # ahead; otherwise the test is booked first.
+            is_tested = (tested or patch_tests.is_tested)(req.client_name)
+            if not is_tested and not patch_tests.booked_in_conversation(convo, req.date, req.time):
+                return (f"'{service.name}' needs a patch test and {req.client_name} has none on record and none booked far enough "
+                        f"ahead in this conversation. Book the service 'lash patch test' first (10 minutes, with Amber, Carmen or Jess, "
+                        f"any free time in opening hours) at least {patch_tests.LEAD_HOURS:g} hours before this slot, then book this.")
 
         client, why = _match_client(f, req.client_name)
         if client is None:

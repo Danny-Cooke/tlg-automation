@@ -416,7 +416,7 @@ menu's edges and about proof. Proposed steps, in order:
 5. **Switch**: `MESSAGE_TEST_MODE=false` on the GitHub `prod` environment,
    the user's call, after step 4 passes.
 
-### 12. Patch tests before beauty and lash bookings (AGREED in principle 2026-10-24, not built)
+### 12. Patch tests before beauty and lash bookings (BUILT 2026-10-24; bot stack)
 
 The user's ask: when a client asks for a service that needs a patch test,
 check whether we have tested them before; if not, arrange a 10-minute
@@ -463,9 +463,21 @@ How it will work:
 6. Hair is unaffected: hair is never booked in chat (decision 2026-10-24),
    so the Fresha tick on colour services only makes the refusal explicit.
 
-Before building: the Fresha service and ticks (user), the lead hours, and
-the "client says yes, Fresha says nothing" rule. Then: tool, guard,
-prompt, kind, tests, a dry run against a test client.
+Built 2026-10-24, the same afternoon the user added "lash patch test" in
+Fresha (Beauty - TLG and Lashes by Amber; Amber, Carmen, Jess; free; 5
+minutes): `src/bot/patch_tests.py` (which services need a test: the lash
+or brow rule shared with the sync plus Fresha's tick; the client's row by
+name; `patch_test_status` tool body; "booked earlier in this thread far
+enough ahead"), the guard in `booking.book` (a lash or brow treatment, or a
+flagged service, is refused unless the column says tested or a patch test
+is booked in the conversation at least `PATCH_TEST_LEAD_HOURS` before,
+default 24, Terraform `patch_test_lead_hours`), the Patch tests section of
+the prompt (check first; tested, book; otherwise one question, then the
+test and the treatment read back together and booked test first), the
+`patch test` hand-over kind (Telegram and email to Jess, not locking), the
+bot Lambdas' read access to the clients table. Decided by default: a client
+who says they were tested but has no record still gets the test, kindly.
+Not yet: a dry run against a test client on the live Page.
 
 ## Open questions for the user
 

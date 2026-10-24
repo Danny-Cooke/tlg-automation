@@ -157,3 +157,9 @@ def test_api_failure_is_a_safe_escalation():
 
     reply = brain.ask("SYSTEM", [], "hi", client=Dead())
     assert reply.escalate is True and reply.reply == brain.SAFE_REPLY
+
+
+def test_patch_test_tool_and_kind_exist():
+    assert "patch test" in brain.ESCALATION_KINDS
+    assert brain.TOOL_DEFINITIONS["patch_test_status"]["input_schema"]["required"] == ["client_name"]
+    assert list(brain.TOOL_DEFINITIONS) == ["check_availability", "patch_test_status", "book_appointment", "cancel_appointment"]
