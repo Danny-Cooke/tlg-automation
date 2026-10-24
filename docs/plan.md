@@ -416,6 +416,55 @@ menu's edges and about proof. Proposed steps, in order:
 5. **Switch**: `MESSAGE_TEST_MODE=false` on the GitHub `prod` environment,
    the user's call, after step 4 passes.
 
+### 12. Patch tests before beauty and lash bookings (AGREED in principle 2026-10-24, not built)
+
+The user's ask: when a client asks for a service that needs a patch test,
+check whether we have tested them before; if not, arrange a 10-minute
+patch-test visit during working hours in Jess's, Carmen's or Amber's
+diary, tell Jess on Telegram with the time, and book the real appointment
+in the same conversation, leaving enough time between the two.
+
+How it will work:
+
+1. **Which services need one: Fresha's own tick.** The "patch test
+   required" flag on a service already reaches the booking tool through
+   the catalog (`Service.patch_test`); today it is off everywhere. Jess and
+   Amber tick it on the tint and lash services (open question 8). The
+   lead time between test and treatment is config
+   (`salon.auto.tfvars`: `patch_test_lead_hours`, default 24, with a
+   per-service override for the lash adhesive at 48 if Amber wants it).
+2. **"Have we patch tested you before?" is answered from Fresha first.**
+   A new read-only tool, `patch_test_status`, looks the client up and reads
+   their patch-test records (the `clientRecord` query, job 10): an active
+   test means book straight away, nothing to ask. No record means the bot
+   asks the client; "no" or "not sure" means a patch test is arranged.
+   "Yes, you did it last month" with no record: the bot still books the
+   test (the record is what covers the salon) and says so kindly, unless
+   the user rules otherwise (decision needed).
+3. **The patch test is a real Fresha appointment.** Fresha needs a service
+   to book against, so the user adds one in Fresha: "Patch test", in
+   Beauty - TLG, free, 10 minutes, Jess, Carmen and Amber, bookable online
+   (the availability lookup reads the public booking flow, so a hidden
+   service would have no free times). Then the existing
+   `check_availability` and `book_appointment` tools do the rest: free
+   10-minute slots in opening hours, the client gets Fresha's confirmation,
+   and it sits in whichever diary was free. No new Fresha call to record.
+4. **Two bookings, one read-back.** "To confirm then, patch test with Jess
+   on Tuesday 28th at 11am, then classic lashes with Amber on Thursday 30th
+   at 2pm, shall I pop you in? x". Two `book_appointment` calls on the yes.
+   The tool refuses a patch-test service unless the client has an active
+   test on record or a patch test booked in this conversation at least the
+   lead time before the slot: the guard is in code, not just the prompt.
+5. **Jess hears about it.** A new hand-over kind, `patch test`, posted to
+   Telegram and emailed with both appointments, not locking: the client is
+   mid-conversation and the bot carries on.
+6. Hair is unaffected: hair is never booked in chat (decision 2026-10-24),
+   so the Fresha tick on colour services only makes the refusal explicit.
+
+Before building: the Fresha service and ticks (user), the lead hours, and
+the "client says yes, Fresha says nothing" rule. Then: tool, guard,
+prompt, kind, tests, a dry run against a test client.
+
 ## Open questions for the user
 
 1. Prod only, or a dev stack as well?

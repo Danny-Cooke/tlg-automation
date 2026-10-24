@@ -292,6 +292,41 @@ same fields (patch tests `first:50` without `onlyActive`, notes 50,
 attachments 30, upcoming 20, past 50), followed by the statistics and
 forms calls. Four requests a client.
 
+## A service's cancellation and no-show fees (recorded 2026-10-24)
+
+Edit service > Settings shows "Require late cancellation fee" and "Require
+no-show fee", each with a Default/custom amount, plus "Require patch test".
+The fees are not on the service record: they are per-service overrides on
+the workspace's appointment-protection setting.
+
+- Read, one call for every service: `serviceAppointmentProtectionSettingQuery`
+  (no variables) returns `AppointmentProtection_appointmentProtectionSetting
+  { strategy lateCancellationAndRescheduleWindowInMinutes strategySetting
+  { ... on AppointmentProtection_CardConfirmationStrategySetting {
+  cancellationFee{value type} noShowFeePercentage serviceSettings {
+  serviceId cancellationFee{value type} cancellationFeeVariant
+  noShowFeePercentage noShowFeeVariant } } ... on
+  AppointmentProtection_DepositStrategySetting { depositFee ... } } }`.
+  The salon: strategy CARD_CONFIRMATION, window 1440 minutes, default
+  100% cancellation fee and 100% no-show fee. A service with no entry in
+  `serviceSettings` inherits the defaults (both ticks on). Variants seen:
+  `DEFAULT` (tick on, default amount) and `DISABLED` (tick off).
+- Write, one service: mutation `setAppointmentProtectionServiceSetting`
+  (`_mutation=` in the URL, no `__pid`) with `{"input": {
+  "cardConfirmationStrategySetting": {"cancellationFee": null,
+  "cancellationFeeVariant": "DEFAULT", "noShowFeePercentage": null,
+  "noShowFeeVariant": "DEFAULT"}, "serviceId": "<id>", "strategy":
+  "CARD_CONFIRMATION"}}`; the answer echoes the variants. The dashboard
+  sends it alongside `services_updateServiceMutation` on Save, but it
+  stands alone. Replayed 2026-10-24 for 25 services (user's request: the
+  no-show fee on for every nails, Amber, beauty and tattoo service), each
+  answer checked, then the read query run again: none left DISABLED in
+  those categories. 96 DISABLED overrides remain, all under Sophie,
+  Bernadette and Lori-Dee, untouched on the user's instruction.
+- The patch-test tick is on the service itself (`patchTestRequired` in
+  `services_getServiceById`, saved by `services_updateServiceMutation`),
+  which is what the catalog's `isPatchTestRequired` reflects.
+
 ## Other APIs
 
 All under the same cookies and query-string ids:

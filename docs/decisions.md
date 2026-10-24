@@ -590,3 +590,17 @@ Telegram post and a second "that's one for Lori" the next time the client
 mentioned hair. Why silent with Jess: her hand-overs are the ones where a
 bot reply could cut across a complaint or a money decision.
 
+## 2026-10-24: Telegram stays, and only Jess is in it
+
+The user asked whether hand-overs could go to Jess's personal Facebook
+profile instead of Telegram, because Lori-Dee does not want much
+intervention. No: a Page can only reply to someone who has messaged it,
+and only for 24 hours after their last message; it cannot start a
+conversation and cannot reach a profile URL (same wall as the 2026-10-20
+decision). Ruling: "leave it as Telegram then and it will be just Jess."
+So the group keeps its one bot and one member, Jess; Lori-Dee and Carmen
+leave it (or never look). Nothing changes in code: every hand-over still
+posts the same line, and the `escalate_to` name on the line tells Jess
+who it concerns. Lori-Dee's hair threads are already hers in the inbox
+without a post needing to reach her.
+
