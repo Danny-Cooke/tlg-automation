@@ -236,7 +236,12 @@ dry-cut first, then washed and diffused; come with clean hair styled as
 usual. The bot asks for the photos, says Lori will come back with a price,
 and hands over. A plain price question (a curly cut, a wash cut and blow
 dry) can be answered from the salon details in Lori's shape without a
-hand-over.
+hand-over. Booking is never done in chat for hair: Sophie's clients are
+sent to her WhatsApp in Jess's own voice ("Ok lovely, if you want to book
+in with Sophie it's best to message her directly on WhatsApp, here's her
+number"); everything else is Lori's, in the inbox ("Hiya, that's one for
+Lori our hairdresser, she'll pick this up with you here x"), and the bot
+goes quiet. Hair complaints are Jess's.
 
 **Aesthetics.** "That's our aesthetic lady Bernadette, Re Fresh Aesthetics.
 She does her own diary, so drop her a message on her page or book a

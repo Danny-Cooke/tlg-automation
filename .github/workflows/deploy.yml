@@ -116,7 +116,7 @@ jobs:
           pip install --quiet -r requirements-mcp.txt  # python-hcl2 for the salon config render
           bash scripts/build_lambda.sh menu_sync
           bash scripts/build_lambda.sh fresha_watch menu_sync
-          bash scripts/build_lambda.sh bot menu_sync
+          bash scripts/build_lambda.sh bot menu_sync clients
 
       # The secrets context is not available in a step's `if`, so a step
       # decides and the applies read its output.
@@ -195,6 +195,7 @@ jobs:
           TF_VAR_message_test_mode: ${{ vars.MESSAGE_TEST_MODE || 'true' }}
           TF_VAR_escalation_emails: ${{ vars.ESCALATION_EMAILS || '[]' }}
           TF_VAR_carmen_whatsapp: ${{ vars.CARMEN_PHONE || '' }}
+          TF_VAR_sophie_whatsapp: ${{ vars.SOPHIE_PHONE || '' }}
           TF_VAR_meta_messenger_app_id: ${{ secrets.TLG_APP1_ID || '0' }}
           TF_VAR_meta_messenger_app_secret: ${{ secrets.TLG_APP1_SECRET || 'unset' }}
           TF_VAR_meta_instagram_app_id: ${{ secrets.TLG_APP2_ID || '' }}

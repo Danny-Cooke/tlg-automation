@@ -56,6 +56,14 @@ REPLY_DELAY_SECONDS = float(os.environ.get("REPLY_DELAY_SECONDS", "10"))
 # (booking, cancellation or rebooking, spam) notify the team and carry on.
 # A cancellation-fee plea locks too: Jess decides about money (user, 2026-10-21).
 LOCKING_KINDS = frozenset({"complaint", "cancellation fee", "quote", "can't assist anymore", ""})
+# Areas that always lock, whatever the kind: a hair thread is Lori-Dee's to
+# deal with completely in the inbox, or has been sent to Sophie's WhatsApp
+# (user, 2026-10-24). Complaints about hair still go to Jess, and lock anyway.
+LOCKING_AREAS = frozenset({"hair"})
+
+
+def locks(kind: str, area: str) -> bool:
+    return kind in LOCKING_KINDS or area in LOCKING_AREAS
 SALON_TZ = zoneinfo.ZoneInfo(os.environ.get("SALON_TIMEZONE", "Europe/London"))
 
 
@@ -179,11 +187,12 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         log.info("SIMPLE %s from %s: %r -> %r (sent=%s)", msg.channel, msg.sender_id, user_text[:200], reply_text, sent)
         return
 
-    if convo.handed_to_jess:
-        log.info("Thread %s is with the team, staying quiet", msg.sender_id)
-        convo.seen_message_ids.append(msg.message_id)
+    if convo.handed_to_jess and not convo.watching():
+        log.info("Thread %s is with %s, staying quiet", msg.sender_id, convo.handed_to or "the team")
+        convo.note_message(msg.message_id, user_text)
         store.save(convo)
         return
+    watching = convo.watching()  # with Lori-Dee or Carmen: read it, answer only if it is ours
 
     _ensure_name(convo)
     convo.mark_seen(msg.message_id)
@@ -201,6 +210,13 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     else:
         reply = brain.ask(system_prompt(), convo.history, user_text, context=context_block(convo), tools=tools(convo, store))
 
+    if watching and (not reply.reply.strip() or (reply.escalate and reply.area == convo.handed_area)):
+        # Theirs, or a reply to them: Lori-Dee or Carmen is answering in the inbox.
+        log.info("Thread %s is with %s for %s; this message is theirs", msg.sender_id, convo.handed_to, convo.handed_area)
+        convo.note_message(msg.message_id, user_text)
+        store.save(convo)
+        return
+
     convo.record_turn(msg.message_id, user_text, reply.reply)
     store.save(convo)  # seen before the wait, so a Meta retry is a duplicate
 
@@ -209,8 +225,11 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         # person takes the thread. A booking or a move just tells the team and
         # the bot keeps talking: the client is mid-conversation (user,
         # 2026-10-20). Shadow mode never locks, nothing reaches the client.
-        lock = MODE == "live" and reply.escalation_kind in LOCKING_KINDS
-        convo.handed_to_jess = lock
+        lock = MODE == "live" and locks(reply.escalation_kind, reply.area)
+        if lock:
+            convo.hand_over(reply.escalate_to, reply.area)
+        elif not watching:
+            convo.handed_to_jess = False
         escalation.notify(
             convo, reply.escalation_reason, user_text,
             to=reply.escalate_to, area=reply.area, kind=reply.escalation_kind, bot_quiet=lock,
@@ -241,7 +260,19 @@ def context_block(convo: Conversation, now: dt.datetime | None = None) -> str:
     else:
         lines.append("The client's name is not known.")
     lines.append(f"Channel: {convo.channel or 'unknown'}.")
+    if convo.watching():
+        who = WATCHED_NAMES.get(convo.handed_to, convo.handed_to)
+        lines.append(
+            f"This thread is with {who} for {convo.handed_area}: {who} is answering the client here in the inbox, "
+            f"and those messages are not shown to you. Answer only if the new message is clearly about something "
+            f"else that is yours (nails, beauty, lashes, aesthetics, hours, the salon). If it is about {convo.handed_area}, "
+            f"could be a reply to {who}, or you are not sure, set `reply` to an empty string and `escalate` to false: "
+            f"nothing is sent."
+        )
     return " ".join(lines)
+
+
+WATCHED_NAMES = {"lori-dee": "Lori-Dee", "carmen": "Carmen"}
 
 
 def tools(convo: Conversation | None = None, store: ConversationStore | None = None) -> dict[str, brain.ToolRunner]:
@@ -314,6 +345,9 @@ def _send(recipient_id: str, text: str, started: float | None = None) -> bool:
     s = secrets()
     if not s.get("page_token"):
         log.warning("No page token configured; cannot reply to %s", recipient_id)
+        return False
+    if not text.strip():
+        log.info("Nothing to send to %s", recipient_id)
         return False
     if REPLY_DELAY_SECONDS > 0:
         meta.send_action(recipient_id, "typing_on", s["page_token"], app_secret=s.get("app_secret"))

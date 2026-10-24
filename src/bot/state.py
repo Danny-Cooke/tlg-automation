@@ -20,13 +20,29 @@ class Conversation:
     sender_id: str
     channel: str = ""
     history: list[dict] = field(default_factory=list)
-    handed_to_jess: bool = False
+    handed_to_jess: bool = False  # the thread is with a person; the name is historical, see handed_to
     seen_message_ids: list[str] = field(default_factory=list)
     client_name: str = ""
     bookings: list[dict] = field(default_factory=list)  # appointments the bot put into Fresha for this thread
+    handed_to: str = ""  # jess | carmen | lori-dee, when handed_to_jess is True
+    handed_area: str = ""  # what was handed over: hair, tattoos, nails ...
+
+    # With these people the bot keeps reading the thread and answers only what
+    # is not theirs (user, 2026-10-24: a hair client with Lori who asks about
+    # nails gets the bot back for nails). With Jess the bot is silent.
+    WATCHED = ("lori-dee", "carmen")
 
     def has_seen(self, message_id: str) -> bool:
         return bool(message_id) and message_id in self.seen_message_ids
+
+    def watching(self) -> bool:
+        """Handed to Lori-Dee or Carmen: still read every message, answer only what is ours."""
+        return self.handed_to_jess and self.handed_to in self.WATCHED
+
+    def hand_over(self, to: str, area: str) -> None:
+        self.handed_to_jess = True
+        self.handed_to = to or "jess"
+        self.handed_area = area or "general"
 
     def note_message(self, message_id: str, user_text: str) -> None:
         """Listen mode: remember the message and keep it as context, no reply."""
@@ -73,6 +89,8 @@ class ConversationStore:
             seen_message_ids=list(item.get("seen_message_ids", [])),
             client_name=item.get("client_name", ""),
             bookings=[dict(b) for b in item.get("bookings", [])],
+            handed_to=item.get("handed_to", ""),
+            handed_area=item.get("handed_area", ""),
         )
 
     def save(self, convo: Conversation) -> None:
@@ -85,6 +103,8 @@ class ConversationStore:
                 "seen_message_ids": convo.seen_message_ids,
                 "client_name": convo.client_name,
                 "bookings": convo.bookings,
+                "handed_to": convo.handed_to,
+                "handed_area": convo.handed_area,
                 "updated_at": int(time.time()),
                 "expires_at": int(time.time()) + TTL_DAYS * 86400,
             }
@@ -93,8 +113,8 @@ class ConversationStore:
     def clear_handover(self, sender_id: str) -> None:
         self.table.update_item(
             Key={"sender_id": sender_id},
-            UpdateExpression="SET handed_to_jess = :f",
-            ExpressionAttributeValues={":f": False},
+            UpdateExpression="SET handed_to_jess = :f, handed_to = :e, handed_area = :e",
+            ExpressionAttributeValues={":f": False, ":e": ""},
         )
 
 

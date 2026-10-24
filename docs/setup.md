@@ -65,7 +65,10 @@ everyone is answered), `BOT_MODE` (`simple`, the default, then `shadow`,
 then `live`), `ESCALATION_EMAILS` (JSON list, Jess, from shadow mode on) and
 `CARMEN_PHONE` (her WhatsApp number as clients should dial it; tattoo questions
 beyond a consultation are sent there in her words; empty means the bot uses
-the holding line instead).
+the holding line instead) and `SOPHIE_PHONE` (her WhatsApp number; clients
+who want to book hair with Sophie are sent there in Jess's voice, because
+hair is never booked in chat; empty means the bot says Sophie will message
+them and hands over).
 
 The bot stack applies once `TLG_APP1_SECRET` exists. The deploy then
 registers the webhooks with Meta itself (section 3) and prints the URLs.
@@ -244,6 +247,58 @@ aws dynamodb update-item \
 ```
 
 A small admin endpoint for Jess can replace this later.
+
+## 6. The client list and the stop link (plan job 10)
+
+The bot stack also deploys `tlg-prod-client-sync` and `tlg-prod-unsubscribe`.
+Nothing to set up: the sync uses the same Fresha session as the bot (4d) and
+runs daily at 05:30 London. To run it now, or to see what it would do:
+
+```bash
+aws lambda invoke --function-name tlg-prod-client-sync --payload '{"dry_run": true}'   --cli-binary-format raw-in-base64-out /dev/stdout
+aws lambda invoke --function-name tlg-prod-client-sync --payload '{"limit": 5}'       --cli-binary-format raw-in-base64-out /dev/stdout   # the five stalest clients only, written
+```
+
+The reply is a summary: clients in Fresha, rows, how many have a mobile,
+how many accept SMS marketing in Fresha, how many opted out with us, and
+`textable`, the number a blast would reach. Rows are in the DynamoDB table
+`tlg-prod-clients`; a client's stop link lands at the `unsubscribe_url`
+output with their row's `token` in place of `{token}`.
+
+**The short link on the website (done 2026-10-23).** Texts carry
+`tlg-beauty.co.uk/stop/<token>`. The website is WordPress on Krystal's
+Onyx managed platform (not the cPanel account on hera, which the domain
+does not point at: a redirect added there does nothing). The rule lives
+at the top of the site's `.htaccess`, above the Patchstack block, edited
+through the Onyx dashboard: Sites, The looking Glass, File Manager, `html`,
+Actions next to `.htaccess`, Edit:
+
+```
+# TLG stop link for offer texts: tlg-beauty.co.uk/stop/<token> goes to the salon's AWS page
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^stop/(.*)$ https://qzn1xllzdj.execute-api.eu-west-2.amazonaws.com/stop/$1 [R=301,L]
+</IfModule>
+```
+
+The API address is the `unsubscribe_url` output without `/{token}`; it only
+changes if the API is ever recreated. Check: `https://tlg-beauty.co.uk/stop/test`
+redirects (301) to the API, and after the deploy lands on our "This link
+isn't valid" page. Patchstack and WordPress rewrite their own blocks of the
+file and leave lines above "# BEGIN Patchstack" alone.
+
+Still to do before the first blast, in order:
+
+1. **Record Fresha's consent update.** Open a client's profile in the Fresha
+   dashboard with DevTools recording (same method as 4d's booking capture),
+   untick "SMS marketing", save, tick it back, save, export the HAR with
+   sensitive data. The request that saves the tick goes into
+   `knowledge/fresha-internal-api.md`, and the sync can then push rows
+   flagged `fresha_pending` back to Fresha.
+2. **Leave the SMS sandbox.** AWS Support case under End User Messaging:
+   production access and a monthly spend limit (£30 covers a blast to
+   everyone). Until then only verified numbers can receive texts.
+3. ~~The redirect on the website~~ done.
 
 ## Local checks
 

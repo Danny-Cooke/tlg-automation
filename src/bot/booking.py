@@ -7,11 +7,12 @@ act on: "Booked: ..." or a reason it could not book and what to do instead.
 
 Guards, in order:
 
-1. Everything on the menu except a tattoo itself: nails, hair, beauty,
-   lashes, aesthetics, and for tattoos only Carmen's free consultation
-   (decisions 2026-10-21). Anything else is refused and the model is told
-   to give the Fresha link. A service Fresha flags as needing a patch test
-   is refused too, and handed over (no service carries that flag today).
+1. Nails, beauty, lashes, aesthetics, and for tattoos only Carmen's free
+   consultation (decisions 2026-10-21). Never hair (decision 2026-10-24):
+   Sophie's clients are sent to her WhatsApp, Lori-Dee's to her link or a
+   hand-over. Anything else is refused and the model is told what to do
+   instead. A service Fresha flags as needing a patch test is refused too,
+   and handed over (no service carries that flag today).
 2. The person must be on the team list with a Fresha id, and must do that
    service according to Fresha's catalog.
 3. The client must already be a Fresha client, matched by name: exactly one
@@ -45,7 +46,7 @@ from .state import Conversation
 log = logging.getLogger(__name__)
 
 # Fresha category -> the team's area word, for the Telegram line. Spelled as Fresha spells them.
-BOOKABLE_CATEGORIES = {
+AREAS = {
     "Senior Nail Services - TLG": "nails",
     "Nails by TLG": "nails",
     "Hair by Lori-dee": "hair",
@@ -54,6 +55,15 @@ BOOKABLE_CATEGORIES = {
     "Beauty - TLG": "beauty",
     "Lashes by Amber": "beauty",
     "Bernadettes ReFresh aethetics": "aesthetics",
+}
+# What the bot may book in chat. Hair is out (user, 2026-10-24: "no hair
+# bookings automatic at all"): Sophie's clients are sent to her WhatsApp,
+# Lori-Dee's to her link or handed over.
+BOOKABLE_CATEGORIES = {k: v for k, v in AREAS.items() if v != "hair"}
+NOT_IN_CHAT = {
+    "hair": ("which the bot does not book in chat. If the client named Sophie, send her WhatsApp line (see Hair in "
+             "the rules); otherwise say it is one for Lori and hand over to lori-dee (kind: booking) with the details. "
+             "Either way you will not answer again on the thread."),
 }
 # Categories where only some services may be booked in chat (normalised names).
 ONLY_THESE = {"Tattoos by Skin deep canvas": frozenset({"consultation"})}
@@ -264,8 +274,9 @@ def _validate(req: Request, cfg: SalonConfig, now: dt.datetime) -> str:
     if listed is None:
         return f"'{req.service}' is not a service in the salon details. Use the exact name from the list."
     if listed.category not in BOOKABLE_CATEGORIES:
-        return (f"'{listed.name}' is {listed.category}, which the bot does not book in chat. "
-                "Give the client the booking link for it and hand over if a slot was agreed.")
+        why = NOT_IN_CHAT.get(AREAS.get(listed.category, ""),
+                              "which the bot does not book in chat. Give the client the booking link for it and hand over if a slot was agreed.")
+        return f"'{listed.name}' is {area_of(listed.category)}, {why}"
     if not bookable(listed.category, listed.name):
         return (f"'{listed.name}' is a tattoo, and the only tattoo appointment the bot books is the free "
                 "consultation with Carmen. Offer that, or give the booking link, and hand over (kind: quote) "
@@ -293,7 +304,7 @@ def bookable(category: str, service_name: str) -> bool:
 
 
 def area_of(category: str) -> str:
-    return BOOKABLE_CATEGORIES.get(category, "general")
+    return AREAS.get(category, "general")
 
 
 def area_of_service(cfg: SalonConfig, service_name: str) -> str:

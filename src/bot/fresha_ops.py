@@ -729,3 +729,257 @@ fragment AppointmentProtectionDepositFragment on AppointmentProtection_Deposit {
   }
 }"""),
 }
+
+
+# The client profile page in one call, for the client mirror (clients/sync.py).
+# Composed 2026-10-24 from the queries the dashboard sends when a profile is
+# opened (CustomerLeftDrawer, ListCustomerPatchTests, ListClientNotes,
+# ListCustomerAttachments, CustomerUpcomingAppointmentQuery,
+# CustomerPastAppointmentQuery): the same fields, under one operation name,
+# so the sync makes one GraphQL request per client instead of six.
+OPS["clientRecord"] = ("query", "clientRecord", """query clientRecord($customerId: ID!) {
+  __typename
+  customer: Customers_customer(id: $customerId) {
+    __typename
+    id
+    firstName
+    lastName
+    fullName
+    isBlocked
+    blockReason
+    birthdayDay
+    birthdayMonth
+    birthdayYear
+    gender
+    pronoun
+    createdAt
+    deletedAt
+    staffAlert
+    hasPaymentMethod
+    patchTestCount
+    onlineProfile {
+      __typename
+      isEmailVerified
+      isPhoneVerified
+    }
+    labels {
+      __typename
+      edges {
+        __typename
+        node {
+          __typename
+          id
+          ... on Customers_NoShowLabel {
+            __typename
+            count
+          }
+          ... on Customers_BirthdayLabel {
+            __typename
+            date
+          }
+          ... on Customers_UnpaidLabel {
+            __typename
+            amount
+          }
+        }
+      }
+    }
+    tags(first: 50) {
+      __typename
+      edges {
+        __typename
+        node {
+          __typename
+          id
+          name
+          assignedAt
+        }
+      }
+    }
+    segmentBadges(first: 50) {
+      __typename
+      edges {
+        __typename
+        node {
+          __typename
+          id
+          definition {
+            __typename
+            id
+            badgeName
+          }
+        }
+      }
+    }
+    allergies(first: 50) {
+      __typename
+      edges {
+        __typename
+        node {
+          __typename
+          id
+          name
+          severity
+          type
+          reaction
+          description
+        }
+      }
+    }
+    patchTests(first: 50) {
+      __typename
+      edges {
+        __typename
+        node {
+          __typename
+          id
+          title
+          status
+          performedDate
+          isExpired
+          createdAt
+          confirmationRequired
+          expirationDate
+        }
+      }
+    }
+  }
+  notes: Notes_notes(customerId: $customerId, first: 50, includeClientNote: true, sort: ACTIVITY_DATE) {
+    __typename
+    edges {
+      __typename
+      node {
+        __typename
+        id
+        body
+        type
+        createdAt
+        lastEditedAt
+        activityAt
+        authorType
+        author {
+          __typename
+          id
+          fullName
+        }
+        authorClient {
+          __typename
+          id
+          fullName
+        }
+        appointment {
+          __typename
+          id
+          startDatetime
+        }
+        attachments {
+          __typename
+          id
+          fileName
+          kind
+        }
+      }
+    }
+    pageInfo {
+      __typename
+      hasNextPage
+    }
+  }
+  attachments: Notes_attachmentsByCustomer(customerId: $customerId, first: 30) {
+    __typename
+    edges {
+      __typename
+      node {
+        __typename
+        id
+        fileName
+        contentType
+        fileSizeBytes
+        kind
+        createdAt
+      }
+    }
+  }
+  upcoming: Appointments_appointments(customerId: $customerId, first: 20, onlyFuture: true, order: {field: START_DATETIME, direction: ASC}) {
+    __typename
+    edges {
+      __typename
+      node {
+        __typename
+        ...TlgAppointment
+      }
+    }
+    pageInfo {
+      __typename
+      hasNextPage
+    }
+  }
+  past: Appointments_appointments(customerId: $customerId, first: 50, onlyPast: true, order: {field: START_DATETIME, direction: DESC}) {
+    __typename
+    edges {
+      __typename
+      node {
+        __typename
+        ...TlgAppointment
+      }
+    }
+    pageInfo {
+      __typename
+      hasNextPage
+    }
+  }
+}
+fragment TlgAppointment on Appointments_Appointment {
+  __typename
+  id
+  status
+  statusLabelId
+  startWallClock
+  primaryBookingId
+  salesOrderId
+  consultationForms {
+    __typename
+    id
+    status
+  }
+  preferredNote {
+    __typename
+    note {
+      __typename
+      id
+      body
+    }
+  }
+  bookings {
+    __typename
+    id
+    priceType
+    price
+    startWallClock
+    endDatetime
+    servicePricingLevelId
+    service {
+      __typename
+      name
+      servicePricingLevels {
+        __typename
+        id
+        name
+      }
+    }
+    employee {
+      __typename
+      firstName
+      lastName
+    }
+    bookingServiceAddOns {
+      __typename
+      serviceAddOnId
+      serviceAddOn {
+        __typename
+        name
+      }
+    }
+  }
+}
+""")

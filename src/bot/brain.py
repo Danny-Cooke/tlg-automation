@@ -39,7 +39,7 @@ REPLY_SCHEMA = {
         "escalate_to": {
             "type": "string",
             "enum": ESCALATE_TO,
-            "description": "Who should pick it up: jess (nails, general, complaints, money), carmen (tattoos), lori-dee (hair). Empty if not escalating.",
+            "description": "Who should pick it up: jess (nails, beauty, lashes, aesthetics, general, money, and every complaint including hair), carmen (tattoos), lori-dee (hair that is not a complaint). Empty if not escalating.",
         },
         "area": {
             "type": "string",
@@ -49,7 +49,7 @@ REPLY_SCHEMA = {
         "escalation_kind": {
             "type": "string",
             "enum": ESCALATION_KINDS,
-            "description": "Why: complaint; booking (a slot agreed in chat that the tool could not put in); cancellation or rebooking (one the tool could not do); cancellation fee (a client inside the 24-hour window who is unsure or asks not to pay; Jess decides, the bot goes quiet); quote (a price you cannot give straight from the salon details, including anything from a picture; the team prices it, the bot goes quiet); can't assist anymore (anything else you cannot handle); spam. Empty if not escalating.",
+            "description": "Why: complaint; booking (a slot agreed in chat that the tool could not put in, or any hair booking, which is Lori-Dee's or Sophie's); cancellation or rebooking (one the tool could not do); cancellation fee (a client inside the 24-hour window who is unsure or asks not to pay; Jess decides, the bot goes quiet); quote (a price you cannot give straight from the salon details, including anything from a picture; the team prices it, the bot goes quiet); can't assist anymore (anything else you cannot handle); spam. Empty if not escalating.",
         },
         "suggested_booking_link": {
             "type": "string",
@@ -100,8 +100,8 @@ BOOKING_TOOL = {
         "person, date and time that you confirmed back to them in one message. It answers "
         "'Booked: ...' when the appointment is in, or says why it could not book and what to "
         "do instead; never tell the client it is booked unless the answer starts with 'Booked'. "
-        "Nails, hair, beauty, lashes, aesthetics, and for tattoos only Carmen's free consultation: "
-        "a tattoo itself is not booked here, and neither is hair colour that needs a patch test."
+        "Nails, beauty, lashes, aesthetics, and for tattoos only Carmen's free consultation. Never hair: "
+        "Sophie's clients go to her WhatsApp, Lori-Dee's to her booking link or a hand-over. A tattoo itself is not booked here."
     ),
     "input_schema": {
         "type": "object",

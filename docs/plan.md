@@ -109,9 +109,10 @@ name, Fresha's own clash check before the write, an idempotency key per
 conversation and slot (so no queue is needed), the booking recorded on the
 conversation, an ops email per booking (no Telegram post: the group is for
 hand-overs only, decision 2026-10-21 evening), dry run outside
-live mode. Widened to hair the same afternoon (decision 2026-10-21): the two
-hair categories book with Lori-Dee or Sophie in Lori-Dee's register, colour
-needing a patch test is refused and handed to Lori-Dee. Tattoos: the free
+live mode. Widened to hair the same afternoon (decision 2026-10-21), then **reversed
+2026-10-24: hair is never booked in chat.** Sophie's clients are sent to her
+WhatsApp (`SOPHIE_PHONE`), Lori-Dee's get her link or a hand-over (decision
+2026-10-24). Tattoos: the free
 consultation with Carmen only; prices and designs are quote hand-overs.
 Beauty, lashes and aesthetics bookable too (evening ruling), so the only
 menu item not booked in chat is a tattoo itself. The persona and prompt now read the slot back, ask "shall I pop
@@ -317,6 +318,103 @@ filter in the inbox later if wanted.
 **Not in this job, worth doing after:** recording the team's own replies
 (`message_echoes`) while the thread is with them, so the bot resumes
 knowing what Lori or Carmen told the client.
+
+### 10. SMS offers to the client list (AGREED 2026-10-23; steps 1 and 2 BUILT; steps 3 to 5 BACKLOG since 2026-10-24)
+
+Parked by the user on 2026-10-24 ("a backlog item") so the messaging of
+clients can be finished first (job 11). What is built keeps running: the
+daily mirror and the stop link cost nothing to leave in place. The
+AWS sandbox-exit case, the Fresha write-back recording and the send
+Lambda wait.
+
+The team asked for offers by text. Fresha's own blast campaigns cost £0.08
+a text plus VAT; the sender the Fresha watch already uses costs about 2.5p,
+so a blast to the 440 clients who accept SMS marketing is about £11 against
+£42. Built in this order:
+
+1. **Client mirror (built 2026-10-23).** `tlg-prod-client-sync`, in the bot
+   stack, pages through Fresha's client search with the owner's session and
+   fetches each client's full record, which is where the marketing ticks
+   live (`accepts-sms-marketing-notifications`, email, WhatsApp). Mirrors
+   name, mobile (E.164), email, blocked, labels, created/updated, referral
+   source and the three ticks into DynamoDB `tlg-prod-clients`, keyed by
+   Fresha's client id. Our own fields on the same row are never written by
+   the sync: `sms_opt_out`, `lists` (our segments), `token` (the random code
+   in the unsubscribe link), the send log. Clients that vanish from Fresha
+   (merged, deleted) are marked `in_fresha=false`, not removed. Daily at
+   05:30 London and on demand (`{"dry_run": true}` counts without writing).
+   Who can be texted = in Fresha, has a mobile, Fresha tick yes, not opted
+   out with us, not blocked.
+   **Widened 2026-10-24 (user: "I want our DynamoDB to be a mirror of our
+   client lists and everything we hold about the clients ... because of
+   patch tests and automation"):** the sync now also fetches each client's
+   profile page, in one composed GraphQL call (`clientRecord`) plus Fresha's
+   statistics and consultation-forms calls: patch tests (title, status,
+   performed, expiry, active), allergies, tags, segment badges, no-show and
+   unpaid flags, staff alert, birthday, notes, files (names only), upcoming
+   and the last 50 past appointments with services, person and add-ons,
+   consultation forms, and Fresha's counters. Clients are refreshed stalest
+   first within the Lambda's 15-minute budget; leftovers go first next run
+   and the summary says how many (`remaining`). Not mirrored: product
+   sales, wallet, loyalty, memberships, packages (all unused by the salon)
+   and signed file links (they expire; the file names are kept).
+2. **Unsubscribe (built 2026-10-23).** `GET /stop/<token>` on the existing
+   webhook API shows a page with one "Stop texts" button; pressing it (a
+   POST, so link previews and scanners cannot opt people out) flips
+   `sms_opt_out`, and the page offers "Get offers again". The token is
+   eight random characters tied to the row, no phone number in the link.
+   The change is marked `fresha_pending` until the write-back below exists.
+3. **Fresha write-back (needs one recording).** Nobody has yet toggled the
+   SMS-marketing tick in a client profile with DevTools open, so the update
+   call is not in `knowledge/fresha-internal-api.md`. Record it (same HAR
+   method as the booking), then the sync pushes pending opt-outs to Fresha
+   so the desk sees the same answer.
+4. **Sending.** A send Lambda through the existing End User Messaging
+   sender (needs the account out of the SMS sandbox: a support case), 160
+   plain characters, booking link and stop link in every text, a log of
+   who got what. The link in the text is `tlg-beauty.co.uk/stop/<token>`
+   (user, 2026-10-23): one wildcard redirect on the website (Krystal)
+   sends `/stop/*` to the API, so no second domain in AWS and the link
+   is 30 characters instead of 60.
+5. **/offer in Telegram**, after job 9's webhook: a few words in, a draft
+   in Jess's voice out, count and cost, Send button.
+
+### 11. Every service settled in chat or handed to Telegram (PROPOSED 2026-10-24, not agreed)
+
+The user's ask: "I want to be sure every service we have in our catalogue
+is dealt with by our chat bot in a way where it either solves the
+conversation or escalates to Telegram." The audit is `docs/service-coverage.md`:
+a matrix of the eight Fresha categories against what the bot answers, books,
+quotes and hands over, and nine gaps. The code already guarantees that an
+answered message ends in a reply or a hand-over; the gaps are about the
+menu's edges and about proof. Proposed steps, in order:
+
+1. **Rulings from the user** (no code): colour prices, quote or list price;
+   add-ons, quote and "mention it on the day" or hand over; who may be booked
+   for "Shampoo and blow dry long hair" and "Mini hatters pamper"; whether
+   Bernadette, Amber and Sophie join the Telegram group and `escalate_to`;
+   whether Tiny Tattoos become bookable; whether the free consultations
+   (Bernadette, Lori-Dee, Sophie) are offered the way Carmen's is.
+2. **Fixes in Fresha** (the user, in the dashboard): tick "patch test
+   required" on every colour service; remove or rename the Beauty - TLG
+   copies of "Classic lashes" and "Classic lash infill"; trim the staff on
+   "Shampoo and blow dry long hair". The menu sync carries each change into
+   the bot overnight.
+3. **Code**: a colour keyword guard in `booking.py` that refuses and hands
+   to Lori-Dee regardless of the Fresha flag; add-ons refused as standalone
+   bookings; a never-book list ("Competition winner", "Two week Botox
+   review") and the `not_bookable_for` additions in `salon.auto.tfvars`;
+   prompt and persona changes for consultations and whatever step 1 decides.
+4. **Evaluation run**: `scripts/eval_bot.py`, one scenario per service
+   family and per hand-over rule (about forty: a price question, a booking
+   ask, a picture, a complaint, an add-on, a colour, an aesthetics "what
+   should I have", a tiny tattoo, each category), run against the real model
+   with a scripted Fresha, asserting the outcome class and who it went to.
+   Not part of `pytest` (it costs money and needs AWS); run by hand before a
+   persona or prompt change, result recorded at the foot of
+   `docs/service-coverage.md`.
+5. **Switch**: `MESSAGE_TEST_MODE=false` on the GitHub `prod` environment,
+   the user's call, after step 4 passes.
 
 ## Open questions for the user
 

@@ -240,6 +240,33 @@ def test_booking_handover_keeps_the_bot_talking(wired, monkeypatch):
     assert handler.LOCKING_KINDS == {"complaint", "cancellation fee", "quote", "can't assist anymore", ""}
 
 
+def test_hair_handovers_lock_the_thread_whatever_the_kind(wired, monkeypatch):
+    """User, 2026-10-24: hair for Lori-Dee is hers to deal with completely in the inbox,
+    Sophie's clients go to her WhatsApp; the bot goes quiet either way. A hair complaint
+    is Jess's and locks like any complaint."""
+    monkeypatch.setattr(handler, "MODE", "live")
+
+    def ask(system, history, text, **kw):
+        if "complain" in text.lower():
+            return brain.BotReply(reply="So sorry lovely, let me get Jess x", escalate=True, escalation_reason="Unhappy with colour",
+                                  escalate_to="jess", area="hair", escalation_kind="complaint")
+        return brain.BotReply(reply="Hiya, that's one for Lori our hairdresser x", escalate=True, escalation_reason="Hair with Lori-Dee: cut Saturday",
+                              escalate_to="lori-dee", area="hair", escalation_kind="booking")
+
+    monkeypatch.setattr(brain, "ask", ask)
+    store = MemoryStore()
+    handler.process_message(inbound("can I book a cut with lori saturday", mid="m1"), store)
+    assert wired["escalated"][-1] == ("psid1", "Hair with Lori-Dee: cut Saturday", "lori-dee")
+    assert store.items["psid1"].handed_to_jess is True
+    handler.process_message(inbound("hello?", mid="m2"), store)
+    assert len(wired["sent"]) == 1  # Lori's thread now
+
+    store = MemoryStore()
+    handler.process_message(inbound("I want to complain about my colour", mid="m3", sender="psid2"), store)
+    assert wired["escalated"][-1] == ("psid2", "Unhappy with colour", "jess") and store.items["psid2"].handed_to_jess is True
+    assert handler.locks("booking", "hair") and not handler.locks("booking", "nails") and handler.locks("complaint", "hair")
+
+
 def test_shadow_mode_never_sends_to_client(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "shadow")
     store = MemoryStore()
@@ -386,3 +413,70 @@ def test_verify_handshake(wired):
     resp = handler.lambda_handler(event)
     assert resp["statusCode"] == 200
     assert resp["body"] == "777"
+
+
+def test_a_thread_with_lori_dee_is_still_read_and_nails_get_the_bot_back(wired, monkeypatch):
+    """User, 2026-10-24: after a hair hand-over the bot keeps reading; hair messages and
+    replies to Lori are left alone, a nails question is answered. With Jess the bot is silent."""
+    monkeypatch.setattr(handler, "MODE", "live")
+    contexts = []
+
+    def ask(system, history, text, context="", **kw):
+        contexts.append(context)
+        low = text.lower()
+        if "nails" in low:
+            return brain.BotReply(reply="Absolutely lovely, gel polish is from £34 xx", escalate=False)
+        if "cut" in low:
+            return brain.BotReply(reply="Hiya, that's one for Lori x", escalate=True, escalation_reason="Hair with Lori-Dee: cut",
+                                  escalate_to="lori-dee", area="hair", escalation_kind="booking")
+        return brain.BotReply(reply="", escalate=False)  # a reply to Lori: send nothing
+
+    monkeypatch.setattr(brain, "ask", ask)
+    store = MemoryStore()
+    handler.process_message(inbound("can I book a cut with lori", mid="m1"), store)
+    convo = store.items["psid1"]
+    assert convo.handed_to_jess and convo.handed_to == "lori-dee" and convo.handed_area == "hair" and convo.watching()
+
+    handler.process_message(inbound("yes 2pm is fine", mid="m2"), store)  # for Lori
+    assert len(wired["sent"]) == 1 and "This thread is with Lori-Dee for hair" in contexts[-1]
+    assert convo.history[-1] == {"role": "user", "content": "yes 2pm is fine"}  # kept as context, no bot turn
+
+    handler.process_message(inbound("also could I get my nails done while I'm in?", mid="m3"), store)
+    assert wired["sent"][-1] == ("psid1", "Absolutely lovely, gel polish is from £34 xx")
+    assert convo.handed_to_jess and convo.handed_to == "lori-dee"  # Lori still has the hair
+
+    handler.process_message(inbound("and a trim on the fringe", mid="m4"), store)  # hair again: theirs, no second hand-over
+    assert len(wired["sent"]) == 2 and len(wired["escalated"]) == 1
+
+    # With Jess (a complaint) nothing is read or answered.
+    convo.hand_over("jess", "nails")
+    assert not convo.watching()
+    before = len(contexts)
+    handler.process_message(inbound("nails please", mid="m5"), store)
+    assert len(contexts) == before and len(wired["sent"]) == 2
+
+
+def test_handover_fields_round_trip_through_the_table():
+    class Table:
+        def __init__(self):
+            self.item = None
+
+        def put_item(self, Item):
+            self.item = Item
+
+        def get_item(self, Key):
+            return {"Item": self.item} if self.item else {}
+
+        def update_item(self, Key, UpdateExpression, ExpressionAttributeValues):
+            assert "handed_to = :e" in UpdateExpression
+            self.item.update(handed_to_jess=False, handed_to="", handed_area="")
+
+    table = Table()
+    store = ConversationStore(table=table)
+    c = Conversation(sender_id="p")
+    c.hand_over("carmen", "tattoos")
+    store.save(c)
+    back = store.load("p")
+    assert back.handed_to == "carmen" and back.handed_area == "tattoos" and back.watching()
+    store.clear_handover("p")
+    assert store.load("p").handed_to_jess is False and store.load("p").handed_to == ""

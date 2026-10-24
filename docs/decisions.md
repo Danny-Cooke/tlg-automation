@@ -470,3 +470,123 @@ variable `CARMEN_PHONE`, passed through Terraform into the bot's
 environment as `CARMEN_WHATSAPP` (never in the repo); without it the holding line is used. This
 is the one deliberate exception to the 2026-10-20 one-persona rule: the
 message sends the client to Carmen's own phone, so it is hers.
+
+## 2026-10-23: offers by text go through our own sender, with the client list mirrored from Fresha
+
+The team asked for SMS offers to the client list. Fresha's blast campaigns
+do it at £0.08 a text plus VAT; the End User Messaging sender the Fresha
+watch already uses costs about 2.5p (this account's October bill: three UK
+texts, $0.10). The user's ruling: build it. The client list is mirrored
+from Fresha into DynamoDB `tlg-prod-clients` by a daily Lambda using the
+owner's session, because Fresha's client export shows it already holds the
+answer that matters: 440 of 593 clients accept SMS marketing, 152 do not.
+Fresha stays the source of truth for who the client is and for that tick;
+our row adds an opt-out with us, our own segments ("lists"), and the token
+behind the stop link. The sync writes only Fresha's fields, so the two
+sides can never overwrite each other.
+
+The stop link is a page with a button, not a bare GET that opts out: phones
+preview links and carriers scan them, and either would unsubscribe people
+who never tapped. The token is eight random characters tied to the row; no
+phone number travels in the link. An opt-out is marked `fresha_pending`
+because the call that updates a client's marketing tick in Fresha has not
+been recorded yet; once it is, the sync carries the answer back so the desk
+sees the same thing. The link in the text is `tlg-beauty.co.uk/stop/<token>`
+(user, 2026-10-23: "can the domain be better?"): the website on Krystal
+redirects `/stop/*` to the API, which keeps the link to 30 characters with
+no certificate or custom domain in AWS. Sending itself, leaving the SMS
+sandbox and the /offer command in Telegram are the next steps of plan job 10.
+
+## 2026-10-24: the clients table mirrors the whole Fresha profile, not just the marketing ticks
+
+The user's ruling, while reviewing how the bot should treat hair colour:
+"I want our DynamoDB to be a mirror of our client lists and everything we
+hold about the clients. It's important we know this because of patch tests
+and automation." Fresha keeps patch tests, allergies, notes, files, tags,
+badges, a staff alert and the appointment history on each client, and the
+dashboard reads them with six GraphQL queries and three REST calls when a
+profile is opened (recorded 2026-10-24 from the profile drawer). The
+client sync now fetches all of it: one composed GraphQL operation
+(`clientRecord`, the same fields under one name) plus the statistics and
+consultation-forms calls, four requests a client, into the same row.
+
+Why a mirror rather than live reads: automations (offers, reminders, the
+colour rule, anything the team asks for next) need to ask "who" across all
+clients, which Fresha's APIs cannot do without a call per client; a daily
+copy in DynamoDB can. Where freshness matters at the moment of a booking
+(a patch test, a fee) the booking tool still asks Fresha live.
+
+Consequences: the Lambda runs up to 15 minutes and refreshes the stalest
+clients first, so a slow day leaves the rest for the next run and says so;
+file links are not stored (they expire), only names; products, wallet,
+loyalty and memberships are left out because the salon does not use them.
+
+## 2026-10-24: hair is never booked in chat; Sophie's clients go to her WhatsApp
+
+The user's ruling, reversing the 2026-10-21 hair decision: "No hair
+bookings automatic at all. Any messages we answer for Sophie we do a very
+similar thing to Carmen": one message in Jess's own voice, "Ok lovely, if
+you want to book in with Sophie it's best to message her directly on
+WhatsApp, here's her number", the number from a GitHub prod variable
+(`SOPHIE_PHONE`, like `CARMEN_PHONE`), then a hand-over.
+
+How it is built:
+
+- The booking tool refuses both hair categories before touching Fresha and
+  tells the model the two routes (`booking.NOT_IN_CHAT`). The area word
+  "hair" still exists for Telegram lines and cancellations.
+- The prompt has a Hair section: plain questions answered in Lori-Dee's
+  shape; if the client has not said which stylist, one question ("is that
+  with Lori-Dee or Sophie lovely?"); Sophie's clients get the WhatsApp line
+  and a hand-over to lori-dee (kind booking, "Sent to Sophie's WhatsApp"
+  in the reason, bot keeps answering); Lori-Dee's clients get her own
+  booking link, and a hand-over to Lori-Dee with the details if they would
+  rather be booked in. No hair availability checks. Colour stays a quote.
+- Without `SOPHIE_PHONE` the bot says Sophie will message them and hands
+  over, so nothing breaks before the variable is set.
+
+Refined the same afternoon by the user: "any hair complaints get escalated
+though to Jess and Telegram. Hair for Lori gets moved to Lori in the FB
+messages for Lori to deal with completely. Amber / nails / beauty all get
+dealt with by you." So:
+
+- A hair thread that is not a plain listed-price question ends the bot's
+  part: Sophie named, the WhatsApp line; otherwise "Hiya, that's one for
+  Lori our hairdresser, she'll pick this up with you here x". Both hand over
+  to lori-dee (kind booking, area hair) and the thread locks: `handler.locks`
+  treats area "hair" like a locking kind, so Lori-Dee has the inbox thread
+  to herself. No "which stylist?" question: anyone who does not name Sophie
+  is Lori-Dee's.
+- A hair complaint is a complaint: escalate_to jess, kind complaint, locked,
+  posted to Telegram like every complaint.
+- Nails, beauty, lashes and aesthetics stay the bot's: booked in chat, and
+  their hand-overs go to Jess. Cancelling a hair appointment through the
+  cancel tool is unchanged (Fresha's own free cancellation, which the
+  client could do themselves).
+
+## 2026-10-24: a thread with Lori-Dee or Carmen is still read; the bot answers what is its own
+
+The user's ruling, after the hair hand-over was built: "you should however
+monitor all the messages even after they have been allocated to Lori. For
+example if it's a hair client and lives with Lori but then wants to ask
+about nails then you take over for nails, beauty."
+
+So a hand-over now records who has the thread and for what
+(`Conversation.handed_to`, `handed_area`). With Lori-Dee or Carmen the bot
+keeps reading every message (`Conversation.watching()`): the context block
+tells the model whose thread it is, that their replies are not shown to
+it, and that a short message is almost certainly for them. The model sends
+nothing (an empty `reply`, the only time that is allowed) for anything in
+their area or anything that could be a reply to them, and answers in Jess's
+voice when the client clearly turns to nails, beauty, lashes, aesthetics or
+the salon, booking as usual. The thread stays theirs throughout: a nails
+answer does not unlock the hair, and a further hair message is left alone
+rather than handed over a second time. With Jess (complaints, fees,
+anything she took) the bot stays silent as before: she answers the whole
+thread herself.
+
+Why not unlock after the nails answer: Lori-Dee would then get a second
+Telegram post and a second "that's one for Lori" the next time the client
+mentioned hair. Why silent with Jess: her hand-overs are the ones where a
+bot reply could cut across a complaint or a money decision.
+

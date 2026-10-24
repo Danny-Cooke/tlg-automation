@@ -161,31 +161,16 @@ def test_tattoo_consultation_is_booked_with_carmen(cfg):
     assert posted[0]["area"] == "tattoos"
 
 
-def test_hair_is_booked_with_lori_dee_or_sophie(cfg):
-    posted = []
-
-    def notify(convo, summary, appointment_id, **kw):
-        posted.append((summary, kw))
-
-    out, f, c = run(cfg, args={"service": "Dry cut", "person": "Lori-Dee"}, f=FakeFresha(services=[DRY_CUT]), notify=notify)
-    assert out.startswith("Booked: Dry cut with Lori-Dee, Thu 29 Oct 10am, for Danny Cooke")
-    assert f.created[0]["employee_id"] == "3440849" and f.created[0]["pricing_level_id"] == "25845700"
-    assert posted[0][1]["area"] == "hair"
-
-    booking.forget_catalog()
-    out, f, c = run(cfg, args={"service": "Curling hair", "person": "Sophie"}, f=FakeFresha(services=[CURLS]), notify=notify)
-    assert out.startswith("Booked: Curling hair with Sophie") and f.created[0]["employee_id"] == "5630580"
-    assert posted[1][1]["area"] == "hair"
-
-    booking.forget_catalog()
-    out, f, _ = run(cfg, args={"service": "Dry cut", "person": "Sophie"}, f=FakeFresha(services=[DRY_CUT]))
-    assert "Sophie is not booked for 'Dry cut' here; it is done by Lori-Dee" in out and f.created == []
-
-
-def test_hair_colour_with_a_patch_test_hands_over_to_lori_dee(cfg):
-    colour = fresha.Service("1", "Dry cut", "Hair by Lori-dee", "9", "30.00", "FIXED", 2700, ("3440849",), patch_test=True)
-    out, f, _ = run(cfg, args={"service": "Dry cut", "person": "Lori-Dee"}, f=FakeFresha(services=[colour]))
-    assert "patch test" in out and "Hand over to Lori-Dee" in out and f.created == []
+def test_hair_is_never_booked_in_chat_with_either_stylist(cfg):
+    """User, 2026-10-24: no hair bookings automatic at all. Sophie's clients go
+    to her WhatsApp, Lori-Dee's to her link or a hand-over; the tool refuses
+    both before it touches Fresha."""
+    for service, person, catalog in (("Dry cut", "Lori-Dee", DRY_CUT), ("Curling hair", "Sophie", CURLS)):
+        booking.forget_catalog()
+        out, f, _ = run(cfg, args={"service": service, "person": person}, f=FakeFresha(services=[catalog]))
+        assert out.startswith(f"'{service}' is hair, which the bot does not book in chat") and f.created == []
+        assert "Sophie" in out and "WhatsApp" in out and "one for Lori" in out and "not answer again" in out
+    assert booking.area_of("Sophie cooper") == "hair" and not booking.bookable("Hair by Lori-dee", "Dry cut")
 
 
 def test_person_must_be_on_the_team_with_a_fresha_id(cfg):
@@ -375,7 +360,7 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
 
     prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
     assert "# Booking" in prompt and "`book_appointment`" in prompt and "Bernadette's" in prompt
-    assert "Lori-Dee or Sophie" in prompt
+    assert "# Hair" in prompt and "Never hair" in prompt and "one for Lori our hairdresser" in prompt
     assert "do not hand over again" in prompt
     assert "shall I pop you in" in prompt and prompt.count("to confirm then") >= 3
     assert "# Pictures and quotes" in prompt and "give me a little time to have a think" in prompt and "quote;" in prompt
@@ -556,3 +541,19 @@ def test_prompt_and_persona_carry_the_move_order(persona_text, salon_config_json
     assert "# Moving an appointment" in prompt
     assert prompt.index("`check_only` true for the old one") < prompt.index("`book_appointment` for the new slot") < prompt.index("without `check_only`")
     assert "book the new one, then cancel\n  the old one, in that order" in persona_text
+
+
+def test_sophies_hair_clients_go_to_her_whatsapp_when_configured(persona_text, salon_config_json, monkeypatch):
+    """User, 2026-10-24: like Carmen's line, but in Jess's own voice, number from SOPHIE_PHONE."""
+    from bot.prompt import build_system_prompt
+
+    cfg = SalonConfig.from_json(salon_config_json)
+    monkeypatch.delenv("SOPHIE_WHATSAPP", raising=False)
+    without = build_system_prompt(persona_text, cfg)
+    hair = without.split("# Hair")[1].split("# Pictures")[0]
+    assert "Sophie's WhatsApp number is not configured" in hair and "07" not in hair
+    monkeypatch.setenv("SOPHIE_WHATSAPP", "07700 900456")
+    hair = build_system_prompt(persona_text, cfg).split("# Hair")[1].split("# Pictures")[0]
+    assert ("\"Ok lovely, if you want to book in with Sophie it's best to message her directly on WhatsApp, "
+            "here's her number: 07700 900456 x\"") in hair
+    assert "Sent to Sophie's WhatsApp" in hair and "Lori-Dee's to deal with completely" in hair and "complaint about hair" in hair

@@ -9,6 +9,19 @@ output "webhook_verify_tokens" {
   sensitive   = true
 }
 
+output "unsubscribe_url" {
+  description = "Where the stop link lands, with the token in place of {token}. The texts carry tlg-beauty.co.uk/stop/<token>, which the website redirects here."
+  value       = "${aws_apigatewayv2_api.webhook.api_endpoint}/stop/{token}"
+}
+
+output "clients_table" {
+  value = aws_dynamodb_table.clients.name
+}
+
+output "client_sync_function_name" {
+  value = aws_lambda_function.client_sync.function_name
+}
+
 output "bot_function_names" {
   value = { for c in local.channels : c => aws_lambda_function.bot[c].function_name }
 }

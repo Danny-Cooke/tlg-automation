@@ -124,6 +124,12 @@ variable "carmen_whatsapp" {
   default     = ""
 }
 
+variable "sophie_whatsapp" {
+  description = "Sophie's WhatsApp number, given to clients who want to book hair with her (user, 2026-10-24: no hair bookings in chat). Empty: the bot says Sophie will message them and hands over."
+  type        = string
+  default     = ""
+}
+
 variable "message_test_trigger" {
   description = "The word a message must start with to be answered while message_test_mode is true. Stripped before the bot reads the text."
   type        = string
@@ -220,6 +226,22 @@ variable "staff" {
     calendar_email = optional(string, "")
   }))
   default = {}
+}
+
+# ---------------------------------------------------------------------------
+# Client list mirror (plan job 10)
+# ---------------------------------------------------------------------------
+
+variable "client_sync_schedule" {
+  description = "EventBridge Scheduler cron for the Fresha client list mirror, in client_sync_timezone."
+  type        = string
+  default     = "cron(30 5 * * ? *)" # daily, 05:30
+}
+
+variable "client_sync_timezone" {
+  description = "IANA time zone the client sync schedule is written in."
+  type        = string
+  default     = "Europe/London"
 }
 
 # ---------------------------------------------------------------------------

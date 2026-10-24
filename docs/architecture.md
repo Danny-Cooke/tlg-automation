@@ -107,7 +107,29 @@ When `handed_to_jess` is set the bot stays silent on that thread until Jess
 clears it (a small admin endpoint, or a TTL). This stops the bot talking over
 her.
 
+### Client list (plan job 10)
+
+DynamoDB `tlg-prod-clients`, one row per Fresha client id, filled daily by
+`tlg-prod-client-sync` from Fresha's client search, each client's record
+(marketing ticks) and each client's profile page (owner's session, same as
+booking): patch tests, allergies, tags, badges, staff alert, notes, files,
+upcoming and past appointments, consultation forms, statistics. Four calls
+a client, stalest first inside the Lambda's time budget, leftovers next
+run. Fresha's fields are overwritten each run; ours (`sms_opt_out`,
+`lists`, `token`, the send log) are created once and never touched by the
+sync. The row is the salon's view of a client for any automation (a
+colour booking checks `patch_test_active`; an offer checks `textable`). `tlg-prod-unsubscribe` answers
+`/stop/{token}` on the webhook API: a page with a button, the button POSTs
+the opt-out. Texts carry `tlg-beauty.co.uk/stop/<token>`; the website
+redirects `/stop/*` to the API. Rows that leave Fresha are flagged `in_fresha=false`, kept.
+
 ### Escalation
+
+A hand-over records who has the thread and for what. With Jess the bot
+goes silent. With Lori-Dee (hair) or Carmen (tattoos) it keeps reading and
+answers only what is its own (nails, beauty, lashes, aesthetics, the
+salon), leaving their area and any reply to them alone; the thread stays
+theirs (decision 2026-10-24).
 
 SNS topic `tlg-escalations`. Subscriptions are Terraform variables (Jess's email
 and mobile). The message includes the client's name, the thread so far, and a

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Assemble a Lambda bundle for Terraform's archive_file.
 #
-#   scripts/build_lambda.sh                        -> build/lambda        (bot, monitor, menu_sync + persona)
+#   scripts/build_lambda.sh                        -> build/lambda        (bot, monitor, menu_sync, clients + persona)
 #   scripts/build_lambda.sh menu_sync              -> build/menu_sync     (that package only)
 #   scripts/build_lambda.sh fresha_watch menu_sync -> build/fresha_watch  (named after the first package,
 #                                                                          holds every package listed)
@@ -14,7 +14,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [ $# -eq 0 ]; then
-  PACKAGES=(bot monitor menu_sync)
+  PACKAGES=(bot monitor menu_sync clients)
   OUT="$ROOT/build/lambda"
 else
   PACKAGES=("$@")

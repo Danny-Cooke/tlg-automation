@@ -34,6 +34,9 @@ log = logging.getLogger(__name__)
 
 GRAPHQL = "https://partners-api-gateway.fresha.com/graphql"
 CUSTOMERS = "https://customers-api.fresha.com/v2/customer-search"
+CUSTOMER = "https://customers-api.fresha.com/v2/customers/{id}"  # the full record, marketing ticks included
+STATISTICS = "https://partners-api.fresha.com/customers/{id}/statistics"  # Fresha's counters per client
+FORMS = "https://consultation-forms-api.fresha.com/requests"  # consultation forms requested of a client
 OWNER_ID = "1453889"       # __pid, the owner's Fresha user
 LOCATION_ID = "1530970"    # The Looking Glass Beauty, Shrewsbury
 TIMEZONE = "Europe/London"
@@ -186,6 +189,54 @@ class Fresha:
                 blocked=bool(a.get("blocked")),
             ))
         return out
+
+    def client_page(self, *, offset: int = 0, limit: int = 50) -> tuple[list[dict], int | None]:
+        """One page of the whole client list (empty query), raw JSON:API rows,
+        and the total Fresha reports (None if it did not say). For the mirror
+        in clients/sync.py."""
+        resp = self.http.get(
+            CUSTOMERS, params={"query": "", "limit": limit, "offset": offset, "include-customers-count": "true", **self._ids()},
+            cookies=self.session.cookies(), headers={**HEADERS, "accept": "application/vnd.api+json"}, timeout=20,
+        )
+        self._check(resp)
+        body = resp.json()
+        count = (body.get("meta") or {}).get("results-count")
+        return list(body.get("data") or []), (int(count) if isinstance(count, int) else None)
+
+    def client_detail(self, client_id: str) -> dict:
+        """The client's full record as the profile page loads it: name, contact
+        details, blocked, and the marketing ticks (SMS, email, WhatsApp)."""
+        resp = self.http.get(
+            CUSTOMER.format(id=client_id), params={"include": "referred_by_customer", **self._ids()},
+            cookies=self.session.cookies(), headers={**HEADERS, "accept": "application/vnd.api+json"}, timeout=20,
+        )
+        self._check(resp)
+        return resp.json()
+
+    def client_record(self, client_id: str) -> dict:
+        """The rest of the profile page in one GraphQL call (`clientRecord` in
+        fresha_ops.py): patch tests, allergies, tags, badges, staff alert,
+        notes, files, upcoming and past appointments. Raw `data`."""
+        return self.graphql("clientRecord", {"customerId": str(client_id)})
+
+    def client_statistics(self, client_id: str) -> dict:
+        """Fresha's own counters for the client: bookings, no-shows, sales. Raw JSON:API."""
+        resp = self.http.get(
+            STATISTICS.format(id=client_id), params=self._ids(),
+            cookies=self.session.cookies(), headers={**HEADERS, "accept": "application/vnd.api+json"}, timeout=20,
+        )
+        self._check(resp)
+        return resp.json()
+
+    def client_forms(self, client_id: str, *, limit: int = 50) -> dict:
+        """Consultation forms requested of the client, newest first. Raw JSON:API."""
+        resp = self.http.get(
+            FORMS, params={"customer-id": str(client_id), "limit": limit, "offset": 0,
+                           "sort-by": "requested_at", "sort-order": "desc", **self._ids()},
+            cookies=self.session.cookies(), headers={**HEADERS, "accept": "application/vnd.api+json"}, timeout=20,
+        )
+        self._check(resp)
+        return resp.json()
 
     def catalog(self, *, employee_id: str = "", customer_id: str | None = None) -> list[Service]:
         """Every bookable service with its pricing level, price and duration.

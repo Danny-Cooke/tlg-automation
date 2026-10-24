@@ -209,9 +209,88 @@ GraphQL. Response is JSON:API (`application/vnd.api+json`): `data[]` of
 email-verified, phone-verified, labels, ...}}`. Matching by phone or email
 is safer than by name; the salon has around 600 clients and names repeat.
 
-The same host serves `GET /v2/customers/<id>` (full record) and
-`GET /customer-duplicates/existence-check`. The mutation that creates a new
-client was not captured (no new client was made during the recording).
+The same host serves `GET /v2/customers/<id>?include=referred_by_customer`
+(full record, type `customers-v2`) and `GET /customer-duplicates/existence-check`.
+The full record is where the marketing ticks live; the search rows do not
+carry them. Attributes (2026-10-23, from the same capture): `name`,
+`first-name`, `last-name`, `contact-number`, `additional-contact-number`,
+`email`, `additional-email`, `blocked`, `block-note`,
+`accepts-sms-marketing-notifications`, `accepts-marketing-notifications`
+(email), `accepts-whatsapp-marketing-notifications`,
+`enable-sms-notifications`, `enable-email-notifications`,
+`enable-whatsapp-notifications`, `birthday-day/month/year`, `gender`,
+`created-at`, `updated-at`, `deleted-at`, `is-obfuscated`, `labels`, and a
+`referral-source` relationship whose name is in `included` (type
+`referral-sources`). `GET /v2/customers/<id>/marketing-consent-log` exists
+too (empty for the client viewed). The client search with an empty `query`
+and `include-customers-count=true` lists everyone, 25 a page in the
+recording, with `meta.results-count` as the total; the client mirror
+(`src/clients/sync.py`) pages it that way.
+
+Not captured: the mutation that creates a new client, and the call that
+saves a client's marketing ticks (needed for job 10 step 3; record it by
+toggling "SMS marketing" on a profile with DevTools open).
+
+## A client's profile page (recorded 2026-10-24)
+
+Opening a client from Clients list (`/clients/list/drawer/clients/<id>`)
+and its Records tabs sends, with the usual ids and cookies:
+
+GraphQL (`partners-api-gateway.fresha.com/graphql`, `_query=<name>`):
+
+- `CustomerLeftDrawer($customerId)`: names, contact, blocked, birthday,
+  gender, pronoun, `staffAlert`, `hasPaymentMethod`, `onlineProfile`,
+  `labels` (typed badges: `Customers_NoShowLabel{count}`,
+  `Customers_BirthdayLabel{date}`, `Customers_UnpaidLabel{amount}`),
+  `tags(first:50){id name assignedAt}`, `segmentBadges(first:50)
+  {definition{badgeName badgeColor}}`, `allergies(first:50){name severity
+  type reaction description}`, `patchTests(first:1, onlyActive:true)`.
+- `PatchTestFieldsForCounter($customerId)`: `patchTestCount`.
+- `ListCustomerPatchTests($customerId, $after, $first:20)`:
+  `patchTests{ id title status performedDate isExpired createdAt
+  confirmationRequired expirationDate }`. Status values have not been seen
+  on a real test yet (every client opened so far had none).
+- `ListClientNotes($customerId, $after, $first:5, $sort:"ACTIVITY_DATE",
+  $includeClientNote:true)`: `Notes_notes` with `NoteCard` (body, type,
+  author, appointment, sale, attachments with signed and CDN urls).
+  `ClientNotesCounts` gives the counts.
+- `ListCustomerAttachments($customerId, $first:10)` and
+  `CustomerAttachmentsCount`: `Notes_attachmentsByCustomer`.
+- `CustomerUpcomingAppointmentQuery($customerId, $after)`:
+  `Appointments_appointments(first:5, customerId, onlyFuture:true,
+  order:{field:START_DATETIME, direction:ASC})`;
+  `CustomerPastAppointmentQuery` the same with `onlyPast:true`, `first:10`,
+  DESC. Each appointment: id, status, statusLabelId, startWallClock,
+  consultationForms{id status}, preferredNote{note{body}}, bookings{ price
+  priceType startWallClock endDatetime servicePricingLevelId service{name
+  servicePricingLevels{id name}} employee{firstName lastName}
+  bookingServiceAddOns{serviceAddOn{name}} }.
+- Also fired, empty for this salon: `CustomerMembershipSubscriptions`,
+  `CustomerPackageInstances`, loyalty, `reviewsV2_customerReviewsSummary`,
+  `reviewsV2_customerAppointmentRatings`, `forms_formsExperience`.
+
+REST, same cookies, `accept: application/vnd.api+json`:
+
+- `GET customers-api.fresha.com/v2/customers/<id>` (the record, see Client
+  search above) and the older `GET customers-api.fresha.com/customers/<id>`
+  (adds `note`, `display-note`, `telephone`, `notification-setting`).
+- `GET partners-api.fresha.com/customers/<id>/statistics`: attributes
+  `bookings-count`, `completed-`, `cancelled-`, `no-show-`, `confirmed-`,
+  `unconfirmed-bookings-count`, `total-sales`, `total-sales-count`,
+  `outstanding-sales`, `paid-/unpaid-/part-paid-/refunded-/voided-sales-count`.
+- `GET partners-api.fresha.com/customers/<id>/service-sale-items`,
+  `/product-sale-items`, `/paid-plans`, `/ncf-events`: sales history
+  (empty for the client opened).
+- `GET consultation-forms-api.fresha.com/requests?customer-id=<id>&limit=1
+  &offset=0&sort-by=requested_at&sort-order=desc`: forms requested of the
+  client, `meta.all-count`.
+- `GET customers-api.fresha.com/v2/customers/<id>/marketing-consent-log`.
+
+The client mirror (`src/clients/sync.py`) does not replay these one by one:
+`clientRecord` in `src/bot/fresha_ops.py` is one composed query carrying the
+same fields (patch tests `first:50` without `onlyActive`, notes 50,
+attachments 30, upcoming 20, past 50), followed by the statistics and
+forms calls. Four requests a client.
 
 ## Other APIs
 
