@@ -130,6 +130,46 @@ variable "patch_test_lead_hours" {
   default     = 24
 }
 
+variable "chaser_schedule" {
+  description = "When the confirmation chaser runs (plan job 14), after the client mirror. EventBridge cron, in chaser_timezone."
+  type        = string
+  default     = "cron(0 6 * * ? *)"
+}
+
+variable "chaser_timezone" {
+  type    = string
+  default = "Europe/London"
+}
+
+variable "chaser_send_texts" {
+  description = "false: the chaser only lists who it would text (the SMS account is still in the sandbox). true: it texts them."
+  type        = bool
+  default     = false
+}
+
+variable "chaser_fresha_reminder" {
+  description = "true: the chaser also presses Fresha's own \"Send reminder\" for each appointment, so Fresha re-sends its confirmation email."
+  type        = bool
+  default     = false
+}
+
+variable "chaser_email_subject" {
+  description = "The subject of the Fresha email the chase text tells the client to look for."
+  type        = string
+  default     = "Please confirm your appointment"
+}
+
+variable "sms_sender_id" {
+  description = "End User Messaging sender ID the salon's texts come from (the Fresha watch uses the same one)."
+  type        = string
+  default     = "TLGWATCH"
+}
+
+variable "sms_sender_country" {
+  type    = string
+  default = "GB"
+}
+
 variable "sophie_whatsapp" {
   description = "Sophie's WhatsApp number, given to clients who want to book hair with her (user, 2026-10-24: no hair bookings in chat). Empty: the bot says Sophie will message them and hands over."
   type        = string

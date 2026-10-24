@@ -682,3 +682,24 @@ plan job 13.
   that differs from the Fresha name stops mattering once the number is
   known.
 
+## 2026-10-24: the confirmation chaser is one text pointing at Fresha's email, not a link of our own
+
+The user's ask, then the shape it settled into over an evening: a Lambda
+that looks at appointments 48 hours away and chases the ones the client
+has not confirmed. Looked at in Fresha: "unconfirmed" here means the card
+confirmation Fresha asked for when the appointment was made has not been
+given; Fresha already emailed a request with a Confirm button (its
+WhatsApp copy fails, message balance); there is a "Send reminder" on the
+appointment (recorded, `sendAppointmentProtectionReminder`) but no way to
+read the client's confirm link back. Three designs were on the table: our
+own confirm page (a new link, a status recording, a website redirect),
+pressing Fresha's reminder plus a text, or a text alone. The user's
+ruling: "we just send a simple reminder at 48 hours before if the
+appointment is not confirmed and ask them to look through the email".
+
+So the chaser sends one text in Jess's voice naming the Fresha email to
+look for, and nothing else. Fresha's reminder press stays available
+behind a switch. Texts wait for the SMS sandbox exit; until then the
+chaser runs daily as a dry run and emails the list to the ops topic, so
+the desk can ring the ones with no mobile either way.
+

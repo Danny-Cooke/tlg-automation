@@ -527,7 +527,7 @@ prompt; nothing written outside live mode. The desk's own defaults are
 kept for the rest of the form, so a client the bot adds is opted in to
 marketing like a walk-in. Not yet: a dry run on the live Page.
 
-### 14. Confirmation chaser: unconfirmed appointments 48 hours out get Fresha's reminder and a text (AGREED 2026-10-24, reminder call recorded, not built)
+### 14. Confirmation chaser: unconfirmed appointments 48 hours out get a text (BUILT 2026-10-24, texts off until the SMS sandbox is left; bot stack)
 
 The user's ask: "we have an issue with customers not confirming their
 appointments. I want another Lambda that looks at all appointments when
@@ -544,15 +544,19 @@ How it will work:
    is re-read live (`viewAppointment`, recorded) so a client who confirmed
    overnight is skipped, and cancelled ones are skipped. One chase per
    appointment, remembered on the client row (`chased` by appointment id).
-2. **What they get (revised the same evening, user's idea).** The Lambda
-   presses Fresha's own "Send reminder" for each one
-   (`sendAppointmentProtectionReminder`, recorded), so Fresha re-sends its
-   card-confirmation request with its Confirm button by email (and
-   WhatsApp once that channel works). Then our text through the existing
-   sender, in Jess's voice: "Hi Sarah, just checking you're still ok for
-   gel polish with Jess on Thu 30th at 2pm? Fresha's just emailed you a
-   confirm link, give it a tap when you can. Need to change it? Just
-   message us x". No page, no link of our own, nothing to invent.
+2. **What they get (user's final word the same evening: "we just send a
+   simple reminder at 48 hours and ask them to look through their email").**
+   One text through the existing sender, in Jess's voice: "Hi Sarah, still
+   ok for gel polish with Jess on Fri 30 Oct at 2pm? Please tap Confirm in
+   the email Fresha sent you, titled 'Please confirm your appointment'.
+   Need to change it? Just message us x". The subject it names is config
+   (`chaser_email_subject`): the confirmation-request email Fresha sent
+   on the appointments looked at was titled "Please confirm your
+   appointment on <day> at <time>"; set it to "New appointment" if that is
+   the one the team sees clients get. Pressing Fresha's own "Send
+   reminder" first is there behind a switch (`chaser_fresha_reminder`,
+   off), recorded and tested, if a fresh email at the top of the inbox
+   turns out to help.
 3. **Confirming** is Fresha's: the client adds a card through Fresha's own
    link and the appointment turns Confirmed. The chaser re-reads the
    appointment next morning and reports who still has not.
@@ -598,10 +602,18 @@ Prerequisites, none of them code:
   Topping up would make Fresha's own WhatsApp requests reach clients as
   well as the email; worth doing whatever we build.
 
-Cost: about 2.5p a text; Fresha's email reminder is free. Build once the
-SMS sandbox clears (email-only reminders can start before that): a
-chaser module in `src/clients/`, the Lambda and schedule in Terraform,
-tests, a dry run that lists who would be chased without sending.
+Built 2026-10-24: `src/clients/chaser.py`, `tlg-prod-confirm-chaser`
+daily at 06:00 London (`chaser_schedule`), half an hour after the mirror.
+Reads the mirrored upcoming appointments for the day after tomorrow with
+status UNCONFIRMED, skips rows not in Fresha or blocked, skips anyone
+already chased for that appointment or with no mobile (listed for the
+desk to ring), re-reads each one live (`viewAppointment`) and skips any
+now confirmed or cancelled, then texts (End User Messaging, sender
+TLGWATCH, transactional) and records `chased` on the row. The ops email
+carries the morning's list. `chaser_send_texts` is false until the SMS
+sandbox is left, so until then every run is a dry run and the email says
+so; `{"dry_run": true}` and `{"date": "YYYY-MM-DD"}` work by hand. Cost
+once on: about 2.5p a text, two to ten a day.
 
 ## Open questions for the user
 

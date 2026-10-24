@@ -267,6 +267,16 @@ The team's one habit that keeps the mirror right: when a patch test is
 done, log it on the client's profile in Fresha (Records, Patch tests).
 The next sync copies it into the row and our `patch_tested` column.
 
+The same stack deploys `tlg-prod-confirm-chaser` (plan job 14), daily at
+06:00 London. It texts clients whose appointment the day after tomorrow
+is still unconfirmed, pointing them at Fresha's confirmation email. Texts
+are off until the SMS account is out of the sandbox: set the Terraform
+variable `chaser_send_texts = true` then. To see who it would chase:
+
+```bash
+aws lambda invoke --function-name tlg-prod-confirm-chaser --payload '{"dry_run": true}'   --cli-binary-format raw-in-base64-out /dev/stdout
+```
+
 The reply is a summary: clients in Fresha, rows, how many have a mobile,
 how many accept SMS marketing in Fresha, how many opted out with us, and
 `textable`, the number a blast would reach. Rows are in the DynamoDB table

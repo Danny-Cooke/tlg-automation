@@ -13,7 +13,7 @@ from functools import lru_cache
 from . import model
 
 OURS = ("sms_opt_out", "opt_out_changed_at", "opt_out_source", "fresha_pending", "lists", "token", "sent",
-        "patch_tested", "patch_test_basis", "patch_test_date", "patch_test_service", "patch_test_set_at")
+        "patch_tested", "patch_test_basis", "patch_test_date", "patch_test_service", "patch_test_set_at", "chased")
 
 
 class ClientStore:
@@ -116,6 +116,14 @@ class ClientStore:
         except Exception as exc:  # noqa: BLE001 - the row already holds a Fresha record; keep it
             if "ConditionalCheckFailed" not in str(exc) and type(exc).__name__ != "ConditionalCheckFailedException":
                 raise
+
+    def mark_chased(self, client_id: str, appointment_id: str, *, now: int | None = None) -> None:
+        """The confirmation chaser texted this client about this appointment (job 14). Ours; never cleared."""
+        self.table.update_item(
+            Key={"client_id": client_id},
+            UpdateExpression="SET chased = list_append(if_not_exists(chased, :empty), :one)",
+            ExpressionAttributeValues={":empty": [], ":one": [{"appointment_id": str(appointment_id), "at": now or int(time.time())}]},
+        )
 
     def all_rows(self, *, projection: tuple[str, ...] = ()) -> list[dict]:
         kw: dict = {}

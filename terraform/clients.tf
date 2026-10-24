@@ -290,3 +290,155 @@ resource "aws_cloudwatch_metric_alarm" "unsubscribe_errors" {
     FunctionName = aws_lambda_function.unsubscribe.function_name
   }
 }
+
+# ---------------------------------------------------------------------------
+# Confirmation chaser (plan job 14): the morning after the mirror, text
+# anyone whose appointment the day after tomorrow is still unconfirmed,
+# pointing them at Fresha's confirmation email. Texts stay off
+# (var.chaser_send_texts) until the SMS account is out of the sandbox.
+# ---------------------------------------------------------------------------
+
+resource "aws_iam_role" "chaser" {
+  name               = "${local.name}-confirm-chaser"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
+}
+
+data "aws_iam_policy_document" "chaser" {
+  statement {
+    sid       = "Logs"
+    actions   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+    resources = ["${aws_cloudwatch_log_group.chaser.arn}:*"]
+  }
+
+  statement {
+    sid       = "Clients"
+    actions   = ["dynamodb:Scan", "dynamodb:UpdateItem"]
+    resources = [aws_dynamodb_table.clients.arn]
+  }
+
+  statement {
+    sid       = "FreshaSession"
+    actions   = ["ssm:GetParameter"]
+    resources = [local.fresha_session_arn]
+  }
+
+  statement {
+    sid       = "FreshaSessionDecrypt"
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_alias.ssm.target_key_arn]
+  }
+
+  statement {
+    sid       = "Ops"
+    actions   = ["sns:Publish"]
+    resources = [local.ops_topic_arn]
+  }
+
+  # Texts go through End User Messaging from the sender ID (the Fresha watch
+  # proved SNS's own path drops them). Scoped to that one origination identity.
+  statement {
+    sid       = "Text"
+    actions   = ["sms-voice:SendTextMessage"]
+    resources = ["arn:aws:sms-voice:${var.aws_region}:${data.aws_caller_identity.current.account_id}:sender-id/${var.sms_sender_id}/${var.sms_sender_country}"]
+  }
+}
+
+resource "aws_iam_role_policy" "chaser" {
+  name   = "confirm-chaser"
+  role   = aws_iam_role.chaser.id
+  policy = data.aws_iam_policy_document.chaser.json
+}
+
+resource "aws_cloudwatch_log_group" "chaser" {
+  name              = "/aws/lambda/${local.name}-confirm-chaser"
+  retention_in_days = 30
+}
+
+resource "aws_lambda_function" "chaser" {
+  function_name    = "${local.name}-confirm-chaser"
+  description      = "Texts clients whose appointment the day after tomorrow is still unconfirmed, pointing them at Fresha's confirmation email"
+  role             = aws_iam_role.chaser.arn
+  runtime          = "python3.12"
+  handler          = "clients.chaser.lambda_handler"
+  filename         = data.archive_file.bot.output_path
+  source_code_hash = data.archive_file.bot.output_base64sha256
+  timeout          = 300
+  memory_size      = 256
+  architectures    = ["arm64"]
+
+  environment {
+    variables = {
+      CLIENTS_TABLE          = aws_dynamodb_table.clients.name
+      FRESHA_SESSION_PARAM   = local.fresha_session_param
+      OPS_TOPIC_ARN          = local.ops_topic_arn
+      SMS_SENDER_ID          = var.sms_sender_id
+      CHASER_SEND_TEXTS      = tostring(var.chaser_send_texts)
+      CHASER_FRESHA_REMINDER = tostring(var.chaser_fresha_reminder)
+      CHASER_EMAIL_SUBJECT   = var.chaser_email_subject
+      LOG_LEVEL              = "INFO"
+    }
+  }
+
+  tags = {
+    Component = "clients"
+  }
+
+  depends_on = [aws_cloudwatch_log_group.chaser]
+}
+
+resource "aws_iam_role" "chaser_scheduler" {
+  name               = "${local.name}-confirm-chaser-scheduler"
+  assume_role_policy = data.aws_iam_policy_document.scheduler_assume.json
+}
+
+data "aws_iam_policy_document" "chaser_scheduler" {
+  statement {
+    actions   = ["lambda:InvokeFunction"]
+    resources = [aws_lambda_function.chaser.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "chaser_scheduler" {
+  name   = "invoke-confirm-chaser"
+  role   = aws_iam_role.chaser_scheduler.id
+  policy = data.aws_iam_policy_document.chaser_scheduler.json
+}
+
+resource "aws_scheduler_schedule" "chaser" {
+  name                         = "${local.name}-confirm-chaser"
+  description                  = "Confirmation chaser, daily after the client mirror"
+  schedule_expression          = var.chaser_schedule
+  schedule_expression_timezone = var.chaser_timezone
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  target {
+    arn      = aws_lambda_function.chaser.arn
+    role_arn = aws_iam_role.chaser_scheduler.arn
+    input    = jsonencode({ source = "schedule" })
+
+    retry_policy {
+      maximum_retry_attempts = 1
+    }
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "chaser_errors" {
+  alarm_name          = "${local.name}-confirm-chaser-errors"
+  alarm_description   = "The confirmation chaser failed."
+  namespace           = "AWS/Lambda"
+  metric_name         = "Errors"
+  statistic           = "Sum"
+  period              = 900
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [local.ops_topic_arn]
+
+  dimensions = {
+    FunctionName = aws_lambda_function.chaser.function_name
+  }
+}
