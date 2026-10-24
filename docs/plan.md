@@ -527,6 +527,62 @@ prompt; nothing written outside live mode. The desk's own defaults are
 kept for the rest of the form, so a client the bot adds is opted in to
 marketing like a walk-in. Not yet: a dry run on the live Page.
 
+### 14. Confirmation chaser: unconfirmed appointments 48 hours out get a text and an email (PROPOSED 2026-10-24, not built)
+
+The user's ask: "we have an issue with customers not confirming their
+appointments. I want another Lambda that looks at all appointments when
+they are 48 hours away and if the customer hasn't confirmed we need to
+send them an email and a text message." Size of it on 2026-10-24, from
+the mirror: 73 upcoming appointments unconfirmed against 111 confirmed,
+roughly two to ten a day; 8 of the 73 have no mobile on file, 11 no email.
+
+How it will work:
+
+1. **Who.** `tlg-prod-confirm-chaser`, daily at 06:00 London, half an hour
+   after the client mirror: every upcoming appointment in the table that
+   starts the day after tomorrow and is still UNCONFIRMED. Each candidate
+   is re-read live (`viewAppointment`, recorded) so a client who confirmed
+   overnight is skipped, and cancelled ones are skipped. One chase per
+   appointment, remembered on the client row (`chased` by appointment id).
+2. **What they get.** A text through the existing sender (TLGWATCH; a
+   reminder is transactional, so the sender fits as registered) and an
+   email from info@tlg-beauty.co.uk, both in Jess's voice: "Hi Sarah, just
+   checking you're still ok for gel polish with Jess on Thu 30th at 2pm?
+   Tap to confirm: tlg-beauty.co.uk/confirm/<token>. Need to change it?
+   Just message us x". No number or email the salon does not already hold.
+3. **Confirming.** The link lands on our API like the stop link does (one
+   more website redirect, `/confirm/*`), shows the appointment and a
+   "Yes, I'll be there" button; the button marks the appointment confirmed
+   in Fresha (the dashboard's status change, to be recorded once) and the
+   page says thanks. A "Need to change it?" line links to the salon's
+   Messenger. GET never changes anything, as with the stop link.
+4. **Jess sees the day's chases** in the ops email (count and names), not
+   Telegram; a client who still has not confirmed by the day before is a
+   line in the same email the next morning, for the desk to ring.
+
+Prerequisites, none of them code:
+
+- **SMS sandbox exit** (the same AWS case as job 10 step 4; reminders are
+  a transactional use and strengthen it). Until then texts only reach
+  verified numbers, so the chaser can run email-only first.
+- **Email from the salon's domain.** Amazon SES in eu-west-2: verify
+  tlg-beauty.co.uk (three DNS records at Onyx, like the stop link
+  redirect), set the From as info@tlg-beauty.co.uk, and request
+  production access (SES starts in a sandbox that only emails verified
+  addresses). A day or two of waiting on AWS.
+- **One recording**: marking an appointment confirmed in the dashboard
+  (calendar, open an unconfirmed appointment, change status), with the
+  capture hook, as the fee save and the Add client call were.
+- **A decision**: Fresha's own automated reminders (Marketing, Automated
+  messages) may already send a confirmation request; worth checking so
+  clients do not get two. Ours can replace Fresha's SMS reminder at a
+  third of the price, or sit alongside its email.
+
+Cost: about 2.5p a text and nothing for email; at ten a day under £1 a
+day. Build after the prerequisites: a chaser module in `src/clients/`,
+the confirm page beside the stop page, SES and the Lambda in Terraform,
+tests, a dry run that lists who would be chased without sending.
+
 ## Open questions for the user
 
 1. Prod only, or a dev stack as well?
