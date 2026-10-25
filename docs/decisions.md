@@ -814,3 +814,17 @@ the user dislikes. The 20 s problem is the rest of the reply path (cold
 start, the Fresha session check, a retry from Meta at 20 s that the
 duplicate check absorbed) and is tomorrow's job.
 
+## 2026-10-25: both Meta apps published; the bot goes to all clients when MESSAGE_TEST_MODE is false
+
+The user: "I want to put in live and remove joshsmells. I want it talking
+to all customers." Both apps were still In development, which is the real
+gate: Meta only delivers messages from people with a role on the app, so
+flipping the test-mode variable alone would have reached nobody new. Each
+app's Publish page wanted only a privacy policy URL; the salon's website
+already has one (https://tlg-beauty.co.uk/privacy-policy/), so it was set
+on both apps and both were published the same evening. No App Review: the
+apps serve only the business's own Page and Instagram account, which
+Standard Access covers. Test mode stayed on through the publish, so the
+order is Meta first, then the GitHub variable `MESSAGE_TEST_MODE=false`
+and a pipeline run, which is the user's switch.
+

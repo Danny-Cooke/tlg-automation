@@ -62,9 +62,16 @@ Facebook Page. Done 2026-10-19: both apps exist.
    with a role on the app. Add your own Facebook and Instagram accounts as
    testers (App roles > Roles) so you can message the Page and see the bots
    react.
-6. **App review.** Before the bots can message anyone else, submit
-   `pages_messaging` (Tlg-app1) and `instagram_manage_messages` (Tlg-app2)
-   for review. Shadow mode runs on testers before that lands.
+6. **Publish, not app review.** Both apps only serve the business's own
+   Page and Instagram account, so Standard Access is enough and no App
+   Review was needed: Meta's Publish page asked for one thing, a privacy
+   policy URL (App settings > Basic), set to the salon's
+   https://tlg-beauty.co.uk/privacy-policy/ on both apps, and the Publish
+   button then worked. Both apps were published 2026-10-25. Until an app is
+   published, Meta delivers messages only from people with a role on it;
+   once published it delivers everyone's, and `MESSAGE_TEST_MODE` is the
+   only thing left between the bot and the clients. To take the bot off the
+   air at the Meta end: the app > Publish > Unpublish.
 
 ## 2. GitHub prod environment
 

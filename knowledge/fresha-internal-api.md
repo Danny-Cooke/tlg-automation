@@ -517,6 +517,34 @@ tie the session to the login address or browser.
 - Whether `auth-api.fresha.com/pin-switching/session/heartbeat` (POST, 403
   before login) matters once logged in. Probably the staff-PIN feature.
 
+## Two services in one appointment (recorded 2026-10-25)
+
+The owner saved "Acrylic removal and new set" plus "Extra time for simple
+nail art", both with Carmen, from the calendar's Add > Appointment with the
+recorder on (`window.fetch` hook, see below). Same mutation,
+`createAppointmentByEmployee`, same envelope; the only difference from a
+single service is a second entry in `appointment.bookings`:
+
+- entry 0: level 26079057, `catalogPrice "54"`, start 10:30:00, one
+  SERVICING segment of 8100 s (135 min);
+- entry 1: level 25845773, `catalogPrice "0.5"`, start 12:45:00 (= entry
+  0's start plus its duration), one SERVICING segment of 900 s (15 min),
+  the same `employees [{id, requested false}]`, its own `orderItemRef`
+  (nanoid), `bookedServiceAddOns []`, `resources []`.
+
+`priceModifiers []`, `appointmentProtection DEFAULT_SETTINGS`, `metadata
+source "new"` as before. The dashboard sends the request as a form body
+(`operationName`, `query`, `variables` fields), not JSON. The reply carried
+one appointment id and one `primaryBookingId` (the first service's);
+`viewAppointment` then lists both bookings with their own ids and levels.
+No client was picked that time, and the request simply had no
+`customerId` key, so a walk-in save is the same call minus that field.
+Appointment 1335465114, Tue 27 Oct 10:30 with Carmen, left for the owner to cancel (the script cancel was blocked from this session).
+
+So `Fresha.create` can take a list of (level, price, duration) and emit one
+booking per service, each starting where the previous one ends. The
+public availability flow would need the combined duration (plan job 16).
+
 ## How this was captured
 
 2026-10-19: patching `Response.prototype.json` and `.text` captured every

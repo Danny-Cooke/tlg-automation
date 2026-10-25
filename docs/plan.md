@@ -5,6 +5,29 @@ open: nothing below is built until the user says so, except where marked.
 Started 2026-10-19. Design reasoning lives in `docs/decisions.md`; Fresha
 facts in `knowledge/`.
 
+## Where things stand (2026-10-25, evening)
+
+- **Both bots are live on both channels and both Meta apps are published.**
+  Messenger and Instagram DMs reach `tlg-prod-messenger-bot` and
+  `tlg-prod-instagram-bot`; `BOT_MODE=live`, model Opus 5.5. The only thing
+  between the bot and real clients is the GitHub variable
+  `MESSAGE_TEST_MODE` (still `true`: trigger word only). Flipping it to
+  `false` and running the Deploy workflow is the user's switch (decision
+  2026-10-25, "I want it talking to all customers").
+- **Working rhythm:** nothing is committed until the user says "commit";
+  the user pushes and runs the pipeline; after a deploy, verify by reading
+  the Lambda configuration and CloudWatch logs (`gh` is not logged in).
+- **In place:** staff quiet list (`TLG_STAFF`), Sophie's and Carmen's
+  WhatsApp numbers, hair three-door rule, Telegram hand-overs with the chat
+  id cached, the tool cap answering from what it found, Meta Business
+  Agent off on the Page.
+- **Next, in order:** 1) the user flips `MESSAGE_TEST_MODE`; 2) job 15,
+  reply time under Meta's 20 s on a cold start; 3) narrow the wide staff
+  entries ("Looking Glass", "Savvy" silence any client whose name
+  contains them); 4) job 9 hand-back; 5) the rest of the backlog below
+  (SMS sandbox, chaser texts, job 11 rulings, Fresha test client
+  "TLG Bot Test" id 305395953 still to delete).
+
 ## Agreed foundations
 
 - **Region:** everything in eu-west-2 (London).
@@ -204,13 +227,18 @@ applies without it. Sequence, each step proven before the next:
 2. **Shadow.** `bot_mode = shadow`. Needs the Claude Platform on AWS
    workspace id and the Page token. Every message gets a drafted reply
    emailed to Jess; nothing goes to the client. Run for a week.
-3. **Live.** `bot_mode = live`. Needs Meta app review of `pages_messaging`
-   and `instagram_manage_messages` to message anyone who is not a tester.
+3. **Live.** `bot_mode = live` (since 2026-10-24 behind the trigger word).
+   No app review was needed: the apps serve only the business's own Page
+   and Instagram account, so Standard Access covers it. What Meta wanted
+   before Publish was a privacy policy URL; both apps were published
+   2026-10-25 (`docs/setup.md` step 6). Instagram got its own Page token
+   the same day (System User on Tlg-app2, swapped for the Page's own
+   token in code) and its first DM was answered at 17:05.
 
 Only the user can do, in the Meta developer console: the two apps (done),
 "Require app secret" on each, link the salon's Instagram account to the
-Page, generate a page token, add testers, submit for review. Steps in
-`docs/setup.md`. Secrets go on the GitHub `prod` environment and into
+Page, generate a page token, add testers, publish (all done by
+2026-10-25). Steps in `docs/setup.md`. Secrets go on the GitHub `prod` environment and into
 Secrets Manager by Terraform, one secret per channel, as the PAT does.
 
 ### 7. Live availability and interactive chat (BUILT 2026-10-20; bot stack)
@@ -223,8 +251,11 @@ the live Page behind the trigger word. Built:
   booking flow, no login (how in `knowledge/fresha.md`). One service, up to
   three named people, up to four dates. Read only.
 - `brain.ask` runs a tool loop: Claude may call `check_availability`, the
-  handler serves it, the final answer is still the JSON reply. Three tool
-  rounds at most; an API or tool failure is a safe escalation.
+  handler serves it, the final answer is still the JSON reply. Five tool
+  rounds at most; at the cap one more call with the tools closed so the
+  model answers from what it found (2026-10-25), and the holding line only
+  if it still cannot. The prompt says one lookup answers the question. An
+  API or tool failure is a safe escalation.
 - The client's name from Meta's User Profile API, once per thread, stored
   on the conversation and given to the model in an uncached context block
   with today's date and the channel. Messenger works with the Page token;
@@ -614,6 +645,58 @@ carries the morning's list. `chaser_send_texts` is false until the SMS
 sandbox is left, so until then every run is a dry run and the email says
 so; `{"dry_run": true}` and `{"date": "YYYY-MM-DD"}` work by hand. Cost
 once on: about 2.5p a text, two to ten a day.
+
+### 15. Reply time under Meta's 20 seconds on a cold start (PROPOSED 2026-10-25, not built)
+
+Measured 2026-10-25 evening on the live Page: a cold Facebook reply took
+22.1 s end to end (Meta re-sent the webhook at 20 s; the duplicate check
+absorbed it, so the client got one reply), a warm one 15.5 s, a cold
+Instagram one 17.6 s. The Claude call is about 12.4 s on Sonnet and 14 s
+on Opus, so the model is not the lever (Sonnet was tried for a few hours
+and reverted, decisions 2026-10-25). Where the rest goes: cold start plus
+the Page token exchange about 3 s, the Fresha session check about 5 s
+(`FRESHA SESSION ok` is logged before the Claude call), the reply pause
+overlaps the call. Candidates, to measure before choosing: take the Fresha
+session check off the reply path (cache it per container or check it
+lazily when a tool needs it); keep a container warm (a scheduled ping or
+provisioned concurrency, cost to weigh); acknowledge Meta's webhook first
+and reply from a second invocation (the clean fix: the 20 s deadline then
+only covers the acknowledgement); trim the prompt and the structured
+reply. Not agreed yet; the user's call once the bot is talking to clients.
+
+### 16. Add-ons on a nails booking: art, luxury manicure, a removal before a new set (AGREED 2026-10-25, capture done, not built)
+
+The user's question: "can you handle a client booking nails and then
+extra nail art too?" Not yet: the booking tool takes one service, and
+the availability check uses that one service's duration, so "BIAB and
+some simple art" either becomes a quote hand-over (right when a picture
+or a design is involved) or a BIAB booked alone in a slot too short.
+
+Captured 2026-10-25 (`knowledge/fresha-internal-api.md`, "Two services in
+one appointment"): Fresha's save is the same mutation with a second entry
+in `bookings`, starting where the first ends, same person, its own
+pricing level and duration. To build:
+
+1. `Fresha.create` takes a list of services; one booking entry each,
+   chained start times, catalog price each. `viewAppointment` already
+   lists every booking.
+2. The availability check takes the combined duration (the public flow
+   accepts a basket; confirm it returns the same slots as the dashboard
+   for two services, else check the main service and filter by the
+   total).
+3. `book_appointment` grows an optional `add_ons` list of exact service
+   names from the same category; the read-back names them all ("BIAB
+   with simple nail art, Jess, Thu 29th at 2pm"); the Telegram note too.
+4. Rules: the bot may attach "Extra time for simple nail art", "Luxury
+   manicure", and a removal before a new set (gel polish, Biab, acrylic
+   soak off) when the client asks for them in words. Extreme art, a
+   picture, or a design request stays a quote to Jess, as now. The
+   per-nail art price is whatever the desk sets afterwards; the bot
+   books it at catalog price and says the art is priced on the day.
+5. Tests: two-service create body, chained times, read-back wording,
+   quote rule unchanged.
+
+About half a day. After the go-live flip and job 15.
 
 ## Open questions for the user
 
