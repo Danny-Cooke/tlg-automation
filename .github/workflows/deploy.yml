@@ -25,6 +25,7 @@ name: Deploy
 #              TLG_APP1_ID, TLG_APP1_SECRET (Meta app for Messenger)
 #              TLG_APP2_ID, TLG_APP2_SECRET (Meta app for Instagram, optional)
 #              TLG_PAGE_TOKEN (Page access token; needed before bots can reply)
+#              TLG_IG_PAGE_TOKEN (Page token from Tlg-app2 with the Instagram permissions; Instagram DMs reach the bot only with it)
 #              ANTHROPIC_AWS_WORKSPACE_ID (optional until shadow)
 
 on:
@@ -201,6 +202,7 @@ jobs:
           TF_VAR_meta_instagram_app_id: ${{ secrets.TLG_APP2_ID || '' }}
           TF_VAR_meta_instagram_app_secret: ${{ secrets.TLG_APP2_SECRET || '' }}
           TF_VAR_meta_page_token: ${{ secrets.TLG_PAGE_TOKEN || '' }}
+          TF_VAR_meta_instagram_page_token: ${{ secrets.TLG_IG_PAGE_TOKEN || '' }}
           TF_VAR_anthropic_aws_workspace_id: ${{ secrets.ANTHROPIC_AWS_WORKSPACE_ID || '' }}
           TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN || '' }}
           TF_VAR_telegram_chat_id: ${{ vars.TELEGRAM_CHAT_ID || '' }}
@@ -237,10 +239,11 @@ jobs:
           APP_ID: ${{ secrets.TLG_APP2_ID }}
           APP_SECRET: ${{ secrets.TLG_APP2_SECRET }}
           PAGE_ID: ${{ secrets.TLG_PAGE_ID }}
-          PAGE_TOKEN: ${{ secrets.TLG_PAGE_TOKEN }}
+          PAGE_TOKEN: ${{ secrets.TLG_IG_PAGE_TOKEN }}
         run: |
           pip install --quiet requests
           PAGE_ID="${PAGE_ID:-$(terraform output -raw meta_page_id)}"
+          [ -n "$PAGE_TOKEN" ] || echo "::warning::No TLG_IG_PAGE_TOKEN: the Page is not subscribed to the Instagram app, so Instagram DMs do not reach the bot."
           python ../scripts/meta_setup.py --channel instagram \
             --app-id "$APP_ID" --app-secret "$APP_SECRET" \
             --callback-url "$(terraform output -json webhook_urls | python -c 'import sys,json; print(json.load(sys.stdin)["instagram"])')" \

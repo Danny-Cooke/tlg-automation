@@ -703,3 +703,26 @@ behind a switch. Texts wait for the SMS sandbox exit; until then the
 chaser runs daily as a dry run and emails the list to the ops topic, so
 the desk can ring the ones with no mobile either way.
 
+## 2026-10-25: the Instagram bot gets its own Page token, issued by Tlg-app2
+
+The user asked whether the bot's rules cover the Instagram DMs that land in
+the Business Suite inbox alongside Messenger. The code does (one handler,
+two Lambdas), but the logs for the last two weeks showed 25 client
+messages on the Messenger bot and none on the Instagram one. Asked Meta
+directly with the stored credentials: the single Page token both bots
+share was issued by Tlg-app1 and carries only `pages_messaging`; Tlg-app2's
+webhook is registered and active for Instagram messages, but the Page was
+never subscribed to Tlg-app2 because that token cannot do it (wrong app,
+no `pages_manage_metadata`). The Instagram profile is linked to the Page
+and both apps sit in the business portfolio, so nothing else was missing.
+
+A token belongs to the app that issued it: every Graph call carries an
+`appsecret_proof` made with that app's secret, so one token cannot serve
+both apps. Hence `meta_instagram_page_token` (`TLG_IG_PAGE_TOKEN`), written
+into the Instagram channel's secret and used by its registration step,
+falling back to the Messenger token when unset so the deploy is safe
+before it exists. The token comes from a System User ("TLG bots") so it
+never expires. The Instagram app's own "allow access to messages" switch
+(Settings > Messages > Connected tools) is still the owner's to check on
+the phone; Meta exposes it through no API.
+

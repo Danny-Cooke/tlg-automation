@@ -72,7 +72,7 @@ resource "aws_secretsmanager_secret_version" "meta" {
   secret_string = jsonencode({
     app_id       = local.meta_app_ids[each.key]
     app_secret   = each.key == "messenger" ? var.meta_messenger_app_secret : var.meta_instagram_app_secret
-    page_token   = var.meta_page_token
+    page_token   = each.key == "instagram" && var.meta_instagram_page_token != "" ? var.meta_instagram_page_token : var.meta_page_token
     verify_token = random_password.verify_token[each.key].result
   })
 }

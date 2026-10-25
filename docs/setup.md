@@ -38,11 +38,21 @@ Facebook Page. Done 2026-10-19: both apps exist.
    Graph call the bots make carries an appsecret_proof, so a leaked page
    token is useless without the secret. Leave the server IP allowlist empty;
    Lambda has no fixed address. The client token is not used.
-4. **Page access token.** Messenger > API setup > Generate token gives one
-   quickly; a System User token (Business Settings, with `pages_messaging`,
-   `pages_manage_metadata`, `instagram_basic`, `instagram_manage_messages`)
-   never expires and is the better one for the bots. Needed before the bots
-   can reply; until then they store, log and email what arrives.
+4. **Page access tokens, one per app.** A token belongs to the app that
+   issued it (the `appsecret_proof` on every call is made with that app's
+   secret), so each channel needs its own. Messenger > API setup >
+   Generate token gives one quickly; a System User token never expires and
+   is the better one. For Instagram (done 2026-10-25): Business Settings >
+   Users > System users > Add ("TLG bots", Employee); Assign assets: the
+   Page with Full access "Everything" (the Instagram profile shares it),
+   the app Tlg-app2 with Develop app; Generate token for Tlg-app2, expiry
+   Never, with `instagram_basic`, `instagram_manage_messages`,
+   `pages_read_engagement`, `pages_show_list` (all Tlg-app2 offers: its
+   use case is Instagram only, so `pages_messaging` and
+   `pages_manage_metadata` are not in its list; the pipeline therefore
+   cannot subscribe the Page to Tlg-app2 itself and warns instead, see
+   section 3). Needed before the bots can reply; until then they store,
+   log and email what arrives.
 5. **Testers.** Until app review, Meta delivers messages only from people
    with a role on the app. Add your own Facebook and Instagram accounts as
    testers (App roles > Roles) so you can message the Page and see the bots
@@ -55,8 +65,13 @@ Facebook Page. Done 2026-10-19: both apps exist.
 
 Secrets (set 2026-10-19): `TLG_APP1_ID`, `TLG_APP1_SECRET` (Messenger),
 `TLG_APP2_ID`, `TLG_APP2_SECRET` (Instagram). Then `TLG_PAGE_TOKEN` so the
-bots can reply (without it they store, log and email but cannot send), and
-later `ANTHROPIC_AWS_WORKSPACE_ID` for shadow mode. The Page ID is in
+Messenger bot can reply (without it they store, log and email but cannot
+send), `TLG_IG_PAGE_TOKEN` (the Tlg-app2 token above) so the Instagram bot
+receives and answers Instagram DMs, and later `ANTHROPIC_AWS_WORKSPACE_ID`
+for shadow mode. Without `TLG_IG_PAGE_TOKEN` the Instagram webhook is
+registered but the Page is never subscribed to Tlg-app2, so Instagram DMs
+stay in the Business Suite inbox and the bot never sees them (found
+2026-10-25: two weeks of logs, Messenger 25 client messages, Instagram 0). The Page ID is in
 `salon.auto.tfvars`; it is not secret.
 
 Variables: `MESSAGE_TEST_MODE` (`true`: only messages starting with the
@@ -81,8 +96,10 @@ registers the webhooks with Meta itself (section 3) and prints the URLs.
 
 After each apply the workflow runs `scripts/meta_setup.py` once per channel
 with the app's id and secret: it points the app's webhook at that channel's
-URL and, when `TLG_PAGE_TOKEN` is set, subscribes the Page to the app. The
-Instagram channel is registered once `TLG_APP2_SECRET` exists. Registration
+URL and, when that channel's token is set (`TLG_PAGE_TOKEN` for Messenger,
+`TLG_IG_PAGE_TOKEN` for Instagram), subscribes the Page to the app. The
+Instagram channel is registered once `TLG_APP2_SECRET` exists; the run log
+then shows the linked Instagram username. Registration
 is idempotent, so every deploy re-asserts it.
 
 Without a page token Meta will not deliver Page messages until the Page is

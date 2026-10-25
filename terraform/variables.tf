@@ -75,7 +75,14 @@ variable "meta_instagram_app_secret" {
 }
 
 variable "meta_page_token" {
-  description = "Long-lived Page access token with pages_messaging and instagram_manage_messages. Needed from shadow mode on."
+  description = "Long-lived Page access token issued by the Messenger app (Tlg-app1) with pages_messaging. Needed from shadow mode on."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "meta_instagram_page_token" {
+  description = "Page access token issued by the Instagram app (Tlg-app2) with instagram_manage_messages, instagram_basic and pages_manage_metadata. A token belongs to the app that issued it, so the Messenger one cannot serve Instagram (checked 2026-10-25). Empty: the Instagram bot falls back to meta_page_token, which can verify webhooks but not read or send Instagram messages."
   type        = string
   sensitive   = true
   default     = ""
