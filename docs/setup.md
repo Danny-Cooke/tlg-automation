@@ -102,9 +102,13 @@ registers the webhooks with Meta itself (section 3) and prints the URLs.
 After each apply the workflow runs `scripts/meta_setup.py` once per channel
 with the app's id and secret: it points the app's webhook at that channel's
 URL and, when that channel's token is set (`TLG_PAGE_TOKEN` for Messenger,
-`TLG_IG_PAGE_TOKEN` for Instagram), subscribes the Page to the app. The
-Instagram channel is registered once `TLG_APP2_SECRET` exists; the run log
-then shows the linked Instagram username. Registration
+`TLG_IG_PAGE_TOKEN` for Instagram), subscribes the Page to the app. For
+Instagram the Page is subscribed with the `name` field: Meta only needs
+the Page tied to the app (the `messages` field is on the app's Instagram
+subscription), and `messages` on the Page would need `pages_messaging`,
+which Tlg-app2 cannot have (checked 2026-10-25). The Instagram channel is
+registered once `TLG_APP2_SECRET` exists; the run log then shows the
+linked Instagram username. Registration
 is idempotent, so every deploy re-asserts it.
 
 Without a page token, or with one that lacks `pages_manage_metadata` (the

@@ -735,5 +735,9 @@ showed the Page id the repo had carried since the start, 61577501519464,
 is not a Page at all; the Page is 625244944014434, fixed everywhere. For
 the Page subscription Tlg-app2 gained the use case "Manage everything on
 your Page", which carries `pages_manage_metadata`; the token was made
-again with it, so the pipeline subscribes the Page itself.
+again with it, so the pipeline subscribes the Page itself. Subscribing
+with the `messages` field still failed ("needs pages_messaging"), so the
+Instagram channel subscribes the Page with `name`: the Page link is what
+Meta needs, the messages field is on the app's own subscription. Done by
+hand once the same afternoon and the Page now lists Tlg-app2.
 

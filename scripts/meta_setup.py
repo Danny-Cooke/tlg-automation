@@ -42,8 +42,13 @@ import requests
 GRAPH = "https://graph.facebook.com/v21.0"
 
 CHANNELS = {
-    "messenger": {"object": "page", "fields": ["messages", "messaging_postbacks"]},
-    "instagram": {"object": "instagram", "fields": ["messages"]},
+    # fields: what the app subscribes to on the object. page_fields: what the
+    # Page is subscribed to the app with. For Instagram the Page link is all
+    # Meta needs (the messages field sits on the app's "instagram"
+    # subscription) and "messages" there would demand pages_messaging, which
+    # Tlg-app2 cannot have; any Page field the token may use will do.
+    "messenger": {"object": "page", "fields": ["messages", "messaging_postbacks"], "page_fields": ["messages", "messaging_postbacks"]},
+    "instagram": {"object": "instagram", "fields": ["messages"], "page_fields": ["name"]},
 }
 
 
@@ -164,7 +169,7 @@ def main() -> None:
 
     if a.page_id and a.page_token:
         page_token = page_token_for(a.page_token, a.page_id, a.app_secret)
-        subscribed = subscribe_page(a.page_id, page_token, a.app_secret, spec["fields"])
+        subscribed = subscribe_page(a.page_id, page_token, a.app_secret, spec["page_fields"])
         if a.channel == "instagram":
             ig = linked_instagram(a.page_id, page_token, a.app_secret)
             print(f"Linked Instagram: {ig or 'none. Link the IG professional account to the Page in Business Settings.'}")
