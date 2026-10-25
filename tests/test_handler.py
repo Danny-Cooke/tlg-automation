@@ -482,3 +482,29 @@ def test_handover_fields_round_trip_through_the_table():
     assert back.fresha_client_id == "305" and back.fresha_client_name == "Amy Pond"
     store.clear_handover("p")
     assert store.load("p").handed_to_jess is False and store.load("p").handed_to == ""
+
+
+def test_staff_threads_are_stored_and_never_answered(wired, monkeypatch):
+    """User, 2026-10-25: staff message the Page as themselves; if the sender's
+    name contains an entry of TLG_STAFF the bot stays quiet. Decorated names
+    match their plain spelling; a hand-set flag on the thread does the same."""
+    calls, store = wired, MemoryStore()
+    sample = "Lori-dee," + chr(10) + "Sophie’s 𝐻𝐴𝐼𝑅 & 𝐵𝐸𝐴𝑈𝑇𝑌," + chr(10) + " carmen smith, "  # as TLG_STAFF holds it: newlines and all
+    staff = tuple(handler._norm(x) for x in sample.split(",") if x.strip())
+    monkeypatch.setattr(handler, "STAFF_SENDERS", staff)
+    assert handler.is_staff("Lori-Dee Blucher") and handler.is_staff("Carmen Smith") and handler.is_staff("Sophie's HAIR & BEAUTY")
+    assert not handler.is_staff("Danny Cooke") and not handler.is_staff("")
+    monkeypatch.setattr(meta, "user_profile", lambda sender_id, token, **kw: {"name": "Lori-dee Blucher"})
+    handler.process_message(inbound("hiya can you check my diary", sender="staff1"), store)
+    assert calls["sent"] == [] and calls["escalated"] == [] and calls["noticed"] == []
+    convo = store.items["staff1"]
+    assert convo.staff is True and convo.history[-1]["content"] == "hiya can you check my diary"
+    # Flag set by hand on a thread whose name matches nothing.
+    monkeypatch.setattr(meta, "user_profile", lambda sender_id, token, **kw: {"name": "Pat Smith"})
+    store.items["flagged"] = Conversation(sender_id="flagged", staff=True)
+    handler.process_message(inbound("hello", mid="m2", sender="flagged"), store)
+    assert calls["sent"] == []
+    # A client is answered as before.
+    handler.process_message(inbound("hello", mid="m3", sender="client1"), store)
+    assert len(calls["sent"]) == 1
+

@@ -41,11 +41,31 @@ from .state import Conversation, ConversationStore
 log = logging.getLogger()
 log.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
+def _norm(s: str) -> str:
+    """NFKC-folded, case-folded, trimmed: how names are compared with the staff list."""
+    import unicodedata
+
+    folded = unicodedata.normalize("NFKC", str(s or "")).casefold().strip()
+    return folded.replace("’", "'").replace("‘", "'")  # curly apostrophes, as Facebook names carry them
+
+
 MODES = ("simple", "shadow", "live")
 MODE = os.environ.get("BOT_MODE", "simple")
 CHANNEL = os.environ.get("CHANNEL", "")  # messenger | instagram; empty accepts both
 TEST_MODE = os.environ.get("MESSAGE_TEST_MODE", "true").lower() == "true"
 TEST_TRIGGER = os.environ.get("MESSAGE_TEST_TRIGGER", "joshsmells")
+# Staff who message the Page as themselves (user, 2026-10-25): the GitHub
+# variable TLG_STAFF, comma-separated. A sender whose Meta profile name
+# contains any entry is never answered, escalated or onboarded; the message
+# is stored like any other. Matched after NFKC folding so decorated names
+# ("Sophie's 𝐻𝐴𝐼𝑅") match their plain spelling too.
+STAFF_SENDERS = tuple(s for s in (_norm(x) for x in os.environ.get("STAFF_SENDERS", "").split(",")) if s)
+
+
+def is_staff(name: str, staff: tuple[str, ...] | None = None) -> bool:
+    """Does this sender's name contain a staff entry? Empty name: no."""
+    n = _norm(name)
+    return bool(n) and any(entry in n for entry in (STAFF_SENDERS if staff is None else staff))
 # A human does not answer in under a second. Typing indicator on, wait, reply.
 # The wait is measured from when the message arrived, so time spent asking
 # Claude and Fresha counts towards it. Kept under Meta's 20 second webhook
@@ -179,6 +199,14 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     user_text = text or "[attachment without text]"
     if text and msg.attachments:
         user_text = f"{text} [{msg.attachments} picture(s) attached]"  # the model knows, without being able to see
+
+    _ensure_name(convo)
+    if convo.staff or is_staff(convo.client_name):
+        convo.staff = True
+        convo.note_message(msg.message_id, user_text)
+        store.save(convo)
+        log.info("STAFF: %s (%s) on %s, staying quiet", convo.client_name or "?", msg.sender_id, msg.channel)
+        return
 
     if MODE == "simple":
         reply_text = simple_reply(msg.channel, text)

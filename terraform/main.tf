@@ -304,6 +304,7 @@ resource "aws_lambda_function" "bot" {
       MESSAGE_TEST_TRIGGER       = var.message_test_trigger
       CARMEN_WHATSAPP            = var.carmen_whatsapp
       SOPHIE_WHATSAPP            = var.sophie_whatsapp
+      STAFF_SENDERS              = var.staff_senders
       REPLY_DELAY_SECONDS        = tostring(var.reply_delay_seconds)
       SALON_CONFIG_PATH          = "/var/task/bot/salon_config.json"
       PERSONA_PATH               = "/var/task/bot/persona"

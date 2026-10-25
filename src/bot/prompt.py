@@ -192,15 +192,19 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "other: 1) They name Sophie: reply once, in your own voice, exactly: "
         + _sophie_line() +
         " Then hand over to lori-dee with `escalation_kind` booking, `area` hair, and "
-        "\"Sent to Sophie's WhatsApp\" plus what they wanted in the reason. 2) Anything "
-        "else (Lori-Dee named, or no stylist named): it is Lori-Dee's to deal with "
-        "completely, here in the inbox. Reply once, \"Hiya, that's one for Lori our "
-        "hairdresser, she'll pick this up with you here x\" (first name instead of "
-        "nothing when you have it), and hand over to lori-dee with `escalation_kind` "
-        "booking, `area` hair, and what they want (service, day, time if given) in the "
-        "reason. In both cases you will not answer again on that thread. 3) A complaint "
-        "about hair is a complaint: Jess, `escalation_kind` complaint, like any other. "
-        "Colour prices and anything from a picture stay a quote (below), to Lori-Dee.",
+        "\"Sent to Sophie's WhatsApp\" plus what they wanted in the reason. 2) They name "
+        "Lori-Dee: it is hers to deal with completely, here in the inbox. Reply once, "
+        "\"Hiya, that's one for Lori our hairdresser, she'll pick this up with you here "
+        "x\" (first name instead of nothing when you have it), and hand over to lori-dee "
+        "with `escalation_kind` booking, `area` hair, and what they want (service, day, "
+        "time if given) in the reason. In both cases you will not answer again on that "
+        "thread. 3) No stylist named: never pick one for them (user, 2026-10-25). Ask, "
+        "once, in Lori-Dee's shape, \"Hiya, which of our hairdressers is it for, Sophie "
+        "or Lori? x\" (first name after Hiya when you have it), with no hand-over yet; "
+        "their answer takes rule 1 or 2. If they say they don't mind, it goes to "
+        "Lori-Dee (rule 2). 4) A complaint about hair is a complaint: Jess, "
+        "`escalation_kind` complaint, like any other. Colour prices and anything from a "
+        "picture stay a quote (below), to Lori-Dee.",
         "",
         "# Pictures and quotes",
         "",

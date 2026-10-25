@@ -197,6 +197,7 @@ jobs:
           TF_VAR_escalation_emails: ${{ vars.ESCALATION_EMAILS || '[]' }}
           TF_VAR_carmen_whatsapp: ${{ vars.CARMEN_PHONE || '' }}
           TF_VAR_sophie_whatsapp: ${{ vars.SOPHIE_PHONE || '' }}
+          TF_VAR_staff_senders: ${{ vars.TLG_STAFF || '' }}
           TF_VAR_meta_messenger_app_id: ${{ secrets.TLG_APP1_ID || '0' }}
           TF_VAR_meta_messenger_app_secret: ${{ secrets.TLG_APP1_SECRET || 'unset' }}
           TF_VAR_meta_instagram_app_id: ${{ secrets.TLG_APP2_ID || '' }}

@@ -28,6 +28,7 @@ class Conversation:
     handed_area: str = ""  # what was handed over: hair, tattoos, nails ...
     fresha_client_id: str = ""  # the Fresha client this thread books for, once matched by phone or created (job 13)
     fresha_client_name: str = ""
+    staff: bool = False  # a staff member's own thread: never answered (user, 2026-10-25); set by name match or by hand
 
     # With these people the bot keeps reading the thread and answers only what
     # is not theirs (user, 2026-10-24: a hair client with Lori who asks about
@@ -95,6 +96,7 @@ class ConversationStore:
             handed_area=item.get("handed_area", ""),
             fresha_client_id=item.get("fresha_client_id", ""),
             fresha_client_name=item.get("fresha_client_name", ""),
+            staff=bool(item.get("staff", False)),
         )
 
     def save(self, convo: Conversation) -> None:
@@ -111,6 +113,7 @@ class ConversationStore:
                 "handed_area": convo.handed_area,
                 "fresha_client_id": convo.fresha_client_id,
                 "fresha_client_name": convo.fresha_client_name,
+                "staff": convo.staff,
                 "updated_at": int(time.time()),
                 "expires_at": int(time.time()) + TTL_DAYS * 86400,
             }

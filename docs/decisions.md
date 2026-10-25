@@ -752,3 +752,28 @@ The user's call: move to Sonnet 5.5 (`claude_model`) and re-test; Opus
 is one variable away if the voice suffers. Still to do for Instagram:
 switch Tlg-app2 to Live (Publish) before real clients' DMs are delivered.
 
+## 2026-10-25: a hair request with no stylist named gets asked which, never pushed to Lori-Dee
+
+The first Instagram test ("I want a haircut", nobody named) was answered
+"that's one for Lori our hairdresser" and handed to Lori-Dee. The user:
+"if someone asks for a hairdresser, you need to ask which one first
+because you can't just push them to Lori first, that's wrong." So the hair
+rule has three doors now: Sophie named, her WhatsApp line; Lori-Dee named,
+hers in the inbox; nobody named, one question in Lori-Dee's shape, "Hiya,
+which of our hairdressers is it for, Sophie or Lori? x", no hand-over
+until they answer. Assumed, not ruled: "don't mind" goes to Lori-Dee.
+
+## 2026-10-25: staff who message the Page are never answered
+
+The user had assigned the team's own threads to Jess in Business Suite
+and asked whether the bot would leave them alone. Assignment in the inbox
+tells the bot nothing: Meta delivers every message to the webhook, and
+until now only test mode kept the bot off those threads. The user's
+ruling: a GitHub variable `TLG_STAFF`, a comma-separated list of names,
+"and if the message sender contains those strings, then don't bother
+replying". So the bot fetches the sender's name (it already did, once per
+thread), folds case and decoration, and if it contains an entry the
+message is stored and nothing else happens: no reply, no Telegram, no
+onboarding. A `staff` flag on the conversation row covers anyone the
+list misses, set by hand. Both channels.
+

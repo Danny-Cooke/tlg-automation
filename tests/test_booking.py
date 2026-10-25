@@ -170,6 +170,7 @@ def test_hair_is_never_booked_in_chat_with_either_stylist(cfg):
         out, f, _ = run(cfg, args={"service": service, "person": person}, f=FakeFresha(services=[catalog]))
         assert out.startswith(f"'{service}' is hair, which the bot does not book in chat") and f.created == []
         assert "Sophie" in out and "WhatsApp" in out and "one for Lori" in out and "not answer again" in out
+        assert "named nobody, ask which hairdresser" in out
     assert booking.area_of("Sophie cooper") == "hair" and not booking.bookable("Hair by Lori-dee", "Dry cut")
 
 
@@ -364,6 +365,8 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
     prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
     assert "# Booking" in prompt and "`book_appointment`" in prompt and "Bernadette's" in prompt
     assert "# Hair" in prompt and "Never hair" in prompt and "one for Lori our hairdresser" in prompt
+    # User, 2026-10-25: no stylist named means ask which, never push them to Lori-Dee.
+    assert "which of our hairdressers is it for, Sophie or Lori?" in prompt and "never pick one for them" in prompt
     assert "do not hand over again" in prompt
     assert "shall I pop you in" in prompt and prompt.count("to confirm then") >= 3
     assert "# Pictures and quotes" in prompt and "give me a little time to have a think" in prompt and "quote;" in prompt
@@ -559,7 +562,8 @@ def test_sophies_hair_clients_go_to_her_whatsapp_when_configured(persona_text, s
     hair = build_system_prompt(persona_text, cfg).split("# Hair")[1].split("# Pictures")[0]
     assert ("\"Ok lovely, if you want to book in with Sophie it's best to message her directly on WhatsApp, "
             "here's her number: 07700 900456 x\"") in hair
-    assert "Sent to Sophie's WhatsApp" in hair and "Lori-Dee's to deal with completely" in hair and "complaint about hair" in hair
+    assert "Sent to Sophie's WhatsApp" in hair and "hers to deal with completely" in hair and "complaint about hair" in hair
+    assert "which of our hairdressers is it for, Sophie or Lori?" in hair  # nobody named: ask (user, 2026-10-25)
 
 
 # -- patch tests before lash and brow treatments (plan job 12, 2026-10-24) ------

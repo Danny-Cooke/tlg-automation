@@ -79,6 +79,17 @@ stay in the Business Suite inbox and the bot never sees them (found
 2026-10-25: two weeks of logs, Messenger 25 client messages, Instagram 0). The Page ID is in
 `salon.auto.tfvars`; it is not secret.
 
+Variable `TLG_STAFF` (set 2026-10-25): a comma-separated list of staff
+names as they appear on Facebook and Instagram. A sender whose profile
+name contains one of them (case and decoration folded, so "Sophie's
+𝐻𝐴𝐼𝑅" matches "sophie's hair") is never answered, escalated or
+onboarded; the message is stored and the log says "STAFF: ... staying
+quiet". For a staff thread the list misses, flag it by hand:
+
+```bash
+aws dynamodb update-item --table-name tlg-prod-conversations   --key '{"sender_id": {"S": "<psid>"}}' --update-expression "SET staff = :t"   --expression-attribute-values '{":t": {"BOOL": true}}'
+```
+
 Variables: `MESSAGE_TEST_MODE` (`true`: only messages starting with the
 trigger word are answered, so only the tester hears from the bots; `false`:
 everyone is answered), `BOT_MODE` (`simple`, the default, then `shadow`,
@@ -412,3 +423,14 @@ Check the Fresha checks are wired up without waiting for Fresha to change:
 ```
 aws lambda invoke --region eu-west-2 --function-name tlg-prod-fresha-watch --cli-binary-format raw-in-base64-out --payload '{"dry_run": true}' out.json && cat out.json
 ```
+
+## Meta Business Agent (Meta's own inbox AI): keep it off
+
+The Page has Meta's "Business Agent" set up (Business Suite > Inbox >
+Meta Business Agent). Checked 2026-10-25: **AI is off**. The "Meta Business
+Agent" thread in the inbox is Meta's agent talking to the business during
+its own setup (Oct 13 to 17), not a client, and the "AI responding" label
+dates from then. It must stay off: switched on it would answer clients
+about prices and products from Meta's guesses, over the top of our bot.
+If a thread ever shows "AI responding" again, check this page first.
+

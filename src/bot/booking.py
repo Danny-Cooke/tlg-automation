@@ -63,8 +63,9 @@ AREAS = {
 BOOKABLE_CATEGORIES = {k: v for k, v in AREAS.items() if v != "hair"}
 NOT_IN_CHAT = {
     "hair": ("which the bot does not book in chat. If the client named Sophie, send her WhatsApp line (see Hair in "
-             "the rules); otherwise say it is one for Lori and hand over to lori-dee (kind: booking) with the details. "
-             "Either way you will not answer again on the thread."),
+             "the rules); if they named Lori-Dee, say it is one for Lori and hand over to lori-dee (kind: booking) "
+             "with the details; if they named nobody, ask which hairdresser it is for, Sophie or Lori, and do not "
+             "hand over yet. Once sent to Sophie or Lori-Dee you will not answer again on the thread."),
 }
 # Categories where only some services may be booked in chat (normalised names).
 ONLY_THESE = {"Tattoos by Skin deep canvas": frozenset({"consultation"})}

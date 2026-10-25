@@ -183,6 +183,12 @@ variable "sophie_whatsapp" {
   default     = ""
 }
 
+variable "staff_senders" {
+  description = "Comma-separated names of staff who message the Page as themselves (GitHub variable TLG_STAFF). A sender whose Facebook or Instagram name contains one is never answered (user, 2026-10-25)."
+  type        = string
+  default     = ""
+}
+
 variable "message_test_trigger" {
   description = "The word a message must start with to be answered while message_test_mode is true. Stripped before the bot reads the text."
   type        = string
