@@ -777,3 +777,18 @@ message is stored and nothing else happens: no reply, no Telegram, no
 onboarding. A `staff` flag on the conversation row covers anyone the
 list misses, set by hand. Both channels.
 
+## 2026-10-25: "I'll pass you on to Lori", and no second "Hiya" when the client has just answered
+
+Instagram test the same evening: the bot asked "which of our hairdressers
+is it for, Sophie or Lori?", the user answered "Lori", and the bot came
+back with the fixed line "Hiya, that's one for Lori our hairdresser,
+she'll pick this up with you here x". The user: "that looks so wrong ...
+it should be something like I'll pass you on to Lori". Two faults in one
+line: a fresh greeting mid-conversation, and explaining who Lori is to
+someone who just named her. So the Lori hand-over has two forms. Named in
+the opening message: "Hiya, that's one for Lori our hairdresser, I'll pass
+you on to her and she'll pick this up with you here x". Named in answer to
+the bot's question: "Lovely, I'll pass you on to Lori and she'll pick this
+up with you here x", no greeting. The same no-fresh-Hiya rule is spelled
+out for Sophie's line when it follows the question.
+

@@ -169,7 +169,7 @@ def test_hair_is_never_booked_in_chat_with_either_stylist(cfg):
         booking.forget_catalog()
         out, f, _ = run(cfg, args={"service": service, "person": person}, f=FakeFresha(services=[catalog]))
         assert out.startswith(f"'{service}' is hair, which the bot does not book in chat") and f.created == []
-        assert "Sophie" in out and "WhatsApp" in out and "one for Lori" in out and "not answer again" in out
+        assert "Sophie" in out and "WhatsApp" in out and "pass them on to Lori" in out and "not answer again" in out
         assert "named nobody, ask which hairdresser" in out
     assert booking.area_of("Sophie cooper") == "hair" and not booking.bookable("Hair by Lori-dee", "Dry cut")
 
@@ -364,7 +364,9 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
 
     prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
     assert "# Booking" in prompt and "`book_appointment`" in prompt and "Bernadette's" in prompt
-    assert "# Hair" in prompt and "Never hair" in prompt and "one for Lori our hairdresser" in prompt
+    assert "# Hair" in prompt and "Never hair" in prompt and "one for Lori our hairdresser, I'll pass you on to her" in prompt
+    # User, 2026-10-25: answering "Lori" to the bot's question gets no second "Hiya, that's one for Lori our hairdresser".
+    assert "Lovely, I'll pass you on to Lori and she'll pick this up with you here x" in prompt and "no greeting and no explaining who Lori is" in prompt
     # User, 2026-10-25: no stylist named means ask which, never push them to Lori-Dee.
     assert "which of our hairdressers is it for, Sophie or Lori?" in prompt and "never pick one for them" in prompt
     assert "do not hand over again" in prompt
