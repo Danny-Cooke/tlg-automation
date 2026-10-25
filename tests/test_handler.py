@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 
 import pytest
@@ -69,6 +70,55 @@ def wired(monkeypatch):
 # ---------------------------------------------------------------------------
 # Simple mode: the two bots that just talk back
 # ---------------------------------------------------------------------------
+
+
+class SentinelTable:
+    """Just enough DynamoDB for claim_daily: a conditional put on the sentinel row."""
+
+    def __init__(self):
+        self.rows = {}
+
+    def put_item(self, Item, ConditionExpression, ExpressionAttributeNames, ExpressionAttributeValues):
+        from botocore.exceptions import ClientError
+        assert ConditionExpression == "attribute_not_exists(sender_id) OR #d < :day" and ExpressionAttributeNames == {"#d": "day"}
+        old = self.rows.get(Item["sender_id"])
+        if old is not None and not old["day"] < ExpressionAttributeValues[":day"]:
+            raise ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
+        self.rows[Item["sender_id"]] = Item
+
+
+def test_fresha_session_nag_posts_once_a_day_from_three_days_out():
+    """Promised in docs/setup.md, built 2026-10-25: the team group hears when the
+    Fresha login is about to run out, once a day however many containers start."""
+    from bot import fresha_session
+    from bot.state import ConversationStore
+
+    store = ConversationStore(SentinelTable())
+    posted = []
+    now = dt.datetime(2026, 11, 15, 9, 0, tzinfo=dt.timezone.utc)
+    far = fresha_session.Session("c", now + dt.timedelta(days=10))
+    near = fresha_session.Session("c", now + dt.timedelta(days=2, hours=6))
+    nag = lambda session, ok, day: handler.nag_about_session(session, ok, store=store, today=day, post=lambda text: posted.append(text) or True, now=now)  # noqa: E731
+    assert nag(far, True, "2026-11-15") is False and posted == []
+    assert nag(near, True, "2026-11-15") is True
+    assert len(posted) == 1 and "runs out in 2 days" in posted[0] and "fresha_session.py" in posted[0]
+    assert nag(near, True, "2026-11-15") is False and len(posted) == 1  # same day: once
+    assert nag(near, True, "2026-11-16") and len(posted) == 2  # next day: again
+    assert store.table.rows["_fresha-session-nag"]["day"] == "2026-11-16" and store.table.rows["_fresha-session-nag"]["expires_at"] > 0
+    assert nag(None, False, "2026-11-17") and "has run out" in posted[-1]
+    assert nag(far, False, "2026-11-18") and "rejecting the bot's login" in posted[-1]
+    assert nag(fresha_session.Session("c", None), True, "2026-11-19") is False and len(posted) == 4  # no expiry known: nothing to say
+
+
+def test_session_check_survives_a_broken_nag(monkeypatch):
+    from bot import fresha_session
+
+    handler.fresha_session_check.cache_clear()
+    monkeypatch.setattr(fresha_session, "get", lambda **kw: fresha_session.Session("c", dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=1)))
+    monkeypatch.setattr(fresha_session, "probe", lambda s: "Shrewsbury")
+    monkeypatch.setattr(handler, "nag_about_session", lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("dynamo down")))
+    assert handler.fresha_session_check() is True
+    handler.fresha_session_check.cache_clear()
 
 
 def test_simple_mode_acknowledges_and_records(wired):

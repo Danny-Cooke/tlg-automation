@@ -33,10 +33,10 @@ import time
 import zoneinfo
 from functools import lru_cache
 
-from . import availability, booking, brain, escalation, fresha_session, meta, patch_tests
+from . import availability, booking, brain, escalation, fresha_session, meta, patch_tests, telegram
 from .config import SalonConfig, load_persona
 from .prompt import build_system_prompt
-from .state import Conversation, ConversationStore
+from .state import Conversation, ConversationStore, claim_daily
 
 log = logging.getLogger()
 log.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -110,21 +110,55 @@ def system_prompt() -> str:
     return build_system_prompt(load_persona(), salon())
 
 
+SESSION_NAG_DAYS = int(os.environ.get("FRESHA_SESSION_NAG_DAYS", "3"))
+
+
 @lru_cache(maxsize=1)
 def fresha_session_check() -> bool:
     """Once per container: does the stored Fresha session work from here?
-    Logged so the owner can see it in CloudWatch; the bot does not yet book,
-    so a bad session changes nothing else."""
+    Logged so the owner can see it in CloudWatch, and the team group is told
+    once a day when the login is about to run out or already has."""
     session = fresha_session.get()
+    ok = False
     if session is None:
         log.info("FRESHA SESSION none (parameter not set, or expired)")
+    else:
+        where = fresha_session.probe(session)
+        if where:
+            log.info("FRESHA SESSION ok (%s, %s days left)", where, session.days_left())
+            ok = True
+        else:
+            log.warning("FRESHA SESSION rejected; run scripts/fresha_session.py")
+    try:
+        nag_about_session(session, ok)
+    except Exception:  # noqa: BLE001 - a nag must never stop a reply
+        log.exception("Fresha session nag failed")
+    return ok
+
+
+def nag_about_session(session, ok: bool, *, store: ConversationStore | None = None, today: str = "", post=None, now=None) -> bool:
+    """Tell the team group, once a day, when the Fresha login has fewer than
+    SESSION_NAG_DAYS days left, has run out, or is rejected (promised in
+    docs/setup.md, built 2026-10-25). Many containers start in a day; the
+    dated sentinel row in the conversations table keeps it to one post."""
+    days = session.days_left(now) if session is not None else None
+    if ok and (days is None or days > SESSION_NAG_DAYS):
         return False
-    where = fresha_session.probe(session)
-    if where:
-        log.info("FRESHA SESSION ok (%s, %s days left)", where, session.days_left())
-        return True
-    log.warning("FRESHA SESSION rejected; run scripts/fresha_session.py")
-    return False
+    if session is None:
+        text = ("Heads up: the bot's Fresha login has run out, so I can't book anyone in until someone runs "
+                "scripts/fresha_session.py on the laptop. I'm giving the Fresha link and handing over instead x")
+    elif not ok:
+        text = ("Heads up: Fresha is rejecting the bot's login, so I can't book anyone in until someone runs "
+                "scripts/fresha_session.py on the laptop x")
+    else:
+        when = "today" if days == 0 else f"in {days} day{'' if days == 1 else 's'}"
+        text = (f"Heads up: the bot's Fresha login runs out {when}. Someone run scripts/fresha_session.py on the "
+                "laptop before then and I'll keep booking x")
+    day = today or dt.datetime.now(SALON_TZ).date().isoformat()
+    if not claim_daily(store or ConversationStore(), "fresha-session-nag", day):
+        return False
+    log.warning("FRESHA SESSION nag posted: %s", text)
+    return bool((post or telegram.post_handover)(text))
 
 
 def lambda_handler(event: dict, context=None) -> dict:

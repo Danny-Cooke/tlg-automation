@@ -219,8 +219,9 @@ Terraform does not manage the parameter; it only gives the bot Lambdas
 permission to read it, so the order of the first run and the first deploy
 does not matter.
 
-Every week (set a calendar reminder; the bot will also nag the Telegram
-group when the session is three days from running out):
+Every week (set a calendar reminder; from three days out the bot also
+posts to the Telegram group once a day, and again if the login has run
+out or Fresha rejects it; `FRESHA_SESSION_NAG_DAYS` moves the threshold):
 
 ```bash
 python scripts/fresha_session.py

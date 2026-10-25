@@ -847,3 +847,17 @@ The read-back and the team note name the add-ons. The clash check covers
 the whole slot; the availability lookup still checks the main service
 alone, which is noted on the job.
 
+## 2026-10-25: the Fresha-login nag the setup notes promised is now real
+
+The user asked when the "logon, the token thingy" needs doing. The Fresha
+session is the only one that runs out (30 days from each login; the Meta
+tokens never expire), and the setup notes had promised since 2026-10-2x
+that the bot "will nag the Telegram group when the session is three days
+from running out", but nothing did. The user: "go ahead and do that last
+bit". So the cold-start session check now posts to the team group, in the
+bot's voice, when the login has three days or fewer left, has run out, or
+is rejected by Fresha. Once a day, not once per container: a dated
+sentinel row in the conversations table (`_fresha-session-nag`, written
+with a condition, TTL a week) decides which container speaks. A failure in
+the nag is logged and never stops a reply.
+

@@ -127,6 +127,26 @@ class ConversationStore:
         )
 
 
+def claim_daily(store: "ConversationStore", name: str, day: str) -> bool:
+    """True the first time `name` is claimed for `day`, False after that, whichever
+    container asks: a sentinel row `_<name>` keyed like a conversation, written
+    with a condition. Used for once-a-day team nags (2026-10-25)."""
+    from botocore.exceptions import ClientError
+
+    try:
+        store.table.put_item(
+            Item={"sender_id": f"_{name}", "day": day, "expires_at": int(time.time()) + 7 * 86400},
+            ConditionExpression="attribute_not_exists(sender_id) OR #d < :day",
+            ExpressionAttributeNames={"#d": "day"},
+            ExpressionAttributeValues={":day": day},
+        )
+    except ClientError as e:
+        if e.response.get("Error", {}).get("Code") == "ConditionalCheckFailedException":
+            return False
+        raise
+    return True
+
+
 @lru_cache(maxsize=1)
 def _default_table():
     import boto3
