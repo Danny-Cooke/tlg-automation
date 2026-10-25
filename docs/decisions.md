@@ -828,3 +828,22 @@ Standard Access covers. Test mode stayed on through the publish, so the
 order is Meta first, then the GitHub variable `MESSAGE_TEST_MODE=false`
 and a pipeline run, which is the user's switch.
 
+## 2026-10-25: the bot asks about add-ons while booking nails, and books them into the same appointment
+
+The user, after pushing the evening's docs: "when booking appointments I
+want you to say things like, do you need any add-ons like nail art?" A
+question with no way to act on it would have left the client at a dead
+end, so plan job 16 was built the same evening on the back of the capture
+made an hour earlier (`knowledge/fresha-internal-api.md`, "Two services in
+one appointment"): Fresha takes a second entry in `bookings`, starting
+where the first ends. The rules: once service, person and day are settled,
+ask once, in Jess's words, whether they want anything adding; the bot may
+add "Extra time for simple nail art", "Luxury manicure", or a removal
+before a new set, by exact name from the same category, with the same
+person; simple art is 50p a nail and priced on the day (the team's own
+quotes, `knowledge/from-messages.md`), so the bot gives no total; extreme
+art, gems, chrome, a picture or a design request stays a quote to Jess.
+The read-back and the team note name the add-ons. The clash check covers
+the whole slot; the availability lookup still checks the main service
+alone, which is noted on the job.
+

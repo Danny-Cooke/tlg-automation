@@ -207,10 +207,13 @@ book straight in with Sav here [link], or I can sort it for you if you tell
 me a day x" then "Sav has 10am or 2.15 Friday?" then "Perfect, I'll get the
 girls to pop that in for you, you'll get a confirmation through x".
 
-**"Can I add nail art / gel toes to my appointment?"** Easy ones the bot
-answers: yes, what it costs from the salon details, and "just let the girls
-know on the day or I can add a note for you". If it needs the booking
-changed or more time, hand over.
+**"Can I add nail art / gel toes to my appointment?"** While booking, the
+bot asks once whether they want anything adding ("do you want any add-ons
+with that lovely, a bit of nail art or the luxury manicure? x", user
+2026-10-25) and books simple art, the luxury manicure or a removal into
+the same appointment. Simple art is 50p a nail, priced on the day. Gel
+toes is a service of its own, booked after the first. For an appointment
+that already exists and needs more time, hand over.
 
 **"Can I move my appointment?"** Fresha first: "the easiest way is the link
 in your confirmation email, it lets you move it yourself x". If they can't:

@@ -99,6 +99,24 @@ def test_create_sends_the_recorded_shape():
     assert v["input"]["metadata"] == {"idempotencyKey": "SYkQPlEAAYqfYX0Cuh_KP", "source": "new"}
 
 
+def test_create_chains_extra_services_as_further_bookings():
+    """Recorded 2026-10-25: two services are two entries in `bookings`, the second
+    starting where the first ends, same person, own level, price and duration."""
+    http = Http({"createAppointmentByEmployee": {"data": {"AppointmentsManager_createAppointmentByEmployee": {
+        "appointment": {"id": "1335465114"}, "primaryBookingId": "1804005087", "warnings": None}}}})
+    f = fresha.Fresha(SESSION, http)
+    f.create(customer_id="1", pricing_level_id="26079057", price="54", duration_s=8100, employee_id="3440872",
+             date="2026-10-27", start="10:30", extras=[("25845773", "0.5", 900), ("25845774", "20", 3600)])
+    bookings = variables(http.calls[0])["input"]["appointment"]["bookings"]
+    assert [b["servicePricingLevel"] for b in bookings] == [
+        {"catalogPrice": "54", "id": "26079057"}, {"catalogPrice": "0.5", "id": "25845773"}, {"catalogPrice": "20", "id": "25845774"}]
+    assert [b["startDateAndTime"]["wallClockTime"] for b in bookings] == ["10:30:00", "12:45:00", "13:00:00"]
+    assert [b["startDateAndTime"]["timeOfDay"] for b in bookings][1] == {"hours": 12, "minutes": 45, "seconds": 0}
+    assert [b["timeSegments"][0]["durationInSeconds"] for b in bookings] == [8100, 900, 3600]
+    assert len({b["orderItemRef"] for b in bookings}) == 3 and all(b["employees"] == [{"id": "3440872", "requested": False}] for b in bookings)
+    assert fresha._plus("09:05:30", 90) == "09:07:00" and fresha._plus("10:30", 8100) == "12:45:00"
+
+
 def test_create_without_an_id_is_an_error():
     http = Http({"createAppointmentByEmployee": {"data": {"AppointmentsManager_createAppointmentByEmployee": {"appointment": None, "warnings": [{"message": "x"}]}}}})
     with pytest.raises(fresha.FreshaError):

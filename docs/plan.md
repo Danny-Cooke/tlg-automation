@@ -664,7 +664,7 @@ and reply from a second invocation (the clean fix: the 20 s deadline then
 only covers the acknowledgement); trim the prompt and the structured
 reply. Not agreed yet; the user's call once the bot is talking to clients.
 
-### 16. Add-ons on a nails booking: art, luxury manicure, a removal before a new set (AGREED 2026-10-25, capture done, not built)
+### 16. Add-ons on a nails booking: art, luxury manicure, a removal before a new set (BUILT 2026-10-25 evening; availability still checks the main service alone)
 
 The user's question: "can you handle a client booking nails and then
 extra nail art too?" Not yet: the booking tool takes one service, and
@@ -696,7 +696,16 @@ pricing level and duration. To build:
 5. Tests: two-service create body, chained times, read-back wording,
    quote rule unchanged.
 
-About half a day. After the go-live flip and job 15.
+Built the same evening after the user asked for the question itself ("when
+booking appointments I want you to say things like, do you need any add-ons
+like nail art?"): `book_appointment` takes `add_ons` (exact names, same
+category, same person), `Fresha.create` chains them as further bookings,
+the clash check covers the whole slot, the read-back and the Telegram note
+name them, and the prompt asks once. Still open from step 2: the
+availability lookup checks the main service alone, so a slot with no room
+for the add-on is caught by the booking tool ("not free with the add-on
+time") and the bot offers another time; a basket lookup would avoid that
+round trip.
 
 ## Open questions for the user
 

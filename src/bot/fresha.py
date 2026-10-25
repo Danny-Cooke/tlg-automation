@@ -21,6 +21,7 @@ call re-reads the parameter. Any other failure raises FreshaError with
 Fresha's own message. The cookie is never logged.
 """
 from __future__ import annotations
+from collections.abc import Sequence
 
 import json
 import logging
@@ -120,6 +121,13 @@ def _digits(text: str | None) -> str:
 def nanoid() -> str:
     """A 21-character id like the dashboard's orderItemRef / idempotencyKey."""
     return secrets.token_urlsafe(16)[:21]
+
+
+def _plus(start: str, seconds: int) -> str:
+    """`start` ("HH:MM" or "HH:MM:SS") plus `seconds`, as "HH:MM:SS"."""
+    h, m, s = _hms(start)
+    total = h * 3600 + m * 60 + s + seconds
+    return f"{total // 3600:02d}:{total % 3600 // 60:02d}:{total % 60:02d}"
 
 
 def _hms(start: str) -> tuple[int, int, int]:
@@ -457,26 +465,36 @@ class Fresha:
     # -- writes ----------------------------------------------------------------
 
     def create(self, *, customer_id: str, pricing_level_id: str, price: str, duration_s: int, employee_id: str,
-               date: str, start: str, idempotency_key: str = "", requested: bool = False) -> Booking:
+               date: str, start: str, idempotency_key: str = "", requested: bool = False,
+               extras: Sequence[tuple[str, str, int]] = ()) -> Booking:
         """Save one appointment exactly as the dashboard's "Save" does, with the
         salon's default payment policy, so Fresha sends its usual confirmation
         and card request. `price` is the catalog price as a string, "34" or
-        "34.00". Pass the same `idempotency_key` to retry safely."""
-        h, m, s = _hms(start)
+        "34.00". Pass the same `idempotency_key` to retry safely. `extras` are
+        (pricing_level_id, price, duration_s) for services booked into the same
+        appointment with the same person, each starting where the one before
+        ends: what the dashboard sends for two services (recorded 2026-10-25,
+        knowledge/fresha-internal-api.md "Two services in one appointment")."""
+        bookings = []
+        offset = 0
+        for level_id, level_price, seconds in ((pricing_level_id, price, duration_s), *extras):
+            h, m, s = _hms(_plus(start, offset))
+            bookings.append({
+                "bookedServiceAddOns": [],
+                "employees": [{"id": employee_id, "requested": requested}],
+                "orderItemRef": nanoid(),
+                "resources": [],
+                "servicePricingLevel": {"catalogPrice": level_price, "id": level_id},
+                "startDateAndTime": {
+                    "date": date, "timeOfDay": {"hours": h, "minutes": m, "seconds": s},
+                    "timezone": TIMEZONE, "wallClockTime": f"{h:02d}:{m:02d}:{s:02d}",
+                },
+                "timeSegments": [{"durationInSeconds": seconds, "isMainServicingTime": True, "sortingId": 0, "type": "SERVICING"}],
+            })
+            offset += seconds
         variables = {"input": {
             "appointment": {
-                "bookings": [{
-                    "bookedServiceAddOns": [],
-                    "employees": [{"id": employee_id, "requested": requested}],
-                    "orderItemRef": nanoid(),
-                    "resources": [],
-                    "servicePricingLevel": {"catalogPrice": price, "id": pricing_level_id},
-                    "startDateAndTime": {
-                        "date": date, "timeOfDay": {"hours": h, "minutes": m, "seconds": s},
-                        "timezone": TIMEZONE, "wallClockTime": f"{h:02d}:{m:02d}:{s:02d}",
-                    },
-                    "timeSegments": [{"durationInSeconds": duration_s, "isMainServicingTime": True, "sortingId": 0, "type": "SERVICING"}],
-                }],
+                "bookings": bookings,
                 "customerId": customer_id,
                 "locationId": self.location_id,
                 "priceModifiers": [],
@@ -490,7 +508,7 @@ class Fresha:
         if not appt:
             raise FreshaError("create: Fresha returned no appointment id")
         warnings = tuple(str(w.get("message", "")) for w in payload.get("warnings") or [])
-        log.info("Fresha booked appointment %s (%s %s, level %s, staff %s)", appt, date, start, pricing_level_id, employee_id)
+        log.info("Fresha booked appointment %s (%s %s, level %s, staff %s, %d extra)", appt, date, start, pricing_level_id, employee_id, len(extras))
         return Booking(appointment_id=str(appt), booking_id=str(payload.get("primaryBookingId", "")), warnings=warnings)
 
     def cancel(self, appointment_id: str, *, notify: bool = False, enforce: bool = True) -> str:

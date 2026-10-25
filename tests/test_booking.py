@@ -16,6 +16,8 @@ CONFIG = {
     "venue_url": "https://www.fresha.com/a/tlg",
     "services": [
         {"category": "Senior Nail Services - TLG", "name": "Gel polish", "price": "from £34", "duration": "1 hour", "staff": ["Jess", "Sav"]},
+        {"category": "Senior Nail Services - TLG", "name": "Extra time for simple nail art", "price": "from £0.50", "duration": "15 mins", "staff": ["Jess"]},
+        {"category": "Senior Nail Services - TLG", "name": "Luxury manicure", "price": "£20", "duration": "1 hour", "staff": ["Jess", "Sav"]},
         {"category": "Hair by Lori-dee", "name": "Dry cut", "price": "£30", "duration": "45 mins", "staff": ["Lori-Dee"]},
         {"category": "Sophie cooper", "name": "Curling hair", "price": "£30", "duration": "45 mins", "staff": ["Sophie", "Lori-Dee"]},
         {"category": "Tattoos by Skin deep canvas", "name": "Small tattoo", "price": "from £50", "duration": "1 hour", "staff": ["Carmen"]},
@@ -37,6 +39,8 @@ CONFIG = {
     ],
 }
 GEL = fresha.Service("22563223", "Gel polish", "Senior Nail Services - TLG", "25845686", "34.00", "STARTS_AT", 3600, ("3440861", "5029221"))
+ART = fresha.Service("22563400", "Extra time for simple nail art", "Senior Nail Services - TLG", "25845773", "0.50", "STARTS_AT", 900, ("3440861",))
+MANI = fresha.Service("22563401", "Luxury manicure", "Senior Nail Services - TLG", "25845774", "20.00", "FIXED", 3600, ("3440861", "5029221"))
 DRY_CUT = fresha.Service("22563300", "Dry cut", "Hair by Lori-dee", "25845700", "30.00", "FIXED", 2700, ("3440849",))
 CURLS = fresha.Service("22563301", "Curling hair", "Sophie cooper", "25845701", "30.00", "FIXED", 2700, ("5630580", "3440849"))
 TATTOO = fresha.Service("22563302", "Small tattoo", "Tattoos by Skin deep canvas", "25845702", "50.00", "STARTS_AT", 3600, ("3440872",))
@@ -51,7 +55,7 @@ class FakeFresha:
 
     def __init__(self, clients=(DANNY,), services=(GEL,), conflicts=(), create_error=None):
         self.clients, self.services, self.conflict_list = list(clients), list(services), list(conflicts)
-        self.create_error, self.created, self.searched = create_error, [], []
+        self.create_error, self.created, self.searched, self.conflict_calls = create_error, [], [], []
 
     def catalog(self, **kw):
         return self.services
@@ -61,6 +65,7 @@ class FakeFresha:
         return [c for c in self.clients if query.casefold() in c.name.casefold()]
 
     def conflicts(self, *a):
+        self.conflict_calls.append(a)
         return self.conflict_list
 
     def create(self, **kw):
@@ -111,6 +116,39 @@ def test_books_and_records_and_tells_the_team(cfg):
     assert c.bookings[0]["appointment_id"] == "1332159791" and c.bookings[0]["client_id"] == "279113349"
     assert saved == [c]  # remembered before anything else can go wrong
     assert pinged == [("Gel polish with Jess, Thu 29 Oct 10am, for Danny Cooke", "1332159791")]
+
+
+def test_add_ons_go_into_the_same_appointment(cfg):
+    """User, 2026-10-25: "do you need any add-ons like nail art?" The capture the same
+    evening showed Fresha takes a second booking entry starting where the first ends."""
+    pinged = []
+    f = FakeFresha(services=[GEL, ART, MANI])
+    out, f, c = run(cfg, f=f, args={"add_ons": ["Extra time for simple nail art", "Luxury manicure"]},
+                    notify=lambda convo, summary, appt, **kw: pinged.append(summary))
+    assert out.startswith("Booked: Gel polish + Extra time for simple nail art + Luxury manicure with Jess, Thu 29 Oct 10am, for Danny Cooke")
+    create = f.created[0]
+    assert create["pricing_level_id"] == "25845686" and create["duration_s"] == 3600
+    assert create["extras"] == [("25845773", "0.50", 900), ("25845774", "20", 3600)]
+    assert f.conflict_calls[0][-1] == 3600 + 900 + 3600  # the whole slot is checked, not just the first service
+    assert c.bookings[0]["add_ons"] == ["Extra time for simple nail art", "Luxury manicure"]
+    assert pinged == ["Gel polish + Extra time for simple nail art + Luxury manicure with Jess, Thu 29 Oct 10am, for Danny Cooke"]
+    # Without add-ons nothing changes, and the key differs between the two shapes.
+    plain = booking.Request.from_args(args(), convo())
+    with_art = booking.Request.from_args(args(add_ons=["Extra time for simple nail art"]), convo())
+    assert booking.idempotency_key("psid1", plain, "25845686") != booking.idempotency_key("psid1", with_art, "25845686")
+    assert plain.add_ons == () and with_art.add_ons == ("Extra time for simple nail art",)
+
+
+def test_add_on_rules(cfg):
+    f = FakeFresha(services=[GEL, ART, MANI])
+    assert "not a service in the salon details" in run(cfg, f=f, args={"add_ons": ["Gems"]})[0]
+    assert "not in the same category" in run(cfg, f=f, args={"add_ons": ["Brow wax"]})[0]
+    assert "is the service itself" in run(cfg, f=f, args={"add_ons": ["Gel polish"]})[0]
+    assert "Sav does not do 'Extra time for simple nail art'" in run(cfg, f=f, args={"person": "Sav", "add_ons": ["Extra time for simple nail art"]})[0]
+    assert "Fresha does not list 'Luxury manicure' for Jess" in run(cfg, f=FakeFresha(services=[GEL, ART]), args={"add_ons": ["Luxury manicure"]})[0]
+    out, f, _ = run(cfg, f=FakeFresha(services=[GEL, ART], conflicts=[{"conflictType": "OVERLAP"}]), args={"add_ons": ["Extra time for simple nail art"]})
+    assert out.startswith("That slot is not free with the add-on time any more (OVERLAP)") and f.created == []
+    assert "add_ons" in brain.BOOKING_TOOL["input_schema"]["properties"]
 
 
 def test_idempotency_key_is_stable_per_conversation_and_slot():
@@ -365,6 +403,9 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
     prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
     assert "# Booking" in prompt and "`book_appointment`" in prompt and "Bernadette's" in prompt
     assert "# Hair" in prompt and "Never hair" in prompt and "one for Lori our hairdresser, I'll pass you on to her" in prompt
+    # User, 2026-10-25: ask once about add-ons while booking, and read them back.
+    assert "Do you want any add-ons with that lovely" in prompt and "gel polish with simple nail art, Jess" in prompt
+    assert "Extreme art, gems, chrome" in prompt and "`add_ons`" in prompt
     # User, 2026-10-25: answering "Lori" to the bot's question gets no second "Hiya, that's one for Lori our hairdresser".
     assert "Lovely, I'll pass you on to Lori and she'll pick this up with you here x" in prompt and "no greeting and no explaining who Lori is" in prompt
     # User, 2026-10-25: no stylist named means ask which, never push them to Lori-Dee.

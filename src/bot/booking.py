@@ -80,6 +80,7 @@ class Request:
     date: str
     time: str
     client_name: str
+    add_ons: tuple[str, ...] = ()  # extras in the same appointment (user, 2026-10-25: "do you need any add-ons like nail art?")
 
     @classmethod
     def from_args(cls, args: dict, convo: Conversation) -> "Request":
@@ -89,6 +90,7 @@ class Request:
             date=str(args.get("date") or "").strip(),
             time=_normalise_time(str(args.get("time") or "")),
             client_name=str(args.get("client_name") or convo.client_name or "").strip(),
+            add_ons=tuple(dict.fromkeys(str(a).strip() for a in (args.get("add_ons") or []) if str(a).strip())),
         )
 
 
@@ -128,16 +130,26 @@ def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, sa
                         f"ahead in this conversation. Book the service 'lash patch test' first (10 minutes, with Amber, Carmen or Jess, "
                         f"any free time in opening hours) at least {patch_tests.LEAD_HOURS:g} hours before this slot, then book this.")
 
+        extras: list[Service] = []
+        for extra in req.add_ons:
+            found = _find_service(f, member.employee_id, extra)
+            if found is None:
+                return f"Fresha does not list '{extra}' for {member.name}. Book without it, or offer someone who does both."
+            extras.append(found)
+        total_s = service.duration_s + sum(e.duration_s for e in extras)
+
         client, why = _match_client(f, req.client_name, convo)
         if client is None:
             return why
 
-        clashes = f.conflicts(service.pricing_level_id, member.employee_id, req.date, req.time, service.duration_s)
+        clashes = f.conflicts(service.pricing_level_id, member.employee_id, req.date, req.time, total_s)
         if clashes:
             kinds = ", ".join(sorted({str(c.get("conflictType", "conflict")) for c in clashes}))
-            return f"That slot is not free any more ({kinds}). Check availability again and offer another time."
+            room = " with the add-on time" if extras else ""
+            return f"That slot is not free{room} any more ({kinds}). Check availability again and offer another time."
 
-        summary = f"{service.name} with {member.name}, {_pretty(req.date, req.time)}, for {client.name}"
+        names = service.name + "".join(f" + {e.name}" for e in extras)
+        summary = f"{names} with {member.name}, {_pretty(req.date, req.time)}, for {client.name}"
         if dry_run:
             log.info("book_appointment dry run: %s", summary)
             return f"Would have booked (not live): {summary}. Tell the client it is booked and Fresha will text them to confirm with card details."
@@ -146,6 +158,7 @@ def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, sa
         booking = f.create(
             customer_id=client.id, pricing_level_id=service.pricing_level_id, price=_price_for_fresha(service.price),
             duration_s=service.duration_s, employee_id=member.employee_id, date=req.date, start=req.time, idempotency_key=key,
+            extras=[(e.pricing_level_id, _price_for_fresha(e.price), e.duration_s) for e in extras],
         )
     except SessionRejected:
         log.warning("book_appointment: Fresha rejected the session")
@@ -157,7 +170,7 @@ def book(args: dict, *, cfg: SalonConfig, convo: Conversation, dry_run: bool, sa
     convo.bookings.append({
         "appointment_id": booking.appointment_id, "service": service.name, "person": member.name,
         "date": req.date, "time": req.time, "client_id": client.id, "client_name": client.name,
-        "booked_at": int(time.time()),
+        "booked_at": int(time.time()), "add_ons": [e.name for e in extras],
     })
     if save:
         save(convo)  # the write happened; remember it even if the reply fails
@@ -347,6 +360,17 @@ def _validate(req: Request, cfg: SalonConfig, now: dt.datetime) -> str:
         others = ", ".join(listed.staff)
         return (f"{member.name} is not booked for '{listed.name}' here; it is done by {others}. "
                 "Offer one of them, or give the booking link.")
+    for extra in req.add_ons:
+        add = _config_service(cfg, extra)
+        if add is None:
+            return f"'{extra}' is not a service in the salon details. Use the exact name from the list for the add-on, or leave it off."
+        if _norm(add.name) == _norm(listed.name):
+            return f"'{add.name}' is the service itself; do not list it as an add-on too."
+        if add.category != listed.category:
+            return (f"'{add.name}' is not in the same category as '{listed.name}', so it cannot go into this appointment "
+                    "as an add-on. Book it separately or leave it off.")
+        if add.staff and not any(_same_person(member.name, n) for n in add.staff):
+            return f"{member.name} does not do '{add.name}'. Leave it off, or pick someone who does both."
     return ""
 
 
@@ -438,7 +462,7 @@ def _already_booked(convo: Conversation, req: Request) -> str:
 
 def idempotency_key(sender_id: str, req: Request, pricing_level_id: str) -> str:
     """21 url-safe characters, stable for the same conversation and slot."""
-    raw = f"{sender_id}|{req.date}|{req.time}|{pricing_level_id}".encode()
+    raw = (f"{sender_id}|{req.date}|{req.time}|{pricing_level_id}" + "".join(f"|{_norm(a)}" for a in req.add_ons)).encode()
     return base64.urlsafe_b64encode(hashlib.sha256(raw).digest()).decode()[:21]
 
 

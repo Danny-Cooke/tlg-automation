@@ -117,6 +117,16 @@ BOOKING_TOOL = {
                 "type": "string",
                 "description": "The client's full name as Fresha would have it: their profile name from the context unless they gave a different one in chat.",
             },
+            "add_ons": {
+                "type": "array",
+                "items": {"type": "string"},
+                "maxItems": 3,
+                "description": (
+                    "Extras booked into the same appointment with the same person, as exact service names from the "
+                    "same category as the service: \"Extra time for simple nail art\", \"Luxury manicure\", or a removal "
+                    "such as \"Gel polish removal\". Leave it out when there are none."
+                ),
+            },
         },
         "required": ["service", "person", "date", "time", "client_name"],
         "additionalProperties": False,
