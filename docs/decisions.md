@@ -741,3 +741,14 @@ Instagram channel subscribes the Page with `name`: the Page link is what
 Meta needs, the messages field is on the app's own subscription. Done by
 hand once the same afternoon and the Page now lists Tlg-app2.
 
+## 2026-10-25: Instagram reached the bot; the bot moves to Sonnet for speed
+
+The first Instagram DM to reach the bot (a tester, trigger word, Tlg-app2
+still unpublished) was answered correctly, a hair request handed to
+Lori-Dee and escalated to Jess, but the run took 20 s: 2 s token swap
+and profile, 3 s Fresha session check (once per warm container), 14 s
+the Opus call, 2 s escalation and send. Meta's webhook deadline is 20 s.
+The user's call: move to Sonnet 5.5 (`claude_model`) and re-test; Opus
+is one variable away if the voice suffers. Still to do for Instagram:
+switch Tlg-app2 to Live (Publish) before real clients' DMs are delivered.
+

@@ -88,7 +88,10 @@ are rendered into the system prompt at deploy time.
 - Client: `AnthropicAWS` from the `anthropic[aws]` package. Auth is the Lambda's
   IAM role via SigV4, so there is no Anthropic API key to store or rotate.
   Billing goes through AWS Marketplace.
-- Model: `claude-opus-5-5`, adaptive thinking, effort `low` (chat workload).
+- Model: `claude-sonnet-5-5` (Terraform `claude_model`), adaptive thinking, effort `low` (chat
+  workload). Opus until 2026-10-25: the first Instagram reply measured 20 s end to end,
+  14 s of it the Opus call, which is Meta's webhook deadline; Sonnet for speed, Opus is
+  one variable away if the voice suffers.
 - Output: structured JSON via `output_config.format`, so the handler never has to
   parse prose. Fields: `reply`, `escalate`, `escalation_reason`,
   `suggested_booking_link`.

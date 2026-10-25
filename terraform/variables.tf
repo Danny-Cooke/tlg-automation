@@ -27,9 +27,9 @@ variable "anthropic_aws_workspace_id" {
 }
 
 variable "claude_model" {
-  description = "Model id passed to the API."
+  description = "Model id passed to the API. Sonnet since 2026-10-25: the first Instagram reply took 20 s end to end, 14 s of it Opus drafting, on Meta's 20 s webhook deadline."
   type        = string
-  default     = "claude-opus-5-5"
+  default     = "claude-sonnet-5-5"
 }
 
 variable "claude_effort" {

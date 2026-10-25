@@ -17,7 +17,7 @@ from typing import Callable
 
 log = logging.getLogger(__name__)
 
-MODEL = os.environ.get("CLAUDE_MODEL", "claude-opus-5-5")
+MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
 EFFORT = os.environ.get("CLAUDE_EFFORT", "low")
 MAX_TOKENS = 1024  # replies are two or three sentences; the JSON wrapper is small
 MAX_TOOL_ROUNDS = 5  # a move is check, availability, book, cancel; more than this is a loop
