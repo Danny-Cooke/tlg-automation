@@ -50,7 +50,11 @@ Fresha's hours because those are the bookable ones. See open-questions.
 
 - Website https://tlg-beauty.co.uk/, email info@tlg-beauty.co.uk, WhatsApp
   07512 574127, phone 01743 669166, address 4a Roushill, Shrewsbury SY1 1PQ.
-- Facebook page id 61577501519464 (page name "The Looking Glass Shrewsbury").
+- Facebook page id 625244944014434 (page name "The Looking Glass Shrewsbury";
+  Business Suite `asset_id`, and what Meta returns for the Page). The id
+  61577501519464 recorded earlier is not a Page: Meta answers "does not
+  exist" for it (checked 2026-10-25), so the inbox links in alerts had
+  pointed nowhere until then.
   Instagram @lookingglassbeautysalons. Neither is readable without a login.
 - Jess is Jess Preston: nail artist, academy trainer, salon director.
 - Fresha rating 5.0 from 232 reviews at the time of reading.

@@ -74,7 +74,10 @@ def secrets() -> dict:
 
     arn = os.environ["META_SECRET_ARN"]
     raw = boto3.client("secretsmanager").get_secret_value(SecretId=arn)["SecretString"]
-    return json.loads(raw)
+    s = json.loads(raw)
+    if s.get("page_token"):  # a System User token is swapped for the Page's own; a Page token passes through
+        s["page_token"] = meta.page_token_for(s["page_token"], os.environ.get("META_PAGE_ID", ""), app_secret=s.get("app_secret"))
+    return s
 
 
 @lru_cache(maxsize=1)

@@ -61,4 +61,4 @@ salon = {
 calendar_emails = {}
 
 # The Facebook Page the bots answer for. Public, not a secret.
-meta_page_id = "61577501519464"
+meta_page_id = "625244944014434"

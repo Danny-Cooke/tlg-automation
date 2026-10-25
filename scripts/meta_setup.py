@@ -71,6 +71,21 @@ def subscribe_app(app_id: str, app_token: str, obj: str, fields: list[str], call
     _check(r, f"subscribe app to {obj} webhooks at {callback}")
 
 
+def page_token_for(token: str, page_id: str, app_secret: str) -> str:
+    """A System User token (the Instagram channel's) is not the Page; Meta
+    gives out the Page's own token for it. A Page token comes back as is."""
+    r = requests.get(
+        f"{GRAPH}/{page_id}",
+        params={"access_token": token, "appsecret_proof": appsecret_proof(token, app_secret), "fields": "access_token"},
+        timeout=30,
+    )
+    if r.status_code >= 400 or not r.json().get("access_token"):
+        return token
+    if r.json()["access_token"] != token:
+        print("ok: swapped the stored token for the Page's own token")
+    return r.json()["access_token"]
+
+
 def token_page(page_token: str, app_secret: str) -> dict:
     """Which Page the token belongs to, if the token may say (needs
     pages_read_engagement, which a Messenger-only token lacks). Best effort."""
@@ -148,9 +163,10 @@ def main() -> None:
     subscribe_app(a.app_id, app_access_token(a.app_id, a.app_secret), spec["object"], spec["fields"], a.callback_url, a.verify_token)
 
     if a.page_id and a.page_token:
-        subscribed = subscribe_page(a.page_id, a.page_token, a.app_secret, spec["fields"])
-        if subscribed and a.channel == "instagram":
-            ig = linked_instagram(a.page_id, a.page_token, a.app_secret)
+        page_token = page_token_for(a.page_token, a.page_id, a.app_secret)
+        subscribed = subscribe_page(a.page_id, page_token, a.app_secret, spec["fields"])
+        if a.channel == "instagram":
+            ig = linked_instagram(a.page_id, page_token, a.app_secret)
             print(f"Linked Instagram: {ig or 'none. Link the IG professional account to the Page in Business Settings.'}")
     else:
         print("No page token given: subscribe the Page to this app in the console (Webhooks > Add subscriptions).")

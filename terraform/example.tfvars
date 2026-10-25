@@ -8,7 +8,7 @@ environment = "prod"
 owner_email = "you@example.com"
 
 # Meta: one app per channel. Tlg-app1 is Messenger, Tlg-app2 is Instagram.
-meta_page_id              = "61577501519464"
+meta_page_id              = "625244944014434"
 meta_messenger_app_id     = "replace-me"
 meta_messenger_app_secret = "replace-me"
 meta_instagram_app_id     = "" # Tlg-app2, when ready

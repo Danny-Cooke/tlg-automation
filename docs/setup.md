@@ -47,12 +47,17 @@ Facebook Page. Done 2026-10-19: both apps exist.
    Page with Full access "Everything" (the Instagram profile shares it),
    the app Tlg-app2 with Develop app; Generate token for Tlg-app2, expiry
    Never, with `instagram_basic`, `instagram_manage_messages`,
-   `pages_read_engagement`, `pages_show_list` (all Tlg-app2 offers: its
-   use case is Instagram only, so `pages_messaging` and
-   `pages_manage_metadata` are not in its list; the pipeline therefore
-   cannot subscribe the Page to Tlg-app2 itself and warns instead, see
-   section 3). Needed before the bots can reply; until then they store,
-   log and email what arrives.
+   `pages_read_engagement`, `pages_show_list` and `pages_manage_metadata`.
+   The last one is what lets the pipeline subscribe the Page to the app;
+   the Instagram use case does not offer it, so Tlg-app2 also has the use
+   case "Manage everything on your Page" (Dashboard > Add use cases),
+   where `pages_manage_metadata` was added under Permissions and features
+   (2026-10-25). A System User token is not the Page: Meta's "me" is the
+   system user, so the bot and the registration script swap it for the
+   Page's own token on first use (`meta.page_token_for`, GET
+   `/{page_id}?fields=access_token`; same permissions, never expires).
+   That needs the real Page id, 625244944014434. Needed before the bots
+   can reply; until then they store, log and email what arrives.
 5. **Testers.** Until app review, Meta delivers messages only from people
    with a role on the app. Add your own Facebook and Instagram accounts as
    testers (App roles > Roles) so you can message the Page and see the bots
@@ -102,9 +107,11 @@ Instagram channel is registered once `TLG_APP2_SECRET` exists; the run log
 then shows the linked Instagram username. Registration
 is idempotent, so every deploy re-asserts it.
 
-Without a page token Meta will not deliver Page messages until the Page is
-subscribed to the app, which the console can do: Messenger (or Instagram) >
-Settings > Webhooks > Add subscriptions, tick messages. To run the script
+Without a page token, or with one that lacks `pages_manage_metadata` (the
+Instagram one, 2026-10-25), Meta will not deliver Page messages until the
+Page is subscribed to the app, which the console can do: the app >
+Messenger > Instagram settings (or Messenger API settings) > Webhooks >
+Add subscriptions next to the Page, tick messages. To run the script
 by hand instead, see its docstring.
 
 Test: from a tester account, DM the Page starting with the trigger word.

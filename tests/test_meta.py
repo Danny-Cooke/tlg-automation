@@ -142,3 +142,34 @@ def test_send_text_posts_expected_payload():
     assert len(kw["params"]["appsecret_proof"]) == 64
     assert kw["json"]["message"] == {"text": "Hello!"}
     json.dumps(kw["json"])  # serialisable
+
+
+def test_page_token_for_swaps_a_system_user_token_and_keeps_a_page_token():
+    """The Instagram channel's token is a System User token (2026-10-25); Meta's
+    "me" is then the system user, so the Page's own token is fetched once."""
+    class Http:
+        def __init__(self, status, body):
+            self.status, self.body, self.calls = status, body, []
+
+        def get(self, url, params, timeout):
+            self.calls.append((url, params))
+            status, body = self.status, self.body
+
+            class R:
+                status_code = status
+
+                def json(self):
+                    return body
+
+            return R()
+
+    http = Http(200, {"access_token": "PAGE", "id": "625244944014434"})
+    assert meta.page_token_for("SYSTEM", "625244944014434", app_secret="s", session=http) == "PAGE"
+    url, params = http.calls[0]
+    assert url.endswith("/625244944014434") and params["fields"] == "access_token" and "appsecret_proof" in params
+    # A Messenger Page token lacks pages_show_list: Meta refuses, the token stands.
+    assert meta.page_token_for("PAGE1", "625244944014434", session=Http(400, {"error": {}})) == "PAGE1"
+    # Nothing to exchange with: no call at all.
+    quiet = Http(200, {})
+    assert meta.page_token_for("TOK", "", session=quiet) == "TOK" and meta.page_token_for("", "1", session=quiet) == "" and quiet.calls == []
+

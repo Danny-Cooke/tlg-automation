@@ -726,3 +726,14 @@ never expires. The Instagram app's own "allow access to messages" switch
 (Settings > Messages > Connected tools) is still the owner's to check on
 the phone; Meta exposes it through no API.
 
+Same evening, after the token was made: Tlg-app2's permission list offers
+only `instagram_basic`, `instagram_manage_messages`, `pages_read_engagement`
+and `pages_show_list` (its use case is Instagram only), and a System User
+token is not the Page, so the bot and the registration script now swap it
+for the Page's own token on first use (`meta.page_token_for`). Doing that
+showed the Page id the repo had carried since the start, 61577501519464,
+is not a Page at all; the Page is 625244944014434, fixed everywhere. For
+the Page subscription Tlg-app2 gained the use case "Manage everything on
+your Page", which carries `pages_manage_metadata`; the token was made
+again with it, so the pipeline subscribes the Page itself.
+

@@ -83,6 +83,39 @@ def appsecret_proof(access_token: str, app_secret: str) -> str:
     return hmac.new(app_secret.encode(), access_token.encode(), hashlib.sha256).hexdigest()
 
 
+def page_token_for(token: str, page_id: str, *, app_secret: str | None = None, session=None) -> str:
+    """A token the Page's "me" endpoints accept.
+
+    A Page token comes back unchanged. A System User token (Business
+    Settings, never expires; the Instagram channel's since 2026-10-25) is
+    not the Page: to Meta its "me" is the system user, so /me/messages
+    fails. Meta hands out the Page's own token for it, GET
+    /{page_id}?fields=access_token, which carries the same permissions and
+    never expires either. Anything that goes wrong returns the token as
+    given, so a bad exchange changes nothing for a Page token.
+    """
+    if not token or not page_id:
+        return token
+    import requests
+
+    http = session or requests
+    params = {"access_token": token, "fields": "access_token"}
+    if app_secret:
+        params["appsecret_proof"] = appsecret_proof(token, app_secret)
+    try:
+        resp = http.get(f"{GRAPH_BASE}/{page_id}", params=params, timeout=10)
+        if resp.status_code >= 400:
+            log.info("Page token exchange not available (%s); using the token as given", resp.status_code)
+            return token
+        exchanged = resp.json().get("access_token") or token
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Page token exchange failed: %s", exc)
+        return token
+    if exchanged != token:
+        log.info("Using the Page token Meta issued for the stored token")
+    return exchanged
+
+
 def send_text(recipient_id: str, text: str, page_token: str, *, app_secret: str | None = None, session=None) -> dict:
     """Send a plain text reply. Same endpoint serves Messenger and Instagram."""
     import requests  # local import keeps unit tests free of network deps
