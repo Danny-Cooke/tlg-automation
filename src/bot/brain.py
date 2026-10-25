@@ -17,10 +17,12 @@ from typing import Callable
 
 log = logging.getLogger(__name__)
 
-MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
+MODEL = os.environ.get("CLAUDE_MODEL", "claude-opus-5-5")
 EFFORT = os.environ.get("CLAUDE_EFFORT", "low")
 MAX_TOKENS = 1024  # replies are two or three sentences; the JSON wrapper is small
 MAX_TOOL_ROUNDS = 5  # a move is check, availability, book, cancel; more than this is a loop
+NO_MORE_TOOLS = ("That is enough looking for this turn. Answer the client now from what the lookups above "
+                 "already told you: offer what you found free, or say what was not and ask what other day suits.")
 
 ESCALATE_TO = ["", "jess", "carmen", "lori-dee"]
 AREAS = ["", "nails", "hair", "tattoos", "aesthetics", "beauty", "general"]
@@ -269,6 +271,19 @@ def ask(
         for use in tool_uses:
             results.append({"type": "tool_result", "tool_use_id": use.id, "content": _run_tool(tools or {}, use.name, use.input)})
         messages.append({"role": "user", "content": results})
+    # The cap is for runaway loops, but the model usually has the answer by now
+    # (2026-10-25: six lookups for "BIAB with Sav next week" when the first had
+    # found Thursday free, then the holding line). One more call with the tools
+    # closed, so it answers from what it found; the escalation only if it still cannot.
+    log.warning("Tool cap after %d rounds; asking for an answer from what was found", MAX_TOOL_ROUNDS)
+    messages[-1]["content"].append({"type": "text", "text": NO_MORE_TOOLS})
+    try:
+        response = client.beta.messages.create(messages=messages, tool_choice={"type": "none"}, **request)
+    except Exception:  # noqa: BLE001
+        log.exception("Claude call failed")
+        return _safe_escalation("Claude call failed")
+    if response.stop_reason != "tool_use":
+        return parse_response(response)
     log.warning("Gave up after %d tool rounds", MAX_TOOL_ROUNDS)
     return _safe_escalation("Too many availability lookups in one turn")
 

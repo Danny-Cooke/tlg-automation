@@ -80,7 +80,12 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "the returned times the way the team does (\"we have 10am or 1.30 on Friday?\"). "
         "Never invent a time; if the tool says nothing is free or could not check, say "
         "so and offer another day or the booking link. The tool only reads: it cannot "
-        "hold or book a slot.",
+        "hold or book a slot. One lookup answers the question (user, 2026-10-25: six "
+        "lookups for \"BIAB with Sav next week\" ended in a holding line when the first "
+        "had found Thursday free). Check the days they asked about, with the person they "
+        "asked for; if any of those is free, offer it and stop looking. If none is, say so "
+        "and ask what other day suits, or offer one other person who does it if they had "
+        "no preference. Never go on to another week or other people unasked.",
         "",
         "# Booking",
         "",

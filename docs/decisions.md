@@ -792,3 +792,25 @@ the bot's question: "Lovely, I'll pass you on to Lori and she'll pick this
 up with you here x", no greeting. The same no-fresh-Hiya rule is spelled
 out for Sophie's line when it follows the question.
 
+## 2026-10-25: back to Opus; the tool cap answers from what it found; one lookup per question
+
+Evening test on Sonnet: "hi i want to book nails next week", "BIAB please
+with Sav?". The first lookup found Sav free on Thursday 29th (2pm, 6.30,
+6.45). The model then checked Saturday, the whole of the following week,
+Jess and Carmen, and Tuesday again: six lookups, past the five-round cap,
+so the code threw the results away, sent the holding line "give me a
+little time to have a think" and pinged the team. The user: "I don't like
+this model change ... why is it asking for time to come back to me".
+
+Three changes. The cap no longer ends in the holding line: one more call
+with `tool_choice` none and a note that the looking is over, so the model
+answers from the lookups it already ran; the escalation only if it still
+asks for a tool. The availability rule now says one lookup answers the
+question: check the days and person asked for, offer what is free, and if
+nothing is, say so and ask what other day suits; never another week or
+other people unasked. And the model is Opus again (`claude_model`):
+Sonnet's call took 12.4 s against 14 s, not worth a voice and judgement
+the user dislikes. The 20 s problem is the rest of the reply path (cold
+start, the Fresha session check, a retry from Meta at 20 s that the
+duplicate check absorbed) and is tomorrow's job.
+

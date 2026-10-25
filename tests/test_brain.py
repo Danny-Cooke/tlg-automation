@@ -143,12 +143,27 @@ def test_tool_failure_is_told_to_the_model_not_raised():
     assert client.requests[1]["messages"][-1]["content"][0]["content"] == "check_availability failed: ConnectionError"
 
 
-def test_ask_gives_up_after_too_many_tool_rounds():
+def test_at_the_tool_cap_the_model_answers_from_what_it_found():
+    """2026-10-25: six lookups for "BIAB with Sav next week" hit the cap and the client got
+    the holding line although the first lookup had found Thursday free. Now the cap closes
+    the tools and asks for an answer from the results so far."""
     loops = [tool_use_response("check_availability", {}, uid=f"t{i}") for i in range(brain.MAX_TOOL_ROUNDS + 1)]
+    client = FakeClient(loops + [fake_response(FINAL)])
+    reply = brain.ask("SYSTEM", [], "Friday?", tools={"check_availability": lambda a: "Thu: 2pm"}, client=client)
+    assert reply.escalate is False and reply.reply == "We have 10am or 1.30 Friday?"
+    assert len(client.requests) == brain.MAX_TOOL_ROUNDS + 2
+    last = client.requests[-1]
+    assert last["tool_choice"] == {"type": "none"} and "tools" in last  # tools stay defined for the history, closed for this call
+    assert last["messages"][-1]["content"][0]["type"] == "tool_result" and last["messages"][-1]["content"][-1] == {"type": "text", "text": brain.NO_MORE_TOOLS}
+    assert all("tool_choice" not in r for r in client.requests[:-1])
+
+
+def test_ask_gives_up_if_it_still_wants_a_tool_at_the_cap():
+    loops = [tool_use_response("check_availability", {}, uid=f"t{i}") for i in range(brain.MAX_TOOL_ROUNDS + 2)]
     client = FakeClient(loops + [fake_response(FINAL)])
     reply = brain.ask("SYSTEM", [], "Friday?", tools={"check_availability": lambda a: "nothing free"}, client=client)
     assert reply.escalate is True and reply.reply == brain.SAFE_REPLY and reply.escalate_to == "jess"
-    assert len(client.requests) == brain.MAX_TOOL_ROUNDS + 1
+    assert len(client.requests) == brain.MAX_TOOL_ROUNDS + 2
 
 
 def test_api_failure_is_a_safe_escalation():
