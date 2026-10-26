@@ -1,0 +1,43 @@
+[Print on Letterhead or insert Address]
+
+>"/> FORMTEXT <<Name>>
+>"/> FORMTEXT <<Title>>
+>"/> FORMTEXT <<Company Name>>
+>"/> FORMTEXT <<Company Address>>
+>"/> FORMTEXT <<Company Address>>
+>"/> FORMTEXT <<Postcode>>
+
+>"/> FORMTEXT <<Date>>
+Re: ‘>"/> FORMTEXT <<Trade Mark>>’, registered trade mark owned by >"/> FORMTEXT <<name of owner>>
+
+Dear >"/> FORMTEXT <<name>>,
+
+We, >"/> FORMTEXT <<insert business name>>, are the owners of the abovementioned registered trade mark, registration number >"/> FORMTEXT <<insert number>>, registered in class(es) >"/> FORMTEXT <<insert classes>>. The trade mark was first registered [by us] OR [by >"/> FORMTEXT <<insert name and details of original registrant>>] on >"/> FORMTEXT <<date>>  [and was assigned to us on >"/> FORMTEXT <<date>> by >"/> FORMTEXT <<insert name and details of assignor>>.]  Full details of the trade mark are enclosed in Schedule 1.
+
+[We use our trade mark for >"/> FORMTEXT <<insert brief description of use, if relevant>>.]
+
+[On >"/> FORMTEXT <<date>> we became aware that you are >"/> FORMTEXT <<insert description of activity>>.  We feel that, in light of this, it is necessary for our business and yours to discuss the matter further in order to better understand our respective positions and activities.  We are not, at this point, accusing you of unlawful infringement of our trade mark but we are of the opinion that further investigation is necessary and would be mutually beneficial.
+
+We look forward to your response and hope that this matter can be resolved quickly and without complication.]
+
+OR
+
+[On >"/> FORMTEXT <<date>> we became aware that you are >"/> FORMTEXT <<insert details of alledged infringement>>.  [Please also refer to the enclosed evidence in Schedule 2.]
+
+We consider that this activity constitutes a primary infringement of our trade mark.  [By using the >"/> FORMTEXT <<infringing sign or mark>>, which is identical to our trade mark, in relation to identical [goods] AND/OR [services] to those for which our trade mark is registered, you are infringing our trade mark under section 10(1) of the Trade Marks Act 1994] OR [By using the >"/> FORMTEXT <<infringing sign or mark>>, which is [similar] OR [identical] to our trade mark, in relation to [identical] AND/OR [similar] [goods] AND/OR [services] to those for which our trade mark is registered, resulting in a likelihood of confusion on the part of the public, you are infringing our trade mark under section 10(2) of the Trade Marks Act 1994].  [Furthermore, our trade mark has a reputation within the United Kingdom and we are of the view that your use of the >"/> FORMTEXT <<infringing sign or mark>> [takes unfair advantage of] AND/OR [is detrimental to] the distinctive character of our trade mark and that you are therefore also infringing our trade mark under section 10(3) of the Trade Marks Act 1994.] [Further evidence in support of these allegations is enclosed in Schedule 3.]
+
+As our consent to such activities was neither sought nor granted we must inform you that we find your activities unacceptable and we hereby request that you take the following action within >"/> FORMTEXT <<insert period, e.g. 14 days>>:
+[Cease all conduct complained of in this letter, namely >"/> FORMTEXT <<describe the alledged infringement>>;] AND/OR
+[Provide to us full details of all sales and supplies that fall within the scope of the conduct complained of including, but not limited to, full details of quantities supplied, prices (including profit margins), >"/> FORMTEXT <<insert further information required>>;] AND/OR
+[Deliver to us any and all goods, documents and other materials in your possession that fall within the scope of the conduct complained of in this letter and to continue to deliver to us any and all goods and other materials that may come into your possession thereafter falling within that same scope within >"/> FORMTEXT <<insert period, e.g. 7 days>> of your receipt of them;] AND/OR
+[Use your best endeavours to recover all stocks of any infringing items from purchasers and deliver such stocks to us;]
+[Deliver to us a written undertaking that you will desist forthwith from the conduct complained of above;] AND/OR
+[Deliver to us a written undertaking that you will pay to us any and all such damages or profits relating to the conduct complained of above as may be agreed or, if no agreement is reached, determined by the court;] AND/OR
+[Deliver to us a witness statement, endorsed with a statement of truth, from a properly authorised officer of your company, confirming that you have fully complied with the obligations set out herein and that the details required under part b) are accurate and comprehensive.]
+
+We expect your acknowledgement of this letter and your response to our requests by >"/> FORMTEXT <<insert date>>.  If it becomes necessary to initiate legal proceedings, which may be issued at any time and without further notice, we may be entitled to remedies including, but not limited to, an injunction, damages, an account of profits, legal costs and interest, or delivery up (or destruction) of the offending goods and/or other materials.]
+
+Yours faithfully,
+
+___________________________________
+>"/> FORMTEXT <<insert name and position, where applicable>>

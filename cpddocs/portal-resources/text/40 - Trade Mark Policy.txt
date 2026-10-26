@@ -1,0 +1,97 @@
+>"/> FORMTEXT <<Company Name>>
+Trade Mark Policy
+>"/> FORMTEXT <<Date>>
+Introduction
+This Policy sets out rules and guidance for all employees and any and all agents, contractors, or other third parties working on behalf of the Company (“Representatives”) regarding trade marks (registered and unregistered).
+The Company is committed to the protection of its trade marks, whether registered or unregistered, and to the acknowledgement, recognition, and correct use of third-party trade marks. This Policy aims to raise awareness of trade mark law within the Company, to ensure the protection and enforcement of trade marks belonging to the Company, and to ensure that all employees and Representatives working on behalf of the Company respect the trade marks of third parties.
+Scope of Policy
+Trade Marks represent valuable intellectual property rights and a key asset to the Company. This applies equally to registered trade marks and to unregistered trade marks.
+This Policy applies to all employees and Representatives of the Company. All employees and Representatives are expected to comply with this Policy at all times. This Policy does not form a part of any contract of employment and may be amended at any time. Breaches of this Policy may result in disciplinary action.
+A trade mark is any word, name, symbol, logo, device, or any combination thereof, used to distinguish the goods or services of one party from those provided by other parties and to indicate the source of those goods or services. Trade marks may be registered or unregistered (see Part 3 for more information).
+This Policy applies to all trade marks belonging to the Company and to the use by the Company’s employees and Representatives of trade marks belonging to other parties during the course of their work.
+Any questions relating to trade marks, other intellectual property rights, or to this Policy, should be referred to [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>].
+About Trade Marks
+A trade mark can take many forms. It may be any one of the following, or a combination thereof:
+Words;
+Slogans;
+Designs;
+Letters;
+Numerals;
+Doman names;
+The shape of goods or their packaging;
+Smells;
+Sounds;
+Colours;
+Gestures;
+Moving digital images.
+A trade mark can be registered or unregistered. Registered trade marks must meet certain criteria in order to be registrable and the formalities for registration must be observed. Unregistered trade marks are not protected by any formal procedure. Instead, they rely on the trading goodwill associated with them and can be protected by a passing off action. It is generally desirable to register a trade mark, but in some cases it will not be possible to do so.
+When registering a trade mark, an application must be made to the relevant trade mark office (in the UK, this is the Intellectual Property Office). There are two types of grounds on which registration may be refused. It is therefore important to check that a proposed trade mark does not fall within one or more of these grounds. The first grounds are known as the “absolute” grounds for refusal, the second are known as the “relative” grounds for refusal.
+Establishing and Maintaining Trade Marks
+If any employee or Representative is required to design and develop a trade mark in the course of their work, all formalities for registration and/or protection shall be handled by [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>].
+The Company’s trade marks must be used correctly and consistently. This helps to keep them protected and increases their value.
+Notwithstanding the relative grounds for refusal of registration, a non-distinctive trade mark (i.e. one which is descriptive or has become generic) can acquire distinctiveness through use over time and become registrable.
+The reverse may also occur and failure to use trade marks consistently can result in a trade mark losing its distinctiveness. If this occurs, a registered trade mark may be put at risk of having its registration revoked. Parts 4.5 to 4.8 of this Policy in particular are intended to help avoid this.
+All Company trade marks must be used strictly as shown in >"/> FORMTEXT <<insert location, e.g. "the Company's Brand Manual">> and only in relation to the [goods] AND/OR [services] to which that trade mark relates.
+When referred to in a body of text, trade marks should be italicised [and in bold type] or presented in their logo form, as appropriate.
+Trade marks consisting of words must not be used as a verb or a noun. For example, it is acceptable to say that our customers like >"/> FORMTEXT <<insert example trade mark>> >"/> FORMTEXT <<insert product or service>>, but it is not acceptable to say that our customers like >"/> FORMTEXT <<insert trade mark>>s.
+Unless a trade mark is designed to be used in the possessive form, do not use a trade mark in a possessive form. For example, it is acceptable to say that the Company is excited about the future of >"/> FORMTEXT <<insert example trade mark>> >"/> FORMTEXT <<insert product or service>>, but it is not acceptable to say that the Company is excited about >"/> FORMTEXT <<insert trade mark>>’s future.
+Using Trade Marks
+When using Company trade marks [in sales and marketing materials] AND/OR [on products and product packaging] AND/OR [>"/> FORMTEXT <<insert further applications relevant to your goods and/or services>>], the trade mark should be accompanied by one of the notices shown below.
+For registered trade marks, the following notice should be applied:
+“[®] OR [Registered trade mark], >"/> FORMTEXT <<insert Company name>>”.
+For unregistered trade marks, the following notice should be applied:
+“[TM] OR [Trade mark of] >"/> FORMTEXT <<insert Company name>>”.
+The “TM” or “trade mark” label signifies only that the Company is using an unregistered mark as a trade mark and is used to communicate that fact to third parties. The ® or “registered trade mark” label must only be used in relation to a mark that is actually registered. It is a criminal offence to misrepresent an unregistered trade mark as a registered one.
+If you are unsure which notice to use with a particular trade mark and/or are uncertain as to a mark’s registration status, please contact [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>].
+Record-Keeping
+The Company shall keep records of its trade marks in order to demonstrate how those trade marks have been used and when. Such records are important when seeking to protect and enforce trade marks.
+When dealing with trade marks, employees and Representatives should keep the following materials, as applicable, ensuring that they are dated:
+[Product packaging samples bearing the trade mark;]
+[Advertising and marketing material samples bearing the trade mark;]
+In the case of new trade marks, copies of invoices, purchase orders, and other documents showing when the trade mark in question was first used;
+Sales records for [goods] AND/OR [services] provided under the trade mark;
+[>"/> FORMTEXT <<insert additional types of records as required>>.]
+Any and all records kept by employees and Representatives in accordance with this Policy should be forwarded to  [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>] on a [regular] OR [>"/> FORMTEXT <<insert interval>>] basis.
+Third-Party Trade Marks
+All employees and Representatives must be aware of third-party trade marks and must take care to avoid infringing them in the course of their work.
+Particular care must be taken when designing, developing, and using new trade marks or existing Company trade marks in a new context. Clearance must be obtained from [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>] before doing so and it may be necessary for searches of existing trade marks to be conducted before such clearance can be granted.
+Ideas for new trade marks and any other forms of branding as well as changes to existing trade marks and branding must not be disclosed to the public without clearance as stated above in Part 7.2.
+Trade marks belonging to third parties (whether registered or unregistered) should not be used in the course of your work unless the Company has a suitable licence to do so. Details of any and all available licences are available from [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>].
+Referring to competitors or to their products and services in any sales and marketing materials must be handled with care, regardless of whether the competitor or their products or services are referred to expressly or by implication. Any such references should be cleared by [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>].
+[The Company may acquire licences to use third-party trade marks. Any such trade marks may only be used in accordance with the applicable licence and with any branding or similar guidelines provided by the trade mark owner.]
+OR
+[The Company uses the following trade marks under licence from the following third parties. These trade marks may only be used in accordance with the applicable licence and with any branding or similar guidelines provided by the trade mark owner:
+>"/> FORMTEXT <<Insert trade mark / name of trade mark>>, a [registered] OR [unregistered] trade mark owned by >"/> FORMTEXT <<insert licensor name>>;
+[>"/> FORMTEXT <<Insert additional trade marks and licensors as required>>.]]
+All third-party registered trade marks must be accompanied by a notice in the following form:
+“[®] OR [Registered trade mark], owned by, and used under licence from, {Name of Licensor}.”
+All third-party unregistered trade marks must be accompanied by a notice in the following form:
+“[TM] OR [Trade mark], owned by, and used under licence from, {Name of Licensor}.”
+Notifying Trade Mark Infringement
+All employees and Representatives should be aware of trade mark infringement.
+A registered trade mark may be infringed if:
+A person uses, in the course of trade, a sign which is identical to the trade mark in relation to goods or services which are identical to those for which the trade mark is registered;
+A person uses, in the course of trade, a sign which is identical to the trade mark in relation to goods or services which are similar to those for which the trade mark is registered or uses a sign which is similar in relation to goods or services which are identical or similar and there exists a likelihood of confusion on the part of the public (including a likelihood of association with the trade mark);
+A person uses, in the course of trade, in relation to goods or services (whether identical, similar, or not similar), a sign which is identical or similar to the trade mark, where the trade mark has a reputation in the UK and the use of the sign takes unfair advantage of, or is detrimental to, the distinctive character or repute of the trade mark.
+An unregistered trade mark may be infringed if (these factors summarise a passing off action):
+The owner of the unregistered mark has accumulated goodwill (i.e. the benefit and advantage of the name, reputation, and connection with their business);
+There has been a misrepresentation made by another party in the course of trade that has resulted in confusion or a likelihood of confusion on the part of the public; and
+There has been damage or there exists a likelihood of damage (reputational, financial, or to goodwill).
+If any employee or Representative suspects or becomes aware of any infringement by a third party of any registered or unregistered trade mark (or any other intellectual property rights) belonging to the Company, they should immediately notify [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>], providing as much detail as possible about the infringement.
+If any employee or Representative suspects or becomes aware of any infringement by another employee or Representative of any trade mark (or any other intellectual property rights) belonging to a third party, they should immediately notify [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>], providing as much detail as possible about the infringement.
+Requests to Use Company Trade Marks
+If any employee or Representative receives any request, whether from another employee or Representative or from an external third party, to use or reproduce any trade mark (registered or otherwise) belonging to the Company, that request must be referred to [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>].
+No employees or Representatives other than [the Company’s Trade Mark Officer, >"/> FORMTEXT <<insert name>>, >"/> FORMTEXT <<insert contact details>>] AND/OR [>"/> FORMTEXT <<insert name(s) and/or position(s)>>, >"/> FORMTEXT <<insert contact details>>] should negotiate any trade mark assignments or licences on the Company’s behalf [without authorisation].
+The Company shall keep full records of any and all such requests along with any assignments made or licences granted in response.
+Implementation of Policy
+This Policy shall be deemed effective as of >"/> FORMTEXT <<insert date>>. No part of this Policy shall have retroactive effect and shall thus apply only to matters occurring on or after this date.
+This Policy has been approved and authorised by:
+Name:
+>"/> FORMTEXT <<insert full name>>
+Position:
+>"/> FORMTEXT <<insert position>>
+Date:
+>"/> FORMTEXT <<insert date>>
+Due for Review by:
+>"/> FORMTEXT <<insert date>>
+Signature:

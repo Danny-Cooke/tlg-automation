@@ -1,0 +1,132 @@
+Trade Mark Enforcement Guidance Notes
+
+1 A Brief Introduction to Trade Marks
+
+Governed principally in the UK by the Trade Marks Act 1994, trade marks are a form of intellectual property used to distinguish the goods or services of one undertaking from those of another.  In many cases, the term is often used interchangeably with “name, brand, logo” and other similar terms.
+
+Trade marks may be registered or unregistered.  From a day-to-day trading perspective this may make little difference in many cases.  From an enforcement perspective, however, the difference is significant.  This will be covered in more detail below but simply put for now, a registered trade mark can be protected as such with a specific action designed for it.  An unregistered trade mark may be protected by the common law action known as passing off.
+
+Trade mark symbols can often be a cause of confusion.  The “TM” device, for example, does not mean that a trade mark is registered; only that it is being used as a trade mark.  The ® device or the less common “RTM” device, on the other hand, means that a trade mark is registered.  Use of these latter symbols on a trade mark which is not registered constitutes a criminal offence.
+
+2 Registration – The Basics
+
+As you will see, it is reasonably safe to say that a well-researched, diligently prepared trade mark application should result in a registered trade mark that will not be likely to infringe another mark.
+
+First and foremost, if a mark is already registered which is the same as, or similar, to the one for which you seek registration and for similar goods or services, registration will not be possible.  This work is carried out by the Intellectual Property Office (“the IPO”) as part of the application process, however this does not mean that you would not do well to search the IPO’s trade mark database yourself first as part of your application preparation.
+
+Further safety is provided in the third phase of the application process.  After initial approval by the IPO, trade mark applications are published and left open for opposition for two months.
+
+If your trade mark is unopposed, your trade mark becomes registered.  Nevertheless, in the event that your trade mark is still similar or identical to a trade mark being used by another party who failed to oppose it, it still may be opposed at a later date.
+
+3 Unregistered Trade Marks
+
+For various reasons, you may decide to forego the expense and process of registering your trade mark.  It may be that your trademark does not meet the criteria for registration or it may be simply that you do not feel that you need the additional protection offered by registration.  You may have been using your trade mark for many years and have acquired substantial reputation and recognition associated with it and feel that this is quite sufficient.
+
+When weighing up the respective merits of registration vs. non-registration however it should be borne in mind that, whilst an unregistered trade mark can be protected by a passing-off action, the costs of such an action can quickly mount up and can end up being more expensive than the registered trade mark route.
+
+4 Infringement
+
+Registered Trade Marks
+Under the Trade Marks Act 1994, a registered trade mark is infringed if:
+A person uses, in the course of trade, a sign which is identical to the trade mark in relation to goods or services which are identical to those for which the trade mark is registered;
+A person uses, in the course of trade, a sign which is identical to the trade mark in relation to goods or services which are similar to those for which the trade mark is registered or uses a sign which is similar in relation to goods or services which are identical or similar and there exists a likelihood of confusion on the part of the public (including a likelihood of association with the trade mark);
+A person uses, in the course of trade, in relation to goods or services (whether identical, similar, or not similar), a sign which is identical or similar to the trade mark, where the trade mark has a reputation in the UK and the use of the sign (being without due cause) takes unfair advantage of, or is detrimental to, the distinctive character or repute of the trade mark.
+
+For the purposes of identifying infringement, “use” of a trade mark is defined in the Trade Marks Act 1994 as:
+The mark is affixed to goods or their packaging; or
+Goods are offered, exposed, marketed or stocked for sale under the mark; or
+Services are offered or supplied under the mark; or
+Goods are imported or exported under the mark; or
+The mark is used as a trade or company name or part of a trade or company name;
+The mark is used on business papers and in advertising; or
+The mark is used in comparative advertising in a manner that is contrary to the Business Protection from Misleading Marketing Regulations 2008.
+
+Unregistered Trade Marks
+As noted above, trade marks do not necessarily require registration in order to be protected.  In such cases, the common law tort known as “passing off” can be used to protect the mark.
+
+The basic elements of passing off are as follows:
+Your trade mark must be established and must have acquired a reputation and/or goodwill in the view of the relevant section of the public;
+The infringing trade mark must have been (or be likely to be) confused with your trade mark; and
+Your business, trading under your trade mark, must be (or likely to be) damaged (in the form of lost business or income) by the use of the infringing trade mark.
+
+This might, on the face of it, seem relatively straightforward.  Nevertheless, each case is assessed on its own facts, and there are many questions of degree contained within the above factors.  In light of this, as noted above, pursuing a passing off action can be extremely costly.  In many circumstances, it is likely to be simpler and more cost-effective to register your trade mark as opposed to relying on the common law alternative.  Nevertheless, for those using unregistered trade marks, it is wise to be aware of passing off and of its constituent ingredients.  For more guidance, please refer to BS.IP.GN.03 Passing Off Guidance Notes.
+
+Opposing a Trade Mark Application
+As noted above, for a two-month period during the registration process, trade marks are open to opposition.  If, therefore, you become aware of an application which you feel is either the same as, or similar to, your own trade mark, this is the time to oppose it.
+
+To begin the opposition procedure, you should submit a form TM7a which is available from the IPO.  This form is a ‘Notice of threatened opposition’ and should be filed within the aforementioned two month period.  Should you wish to proceed with the opposition, the next step is to submit a form TM7 to the IPO, a ‘Notice of opposition’.  
+
+As with all matters of this kind, it is important to be prepared and to have all of one’s ducks in a row before proceeding.  Broadly speaking, the following information will be required for your opposition:
+The details of the trade mark application you are opposing;
+Details of your opposition.  There are various grounds for opposition:
+The proposed trade mark does not meet the registration criteria.  For example, the mark is not distinctive; or
+You have already registered (or applied for) a trade mark which is the same as (or similar to) the proposed trade mark and is for similar or identical goods or services.
+Additional information (depending upon the grounds for your opposition) including:
+Details of your use of your trade mark;
+Details of your trade mark (including, where relevant, registration details);
+Details of any reputation your trade mark has acquired;
+Relevant categories of goods and/or services;
+Details of similarities including the perceived likelihood of confusion on the part of the public, any potential unfair advantage or detriment to the distinctive character of your trade mark; and
+Details of earlier rights (related to your prior use of your trade mark).
+
+The above represents a summary and not all of the points will be relevant; however the more information and grounds you can establish prior to making your opposition, the better.  You will then be in a better position to determine which path to take in order to obtain the best result.
+
+The official opposition procedure does not, however, preclude resolving the matter directly with the applicant.  There is, of course, no guarantee of success when dealing with your opposition in this way, however costs could be reduced and an amicable agreement can be reached.
+
+4 Dealing With Infringement
+
+Infringement, as noted thus far, can come in various forms.  As with any action of this nature, the first step is to gather your evidence.  Regardless of whether or not you are seeking to oppose an application, the list of information set out above is a good template to follow.
+
+Unless you are in fact opposing an application, in which case it is recommended that you carefully follow the IPO’s “TM7” procedure, your next step should be to contact the infringer.  Even if you regard your chances of success as remote, it is often wise to attempt to resolve the situation directly with the infringer prior to diving straight into legal proceedings.  It is always worth remembering that many cases of infringement are, in fact, inadvertent and can be easily resolved.  Moreover, even deliberate infringement may sometimes operate on the premise that the infringer doesn’t think you will notice their infringement and will give up easily if caught.  Even when seeking to resolve a dispute in a relatively informal manner, it is vital that full and proper legal advice is sought and costs will inevitably be incurred; however those costs may be significantly lower if the first step is to attempt to resolve the matter in good faith rather than immediately suing.  There are, however, risks involved for which see below.
+
+Threats Actions
+
+It is recommended that all contact with an alleged infringer is made through a suitably qualified solicitor.  There is a risk that, when alleging infringement and suggesting that legal action may follow, you may yourself be sued by the recipient of your communication in a threats action.  The safest way to avoid the potential for a threats action is to ensure that communications (usually letters) are non-accusatory in nature, merely informing the recipient of the existence of your trade mark, possibly inviting the recipient to discuss the matter rather than requiring them to “cease and desist”.
+
+The purpose of threats actions is to guard against groundless threats for infringement proceedings being made, sometimes with the intention of scaring the recipient into paying out some form of settlement when they are in fact innocent.  Nevertheless, there are situations in which it may be considered safer to threaten a suspected infringer with legal action:
+
+The application of your mark to goods (or packaging);
+The supply of services under your mark;
+The importation of goods to which your mark has been applied (or applied to the packaging thereof).
+
+While the above may appear to be risk-free, given that many legal disputes are a matter of degree and of interpreting facts, a recipient’s lawyer may nevertheless choose to challenge you on the grounds that they do not consider their client’s mark to be infringing yours.  Once again, the importance of seeking legal advice cannot be understated.
+
+Cease and Desist
+
+Whilst taking serious account of the previous section, a cease and desist letter can be a useful means of contact.  A cease and desist letter should:
+
+Establish your ownership of your trade mark (whether registered or not);
+Set out your (well-founded) allegation of infringement;
+Set out your requests which, first and foremost, include the requirement to cease and desist the recipient’s infringement; and
+Establish a deadline for the recipient’s acknowledgement and response.
+
+The requests made by a cease and desist letter (in addition to the obvious) may include one or more of the following:
+
+The delivery-up of materials bearing the infringing trade mark for destruction;
+The withdrawal of applications for the registration of the infringing trade mark;
+The withdrawal of applications – or the cancellation or assignment of registrations – for domain names incorporating the infringing trade mark;
+A written undertaking from the infringer stating that they will cease and desist from using the infringing trade mark or any other confusingly or deceptively similar trade mark in the future without your consent.
+
+You may also wish, particularly in the case of the infringement of an unregistered trade mark, to briefly describe the use, reputation and goodwill of your trade mark.  Even in the case of a registered trade mark, such evidence may still be persuasive – further convincing the infringer that, should legal remedies be pursued, your chances of success would be that much greater.
+
+What if my allegation is disputed?
+
+In many cases, it quite likely will be (hence the importance of having a solicitor dealing with the matter for you).  Depending upon the nature of the infringer’s rebuttal, there may still be an opportunity to resolve the matter privately simply by discussing it.  This may still not yield the desired result, however all is not yet in the hands of the courts.
+
+If the infringing party is open to the idea, it may be advisable to turn to some form of alternative dispute resolution prior to an all-out claim for infringement.  Mediation, for example, may resolve the matter without the need to incur the considerable time and expense associated with taking the matter to court.
+
+If neither private attempts at a resolution nor the use of alternative dispute resolution methods have succeeded then it may finally be time to seek legal advice on an action for infringement.  Under the provisions of the Trade Marks Act 1994, trade mark owners may, under an action for infringement, obtain relief which may take the form of damages, injunctions or an account of profits.
+
+Live and Let Live
+
+So, you can oppose an application, you can take an action for passing off, you can seek an injunction against an infringer or you can simply try asking them nicely to “stop it and don’t do it again”.  That’s everything, surely?  Not quite.  Have you considered trying to get along?
+
+A trade mark co-existence agreement is one further option.  Under a trade mark co-existence agreement, a party with an established (and usually registered) trade mark enters into a series of mutual undertakings with a party that is seeking to establish a new trade mark.  The agreement will enable both parties to continue using their trade marks.  In certain cases, the established party may require limited alterations either to the new party’s trade mark or to the classes of goods and/or services to which they plan to apply that trade mark, thus preventing unreasonable overlap and limiting the potential for confusion.
+
+From a contractual perspective it is important to note that, as no money changes hands, the all-important ‘consideration’ which makes the contract legally binding, is the mutual undertakings and promises contained in the agreement.  It is essential to maintain a balance when discussing and ultimately agreeing to the terms of such an agreement.
+
+5 Conclusions
+
+Trade marks and all that they embody – your reputation, the goodwill of your customers, your brand and image – represent a valuable business asset.  Whether they are registered or not, great care should be taken with them.  At the outset, taking the time and exercising the due diligence to ensure that you are choosing a name that won’t tread on anyone else’s feet (as well as, of course, one that will make your business stand out!) is very important.  Further down the line, exercising continuing care and maintaining a keen awareness of your market and your fellow traders will help to ensure that your trade mark keeps doing its job, free of hindrance from the activities of others.
+
+These guidance notes have sought to provide an outline introduction to trade marks in order to give businesses an idea of what to expect when dealing with them.  They do not, however, stand in lieu of legal advice and we strongly discourage the taking of any action – particularly with regard to enforcement – without first consulting a suitably qualified solicitor – our goal is simply to help ensure that you are better informed should you choose to.

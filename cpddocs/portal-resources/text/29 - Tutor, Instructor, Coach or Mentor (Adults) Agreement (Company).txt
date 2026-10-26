@@ -1,0 +1,208 @@
+_________________________________________________________________________
+
+AGREEMENT DATED  FORMTEXT       FOR SERVICES TO BE PROVIDED BY
+>"/> FORMTEXT <<NAME OF COMPANY PROVIDING A TUTOR/TEACHER/INSTRUCTOR/COACH/MENTOR>>
+
+-190502984500
+
+THIS AGREEMENT is dated and made on the >"/> FORMTEXT <<........>> day of >"/> FORMTEXT <<,,,,,,,,,,,,>>
+BETWEEN:
+
+>"/> FORMTEXT <<Name of Tutoring Company>> a company registered in >"/> FORMTEXT <<Country of Registration>> under number >"/> FORMTEXT <<Company Registration Number>> whose registered office and place of business is at >"/> FORMTEXT <<insert Address>> (referred to below as the “Company”) which is to provide a [tutor] [teacher] [instructor] [coach] [mentor] to You; and
+
+>"/> FORMTEXT <<Name of Client>> of >"/> FORMTEXT <<Address>> (referred to below as “You”) 
+
+Definitions and Interpretation 
+In this Agreement, unless the context otherwise requires, the following expressions have the following meanings:
+“Business”
+means any business, trade, craft, or profession carried on by You or any other person/organisation;
+“Consumer”
+means a “consumer” as defined by the Consumer Rights Act 2015, and in relation to this Agreement means the Client who receives or uses services from Us comprising one or more Sessions for the individual Client’s personal use and for purposes wholly or mainly outside the purposes of any Business;
+“Fee”
+means the standard charge for each Session (including any necessary travelling time to Your Premises) which at the date of this Agreement is £>"/> FORMTEXT <<insert amount>> including any VAT chargeable;
+“Our Premises”
+means the premises where We provide any Session to You, namely Our premises at [Our above address] OR [>"/> FORMTEXT <<insert address>>] but in Clause 2.17 it means “business premises” as defined in the Regulations;
+“Regulations”
+means The Consumer Contracts (Information, Cancellation and Additional Charges) Regulations 2013;
+“Session”
+means any individual tuition, instruction, training, teaching, coaching or mentoring session of >"/> FORMTEXT <<insert number e.g. 60 >> minutes (or any other period that We agree on any occasion as the length of one or more particular Sessions) that We provide to You in the Subject;
+“Subject/s”
+means the >"/> FORMTEXT <<insert subject/s to be studied>> details of which are set out in the Schedule; 
+“Tutor”
+means any [tutor] [teacher] [instructor] [coach] [mentor], including any person/s whose name/s is/are set out in the Schedule, engaged by the Company from time to time to provide any Session/s on its behalf to You;
+“Us/We/Our”
+means the Company
+“Your Premises”
+means Your above address in the case of any Session that We have agreed to provide to you at that address.
+Unless the context otherwise requires, each reference in this Agreement to:
+“this Agreement” is a reference to this Agreement;
+a “Clause or sub-Clause” is a reference to a Clause or sub-Clause of this Agreement; and
+the Schedule is to the Schedule to this Agreement and it will form part of this Agreement
+The headings used in this Agreement are for convenience only and shall not affect the interpretation of this Agreement;
+Any reference to “We” or “Us” or “Our” or the “Company” is, where the context permits or requires it, includes a Tutor acting on behalf of the Company pursuant to this Agreement;
+Words signifying the singular number shall include the plural and vice versa; and
+References to any gender shall include the other gender. 
+Booking, Timing and Cancellation of Sessions, and Consumer Rights
+Any time/date slot for a Session is subject to availability. We will advise You of any date/time that is available but We will not reserve or guarantee that particular time/date slot unless and until it becomes a firm booking as follows.
+If You ask to book a Session or series of Sessions for any particular date/time slot/s, Your request will be Your offer to book that particular date/time. Whether We accept any requested booking will be in Our discretion. Our confirmation of Your requested booking will be Our acceptance of it but it will only become a firm booking if and when it becomes a binding contract in accordance with sub-Clause 2.3 below.
+If and when We accept (by [phone] [text message] [email] [letter]) Your offer to book a particular Session or series of Sessions and You pay for it/them, there will from the date of payment (but not any sooner) be a binding contract between You and Us for the Session concerned, except as follows.
+If We specifically agree in the case of any one or more particular Sessions to be booked that You may pay for each such particular Session at the beginning of the Session rather than paying for it at the time We accept a booking for it, there will be a binding contract for it from the time that We accept Your offer to book it.
+Unless We agree otherwise, You must book each Session as part of a regular series of Sessions. Each series will be for >"/> FORMTEXT <<insert number, typically between 4-12 but it might be only, say, 1 or 2 where the first Session/s is/are on a trial basis>> at a regular day, time, and location. We will advise You of available time/date slots before You offer to book them. [A discount is available if You pre-pay for at least at least >"/> FORMTEXT <<insert number, e.g. 4>> Sessions – for details See Clause 3].
+During the period of this Agreement, You may book an additional series of Sessions as set out above. You may make the booking either before, after, or during the first series of Sessions. The additional series may begin (with or without an intervening break) at any time after the end of the previous series. You may book one or more further subsequent series in the same way. 
+Where You have not previously received any services from Us in relation to the Subject, We may agree to provide a single Session as a trial so that You can decide whether to continue with Sessions with Us in that Subject;
+Where You pay for a series of Sessions in advance, but You do not at the same time book a time/date slot for any of them, You must subsequently book a time/date for them which falls within the >"/> FORMTEXT <<insert period e.g. 4,6,8, or 10>> week period after the date when You pay for the Sessions. If You pay for any Session but do not book a time/date for it falling within that >"/> FORMTEXT <<insert period as above in this sub-Clause 2.8>> week period You cannot then take that Session and You will lose it, and We will not refund any payment You have made for it. We will use all reasonable endeavours to agree a time/date for it which falls within that >"/> FORMTEXT <<insert period as above in this sub-Clause 2.8>> week period.
+When You book any Sessions and pay Us in advance for them, We will be entitled to keep some or all of that payment as set out in sub-Clauses 2.11 or 2.12 below if You later cancel any such Session/s without giving Us such prior notice as is required by this Agreement to be given, as explained in the following paragraphs of this Clause 2.
+If You arrive at Our Premises for any Session later than its scheduled start time, or if, when We arrive on time for a Session at Your Premises, You are not ready to start the Session, We will not extend the length of it beyond its scheduled finishing time unless We specifically agree to do so at the time when We or You arrive. 
+We may treat a Session that You have booked as cancelled by You without giving notice to Us if You arrive (or are not ready to start) more than [5] minutes after the scheduled start time of the Session or You tell Us at any time that You will be arriving more than [5] minutes after the scheduled start time, or You do not attend at all. If We treat the Session as cancelled in any such case, We may then (but We are not obliged to) give Your time/date slot for it to any other client wishing to book that time and date slot. We may decide to make a charge to You for that cancelled Session, and sub-Clause 2.12 below will then apply.
+EITHER
+[You may for any reason cancel a Session (whether or not it is part of a series) without charge if You give Us at least [>"/> FORMTEXT <<insert period e.g. 2 weeks>>] OR [>"/> FORMTEXT <<insert period e.g.1, 2, or more days>> prior notice. In that event: either We will refund to You the Fee You paid in advance for that Session or, if when You cancel You ask to rebook for a later substitute Session on a date which falls within the >"/> FORMTEXT <<insert period e.g. 2 weeks>> week period after the date of the cancelled Session and We are able to and in Our reasonable discretion We decide to accept that requested substitute booking, We will instead keep the Fee as payment for the substitute Session. 
+If You do not give Us at least >"/> FORMTEXT <<insert same period as in second line of this Clause 2.12>> prior notice of cancellation, or if You do give such notice but there is no such rebooking, We will be entitled to charge You for any net financial loss that We suffer due to Your cancellation but that charge will be limited to the amount of the Fee paid for that Session. We will be entitled to deduct that charge for net financial loss from the Fee You paid in advance for the Session and We shall refund any balance to You.]
+OR
+[Once a Session is booked, You may not cancel it without charge [unless the date booked for that Session is at least >"/> FORMTEXT <<insert number>> weeks after the date when You cancel it]. If You cancel a Session for any reason, then [irrespective of how much, if any, prior notice You give Us of the cancellation,] OR [if You do not give Us at least >"/> FORMTEXT <<insert same number as in line two above>> weeks prior notice,] We will be entitled to charge You for any net financial loss that We suffer due to Your cancellation but that charge will be limited to the amount of the Fee paid for that Session. We will be entitled to deduct that charge from the Fee You paid in advance for the Session and We shall refund any balance to You.]
+Calculation of net financial loss will take account of any time for preparation for a Session incurred or saved by Us, any travel time and/or cost incurred or saved by Us, and loss of the profit element of the Fee.
+If due to exceptional circumstances including, but not limited to, illness, accidents and bereavement, You either miss or cancel a Session [without giving Us at least >"/> FORMTEXT <<insert any period, e.g. the same period as in Clause 2.12 days/weeks>> prior notice], We will consider the circumstances and in Our discretion decide whether to waive any charge for late cancellation that We are entitled to make under Clause 2.12. If We agree to waive such a charge on one or more occasions, We will not be obliged to do so on any other occasion even if the circumstances are the same.
+We may cancel a booked Session at any time before its time/date slot in the following circumstances:
+There is no Tutor reasonably available to Us to provide that Session for You (and/or, if relevant, to travel to Your Premises) on the date and at the time concerned; or
+An event described in sub-Clause 8 below occurs and continues for more than >"/> FORMTEXT <<insert time period>>;
+We find that You are not a “Consumer” (as defined in Clause 1 above); or
+We find that You are not aged 18 or over.
+If We cancel a Session in such circumstances either We will refund to You in full the payment that You have made to Us for that Session or, if when We cancel You ask to rebook for a later substitute Session and in Our discretion We decide to accept that requested substitute booking, We will instead keep the Fee as payment for the substitute Session.
+We will use all reasonable endeavours to start each Session at its scheduled start time, but the start may be delayed by overrun of a previous Session or by other circumstances. If a delay to the start is at least >"/> FORMTEXT <<insert time period e.g 15 minutes>>, or, if at any time before or after You arrive for a Session We notify You that there will be a delay of at least that time, You may cancel the Session and We will refund to You in full the Fee paid for that Session unless We agree to any request from You to rebook that Session for another time/date in which case We will instead keep the Fee as payment for the rebooked Session.
+We may immediately terminate a Session if Your conduct is in Our reasonable opinion unacceptable, or if it amounts to Your breach of this Agreement. You will not be entitled to any refund for a Session started but not completed in such a case. If at that time further Sessions booked and paid for have yet to be taken, We may cancel any or all of them at the time of terminating the Session or within 48 hours after that termination, and in that case We will refund You the Fees for the remaining number of booked Sessions in the series which We cancel.
+Where the contract We make with You is not made on Our Premises, the Regulations give You the rights set out in this sub-Clause 2.17, and they will be in addition to the rights given to You by the above provisions of this Clause 2. You may for any reason cancel a booked Session during the 14 day period after We accept a booking for it, but if the booking includes any Session on a date which is before the end of that 14 day period, and if You have expressly requested Us to provide any such Session in that 14 day period and We do so, You may not cancel that requested Session and You must pay for it in accordance with Clause 3, and You may only cancel any other Session(s) covered by that booking. If You request that a booking be cancelled, You must confirm this in any way convenient to You. If You cancel as allowed by this Sub-Clause 2.17, and You have already made any payment(s) to Us for the booking, We will refund the payment(s) to You within 14 days of receiving Your cancellation less the amount due for the Session(s) that We have provided that is covered by that booking. 
+Fees and Payment
+You must pay the Fees for all Sessions that We fully and correctly provide to You. 
+[If at any one time You pay for >"/> FORMTEXT <<insert number, e.g. 4>> or more Sessions in advance (whether or not as part of a longer series), We will discount the standard Fee by "/> FORMTEXT <<insert amount e.g. 10>% for each of those Sessions, i.e. the Fee for each such Session will only be "/> FORMTEXT <<insert amount which is e.g. 90% of the standard Fee>.]
+The amount of standard Fee is subject to change from time to time but We will try to give You as much prior notice as possible of any such changes, and in any event not less than 4 weeks’ notice. Any increase will only apply to bookings made after We notify You of the increase; it will not apply to any Sessions previously booked and paid for.
+You may pay Us for Sessions using any of the following methods:
+3.4.1	>"/> FORMTEXT <<Insert method E.g. Cash>>
+3.4.2	>"/> FORMTEXT <<Insert method E.g. Credit/Debit Card>>;
+3.4.3	>"/> FORMTEXT <<Insert method E.g. Cheque>>;
+3.4.4	>"/> FORMTEXT <<Insert method E.g. Electronic Bank Transfer>>
+3.4.5	>"/> FORMTEXT <<Insert Additional Method>>.
+All prices of Sessions set out in this Agreement or notified to You from time to time are inclusive of VAT that is chargeable on amounts payable for Sessions.
+Your Eligibility to Require Us to Provide Sessions under this Agreement 
+We will only make Sessions available to You where You are aged 18 or over and You are a “Consumer” (as defined in Clause 1 above), and Your signature of this Agreement will be deemed to be Your confirmation that You are aged 18 or over and that You will be a “Consumer” in connection with any request(s) by You for any Session.
+If at any time We find that You are not aged 18 or over or are not a “Consumer”, We may without liability to You cancel this Agreement forthwith by giving You a cancellation notice and You will not then be entitled to require Us to provide any further Sessions to You. If at the time of such cancellation You have paid for any Sessions not yet due to be given, We will refund You the Fees for those Sessions.
+EITHER [Our Commitment
+We agree to provide a Tutor to conduct Sessions with You at the agreed times and days. It is not possible to determine at the outset how many Sessions You will require [but, in order to get the balance right for You, We will try to be as flexible as possible as to how many Sessions You will need] [but We will not agree in any event to provide more than >"/> FORMTEXT <<number, e.g. 2 >> hours of Sessions on any day or more than >"/> FORMTEXT <<number, e.g. 4>> hours of Sessions in any single week]]. 
+
+OR [Miscellaneous
+The following, amongst other matters are dealt with in the Schedule: 
+[Our commitment, total Session time needed, and maximum Session time on any day/in any week;]
+[Attendance;]
+[Punctuality;]
+[Provision of items by You or Us;]
+[Tasks for You to carry out between Sessions;] and
+[Records].]
+
+Health and Safety and Professional References 
+We will not be responsible for care or safety of any minor at Our or Your Premises.
+In the interests of Your well-being, You must inform Us before You attend any Session of any medical or other condition affecting You which might be or become relevant in relation to that Session.
+If You do not tell Us before a Session of anything referred to in sub-Clause 6.2 that We then discover, We may, acting reasonably, decide not to provide that or the remainder of that Session or any other Sessions booked and to treat any such Sessions as cancelled by You without notice, in which case We may make a charge to You for that cancelled Session (or part of it) and sub-Clause 2.12 above will then apply.
+We will [on request] provide to You before You book any Sessions:
+At least [two] professional references as to our Tutors’ [knowledge of] [and] [skills in] [training in] [and] [experience] [of] [in] the Subject; and 
+Evidence of the qualifications of our Tutors. We confirm that any Tutors that We provide will hold, as a minimum, the following [academic] [technical] [professional] qualifications: [>"/> FORMTEXT <<insert details>>], [and they will be a member of the following [professional] body/ies/institute/s: >"/> FORMTEXT <<insert details>>]. 
+Rules
+We do not permit You to: 
+Smoke anywhere on Our Premises;
+Be accompanied at Our Premises by any child; or
+Bring any animals into Our Premises with the exception of a guide dog. If You require the use of a guide dog, You should inform Us of that before You sign this Agreement; 
+You must not have any electronic device in a Session except as We agree may be used in or after that Session, e.g. a recording device used specifically to record a Session or part of it. 
+You must not make any copies of any books or other materials that are used in or in connection with any Session unless We agree in writing to copying of any specific book or materials (or part/s thereof) produced by Us. 
+If You do not comply with any of these requirements, We may cancel the Session without liability for any refund or other amount. 
+Events Beyond Our Reasonable Control 
+We will not be liable for any failure or delay in performing Our obligations under this Agreement resulting from any cause beyond Our reasonable control, including illness of any Tutor or of Our other relevant personnel, lack of available facilities, non-performance by suppliers, any law or any action taken by a government or public authority, act of god, or any other similar or dissimilar event or circumstance that is beyond Our control.
+If any event described under sub-Clause 8.1 occurs that is likely to adversely affect Our performance of any obligations under the contract, We will try to inform You as soon as is reasonably possible, Our obligations will be suspended and any time limits that We are bound by will be extended accordingly. We will inform You when that event is over and provide details of any new dates, times or availability of Sessions as necessary. You may, without liability to Us, cancel any Session(s) which do not take place due to that event, and We will refund in full the Fees that You have paid to Us for the cancelled Session(s). 
+Limitation of Liability
+We will be responsible for any foreseeable loss or damage that You may suffer as a result of Our or a Tutor’s breach of this Agreement or as a result of Our or a Tutor’s negligence. Loss or damage is foreseeable if it is an obvious consequence of Our or a Tutor’s  breach or negligence or if it is contemplated by You and Us when Our contract with You is created. We will not be responsible for any loss or damage that is not foreseeable. 
+We provide all Sessions only for Your personal and private use/purposes. We will not be liable to You for any loss of profit, loss of business, interruption to business or for any loss of business opportunity.
+Whilst We will use Our best endeavours to ensure that You make satisfactory progress, results will depend on various factors, including, without limitation, number and frequency of Sessions, whether or not You adequately attempt or complete any tasks that We ask You to carry out before or after a Session, Your aptitude, attitude, previous experience, and existing knowledge and skills. Satisfactory progress cannot be guaranteed, and We make no warranty or representation that any particular result will be brought about as a result of You taking part in any Session(s). 
+If You bring any personal belongings on to Our Premises, We do not undertake to keep them safe or provide any storage place for them. Their loss or damage will be at Your own risk except where such loss or damage is due to any deliberate or negligent act by Us or a Tutor. We will not be responsible for any loss or damage to Your personal belongings caused by any other student, guest or visitor to Our Premises even where You leave or store them in any place at Our premises that We or a Tutor suggest or ask You to use. We therefore advise You not to bring any valuable belongings to Our Premises.
+If a Session takes place at Your Premises, We do not undertake to keep Your Premises, or Your or another’s personal belongings or household effects at Your Premises safe or secure. Loss of or damage to them will be at Your own risk except where such loss or damage is due to any deliberate or negligent act by Us or a Tutor.
+Nothing in this Agreement is intended to or will exclude or limit Our liability for death or personal injury caused by Our or a Tutor’s negligence or fraud or fraudulent misrepresentation.
+Furthermore, if You are a “consumer” as defined by the Consumer Rights Act 2015, or You are a consumer for the purposes of any other consumer protection legislation, nothing in this Agreement is intended to or will exclude, limit, prejudice, or otherwise affect any of Our duties or obligations to You, or Your rights or remedies, or Our liability to You, under:
+the Consumer Rights Act 2015; 
+the Regulations; 
+the Consumer Protection Act 1987; or
+any other consumer protection legislation,
+as that legislation is amended from time to time.
+For more details of Your legal rights, please refer to Your local Citizens’ Advice Bureau or Trading Standard Office.
+Status and Authority of Tutors
+10.1	No Tutor is authorised by Us to enter into this Agreement on Our behalf. Only [one of] Our director[s] [including any director who is also a Tutor] may validly do so.
+10.2	If any Tutor in their own name or on their own behalf agrees or arranges to provide, or does provide, any tuition, instruction, training, teaching, coaching or mentoring to You, We will not be responsible or liable to You for any act or omission of that Tutor in relation to any such agreement, arrangement, tuition, instruction, training, teaching, coaching or mentoring.
+10.3	We will be responsible and liable to You for a Tutor’s acts or omissions as set out in Clause 9.
+10.4	Your contract for any Session/s to be provided under this Agreement will be with Us and not with any Tutor.
+10.5	Each of Our Tutors is [either a self-employed individual or is Our employee] OR [a self-employed individual and is not employed by Us] OR [Our employee] who We engage to provide You with Sessions. 
+11.	Changes to Terms and Conditions of this Agreement 
+We may from time to time change any terms and conditions of this Agreement without giving You notice, but We will use Our reasonable endeavours to inform You as soon as is reasonably possible of any such change.
+12	How We Use Your Personal Information (Data Protection)
+For complete details of Our collection, processing, storage, and retention of personal data including, but not limited to, the purpose(s) for which personal data is used, the legal basis or bases for using it, details of Your rights and how to exercise them, and personal data sharing (where applicable), please refer to Our Privacy Notice [available from Us at >"/> FORMTEXT <<insert location>>] OR [attached in the Schedule].
+13	Regulations 
+We are required by the Regulations to ensure that certain information is given or made available to You as a Consumer before We make Our contract with You (i.e. before We make a booking) except where that information is already apparent from the context of the transaction. We have included the information itself either in this Agreement for You to see now, or We will make it available to You before We accept Your request to make a booking. All of that information will, as required by the Regulations, be part of the terms of Our contract with You as a Consumer.
+14	Information
+As required by the Regulations:
+14.1	all of the information described in Clause 13; and 
+14.2	any other information which We give to You about any Sessions or Us and Our business which You take into account when deciding to make a booking or when making any other decision about Sessions,
+will be part of the terms of Our contract with You as a Consumer. 
+15	Complaints
+We always welcome feedback from You and, whilst We always use all reasonable endeavours to ensure that Your experience and Your experience as Our client is a positive one, We nevertheless want to hear from You if You have any cause for complaint. If You have any complaint about any Session/s or any other complaint about Us, please raise the matter with Us by speaking to >"/> FORMTEXT <<Insert Name of nominated person on behalf of the Company>> at Our  Premises or by contacting Us by >"/> FORMTEXT <<Insert Method E.g. Phone, Email or Post>>.
+16	No Waiver
+No failure or delay by Us or You in exercising any rights under this Agreement means that We or You have waived that right, and no waiver by Us or You of a breach of any provision of this Agreement means that We or You will waive any subsequent breach of the same or any other provision. 
+17	Severance
+If any provision of this Agreement is held by any competent authority to be invalid or unenforceable in whole or in part the validity of the other provisions of this Agreement and the remainder of the provision in question shall not be affected.
+18	Law and Jurisdiction
+18.1	The Agreement, and the relationship between You and Us (whether contractual or otherwise) shall be governed by, and construed in accordance with the law of [England & Wales] [Northern Ireland] [Scotland].
+18.2	As a consumer, You will benefit from any mandatory provisions of the law in your country of residence. Nothing in Sub-Clause 18.1 above takes away or reduces Your rights as a consumer to rely on those provisions.
+18.3	Any dispute, controversy, proceedings or claim between You and Us relating to the Agreement, or the relationship between You and Us (whether contractual or otherwise) shall be subject to the jurisdiction of the courts of England, Wales, Scotland, or Northern Ireland, as determined by Your residency. 
+
+SCHEDULE
+
+Names of Tutors (see Clause 1.1 – Definition of “Tutor”)
+The name[s] of the [tutor] [teacher] [instructor] [coach] [mentor] who will from time to time provide any Session on behalf of the Company will be one or more of the following:
+ >"/> FORMTEXT <<Insert name[s]>> [being also a director of the Company]
+>"/> FORMTEXT <<Insert name[s]>>
+>"/> FORMTEXT <<Insert name[s]>> etc
+and/or any other person engaged by the Company for that purpose. 
+
+Subject (see Clause 1.1 – Definitions)
+The Subject comprises the [study] OR [learning] OR [training in] OR [acquisition of [knowledge] [experience] [skills] [of] [in] >"/> FORMTEXT <<Insert name or description of subject>>. 
+Note: the subject may be of any nature, e.g. any general or particular life skill, business, commercial, professional, technical, academic, practical, or creative knowledge, skill, expertise, qualification etc.
+The [area[s]] [range] [syllabus] [aspects of the subject] to be covered will be as follows: >"/> FORMTEXT <<Insert details of the scope of the Sessions, e.g. topics, level of qualification>> 
+By way of clarification, We confirm that You and We have agreed that the following [aspects] [areas] [topics] will not be covered by any Sessions: >"/> FORMTEXT <<Insert details of what is NOT within the scope of Sessions>>
+
+[Miscellaneous (See Clause 5)
+[Our commitment, total Session time needed and maximum Session time on any day/in any week: 
+
+We agree to conduct Sessions with You at the agreed times and days. It is not possible to determine at the outset how many Sessions You will require [but, in order to get the balance right for You, We will try to be as flexible as possible as to how many Sessions You will need] [but We will not agree in any event to provide more than >"/> FORMTEXT <<number, e.g. 2 >> hours of Sessions on any day or more than >"/> FORMTEXT <<number, e.g. 4>> hours of Sessions in any single week].]
+
+[Attendance: If You are not available for a booked Session for any reason it is Your not Our responsibility to make up the missed Session and to book a substitute Session with Us.] 
+
+[Punctuality: We expect You to arrive/be ready for a Session at least 5 minutes before the scheduled start time of the Session to ensure that You are ready to start on time.]
+
+[Provision of items by You or Us: 
+
+Weare not responsible for obtaining or providing any equipment, materials or other items that You need for or in connection with any Session/s [except that We will provide for You to use [at] [or] [and] [between] [Sessions the following items: >"/> FORMTEXT <<insert details>>.] 
+
+[We will advise You [at Our first meeting with You] [at the first Session] as to what You will need to obtain for Yourself for or in connection with any Session/s [in addition to the above items that We will provide].] 
+
+[We may make suggestions as to [how] [where] any items that You need are [or likely to be] available.]
+
+[Tasks for You to carry out between Sessions: We [may] [will] [will usually] give You tasks to carry out after a Session, and, if so, You should complete it prior to the next Session. You should come to each Session prepared by completing [each] [any] tasks that We give to You at the previous Session. This is more likely to result in progress in [relation to] the Subject. [If You need to contact Us about such tasks between Sessions, We are usually contactable and able to provide help via email or telephone.]
+
+[Records: You should provide and maintain a Session diary [and this [should] [can] be in the form of >"/> FORMTEXT <<e.g. a notebook>>]. You and We may make notes in it setting out any information useful or necessary to You when carrying out any tasks.]]
+
+[Data Protection (See Clause 12)
+>"/> FORMTEXT <<insert completed Privacy Notice>>]
+IN WITNESS WHEREOF this Agreement has been duly executed the day and year first before written
+
+SIGNED for and on behalf of the Company by:
+>"/> FORMTEXT <<Full name of the director signing on behalf of the Company>>
+
+__________________________________________________Signature
+
+..........………………………………………………..
+SIGNED by 
+>"/> FORMTEXT <<Name of Client>>
+
+..........………………………………………………..

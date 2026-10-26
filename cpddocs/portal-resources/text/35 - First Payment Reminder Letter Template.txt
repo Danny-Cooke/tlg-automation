@@ -1,0 +1,23 @@
+[Print on Company Letterhead or insert Address]
+
+>"/> FORMTEXT <<Contact Name>>
+>"/> FORMTEXT <<Trading/Company Name>>
+>"/> FORMTEXT <<Address>>
+>"/> FORMTEXT <<Address>>
+>"/> FORMTEXT <<Post Code>>
+
+>"/> FORMTEXT <<Date>>
+
+Dear >"/> FORMTEXT <<Name of Contact>>,
+
+Re. Invoice Numbers >"/> FORMTEXT <<   >>
+
+It has been brought to our attention that there is an outstanding amount of >"/> FORMTEXT <<Amount>> in respect of the above invoice(s). This amount was due for payment on >"/> FORMTEXT <<due date(s)>>.
+
+Our credit terms stipulate full payment within >"/> FORMTEXT <<30 days>>, and this account is now >"/> FORMTEXT <<number of days>> overdue. Subject to the terms of the Late Payment of Commercial Debts (Interest) Act 1998 we claim an additional sum for interest of £ FORMTEXT = (8%+Base Rate) / 365 * Debt Outstanding * Number of Days Overdue. This represents a daily interest cost on the debt of £ FORMTEXT = (8%+Base Rate) / 365 * Debt Outstanding, which will be added to the outstanding amount until we have received settlement in full.
+
+Kindly let us have your cheque including the interest accrued to date by return.
+
+Yours sincerely,
+
+>"/> FORMTEXT <<Name & Title>>For and on behalf of >"/> FORMTEXT <<Company Name>>

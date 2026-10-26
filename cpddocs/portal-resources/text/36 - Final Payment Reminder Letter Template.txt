@@ -1,0 +1,29 @@
+[Print on Company Letterhead or insert Address]
+
+>"/> FORMTEXT <<Contact Name>>
+>"/> FORMTEXT <<Trading/Company Name>>
+>"/> FORMTEXT <<Address>>
+>"/> FORMTEXT <<Address>>
+>"/> FORMTEXT <<Post Code>>
+
+>"/> FORMTEXT <<Date>>
+
+Dear >"/> FORMTEXT <<Name of Contact>>,
+
+Re. Invoice Number(s) >"/> FORMTEXT <<   >>
+
+Further to our letter dated >"/> FORMTEXT <<date>> we are surprised to see that no payment has yet been received for the outstanding amount of >"/> FORMTEXT <<amount>>, including interest calculated according to the terms of the Late Payment of Commercial Debts (Interest) Act 1998.
+
+Since that letter additional interest of £>"/> FORMTEXT <<= 12/365 * Principal * Days since last Letter>> has accrued to the outstanding debt 
+
+No doubt you will agree that it is in all our best interests to clear this account.
+
+I look forward to receiving your cheque by return post.
+
+If you are unable to settle this debt in full please provide us with a proposal immediately.
+
+[Should payment not be forthcoming or we fail to agree alternative payment terms within 5 working days we will be obliged to take legal action.] 
+
+Yours sincerely,
+
+>"/> FORMTEXT <<Name & Title>>For and on behalf of >"/> FORMTEXT <<Company Name>>

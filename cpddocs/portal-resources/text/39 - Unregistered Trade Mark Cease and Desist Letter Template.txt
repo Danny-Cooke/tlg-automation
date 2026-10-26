@@ -1,0 +1,37 @@
+[Print on Letterhead or insert Address]
+
+>"/> FORMTEXT <<Name>>
+>"/> FORMTEXT <<Title>>
+>"/> FORMTEXT <<Company Name>>
+>"/> FORMTEXT <<Company Address>>
+>"/> FORMTEXT <<Company Address>>
+>"/> FORMTEXT <<Postcode>>
+
+>"/> FORMTEXT <<Date>>
+Re: >"/> FORMTEXT <<mark, name or logo that is being passed off>>
+
+Dear >"/> FORMTEXT <<name>>,
+
+We, >"/> FORMTEXT <<insert business name>>, have for >"/> FORMTEXT <<insert period>> operated our business under the name >"/> FORMTEXT <<insert name>>, using the >"/> FORMTEXT <<insert description of mark, logo etc.>>.  Our >"/> FORMTEXT <<mark, name or logo>> is not a registered trade mark, however as is demonstrated by the enclosed details in Schedule 1, we have acquired goodwill in this >"/> FORMTEXT <<mark, name or logo>>.
+
+As a result of the activities described above, we have acquired a significant reputation in >"/> FORMTEXT <<insert territory>> with respect to >"/> FORMTEXT <<describe relevant field of business, products etc.>>.
+
+On >"/> FORMTEXT <<date>> we became aware that you are >"/> FORMTEXT <<describe the alledged passing off>>.  [Please also refer to the enclosed evidence in Schedule 2.]
+
+In light of the goodwill and reputation described above, we are of the view that your activities, as described herein, are likely to cause confusion on the part of the public to the effect that you are [associated or connected with us by virtue of the similarity of the >"/> FORMTEXT <<mark, name or logo>> used] OR [>"/> FORMTEXT <<describe alledged confusion>>].  Should you continue such activity we feel that our reputation and goodwill will be substantially damaged.  [To further support our above assertion that confusion is likely, we enclose evidence of actual confusion on the part of the public in Schedule 3.]
+
+As our consent to use the >"/> FORMTEXT <<mark, name or logo>> in this manner was neither sought nor granted we must inform you that we find this activity unacceptable and we hereby request that you take the following action within >"/> FORMTEXT <<insert period, e.g. 14 days>>:
+[Cease all conduct complained of in this letter, namely >"/> FORMTEXT <<describe the alledged passing off>>;] AND/OR
+[Provide to us full details of all sales and supplies that fall within the scope of the conduct complained of including, but not limited to, full details of quantities supplied, prices (including profit margins), the identity and current whereabouts of all purchasers, >"/> FORMTEXT <<insert further information required>>;] AND/OR
+[Provide to us full details of the identity and current whereabouts of any and all parties who have supplied you with any and all goods and other materials in your possession that fall within the scope of the conduct complained of in this letter;] AND/OR
+[Deliver to us any and all goods, documents, and other materials in your possession that fall within the scope of the conduct complained of in this letter and to continue to deliver to us any and all goods and other materials that may come into your possession thereafter falling within that same scope within >"/> FORMTEXT <<insert period, e.g. 7 days>> of your receipt of them;] AND/OR
+[Deliver to us a written undertaking that you will desist forthwith from the conduct complained of above;] AND/OR
+[Deliver to us a written undertaking that you will pay to us any and all such damages or profits relating to the conduct complained of above as may be agreed or, if no agreement is reached, determined by the court;] AND/OR
+[Deliver to us a witness statement, endorsed with a statement of truth, from a properly authorised officer of your company, confirming that you have fully complied with the obligations set out herein and that the details required under parts b) and c) are accurate and comprehensive.]
+
+We expect your acknowledgement of this letter and your response to our requests by >"/> FORMTEXT <<insert date>>.  If it becomes necessary to initiate legal proceedings, which may be issued at any time and without further notice, we may be entitled to remedies including, but not limited to, an injunction, damages, an account of profits, legal costs and interest, or delivery up (or destruction) of the offending goods and/or other materials.
+
+Yours faithfully,
+
+___________________________________
+>"/> FORMTEXT <<insert name and position, where applicable>>

@@ -1,0 +1,296 @@
+center0
+Guidance Note: Debt Recovery and Legal Action
+00
+Guidance Note: Debt Recovery and Legal Action
+
+Introduction
+
+These Guidance Notes are designed to assist businesses which are owed money by their customers. The Notes set out the options available and guidance on how to take legal action. 
+
+However, you need to be aware of the Debt Respite Scheme (Breathing Space Moratorium and Mental Health Crisis Moratorium) (England and Wales) Regulations 2020 (“the Regulations”). The Regulations are designed to protect debtors in certain situations, and, where they apply, the Regulations will place a constraint on or prevent the legal right to exercise those options and take legal action. These Notes should be read as subject to the Regulations.
+
+It is therefore very important that you familiarise yourself in detail with the Regulations, how they operate, and their potential impact on taking steps to achieve debt recovery and legal action to recover debts. 
+
+Appendix B below contains an outline of certain aspects of the Regulations, but it only flags some basic aspects of the Regulations. It is no substitute for considering the Regulations themselves in detail. 
+
+Preventative Measures: How to Avoid Problems with Debtors
+
+Management time is wasted chasing late payments and initiating court actions to recover debts. This can be minimised by having the right processes in place within the business.
+
+For example, businesses can:
+Perform adequate credit checks on new customers. This could include checking whether a new customer has any court judgments outstanding against them. This can be checked by an online search, for example at http://www.trustonline.org.uk.
+Ensure that every customer is issued with a tightly drawn agreement, or terms and conditions, in which payment terms are clearly set out. A wide range of templates is available in our Business document folder.
+Ensure that invoices are issued in a timely manner, and in accordance with the terms and conditions or agreement.
+
+Updated and co-ordinated records are essential to effective debt collection. An audit trail of credit related documents will facilitate prompt payment as well as establishing the indebtedness in the event of late or disputed payments and any subsequent legal action.
+
+Payment Reminders
+
+Once payments become overdue, the first step is to send a reminder letter. This records the late payment, the amount outstanding, the invoice(s) in respect of the amount and the breach of credit terms. It requests payment by return or, pending payment, correspondence to explain the delay.
+
+We offer two reminder letters to be sent in sequence, with the second letter being more strongly worded than the first. See:
+First Payment Reminder Letter (Excluding Commercial Debts Act Interest) (TR.D&C.02.01); and
+Final Payment Reminder Letter (Excluding Commercial Debts Act Interest) (TR.D&C.02.02).
+
+There are alternative versions of each reminder letter. These versions include a claim for interest under the Late Payment of Commercial Debts (Interest) Act 1998 (“CDA”). The CDA versions should be used where there is no contractual arrangement for payment of interest on monies due. Under the CDA, the creditor is entitled to charge interest on the debt where the contract is silent on the subject of interest. Please note that the CDA only applies where both the supplier and the customer are acting in the course of a business. It does not apply to “business to consumer” contracts. See:
+First Payment Reminder Letter (Including Commercial Debts Act Interest) (TR.D&C.02.01A); and
+Final Payment Reminder Letter (Including Commercial Debts Act Interest) (TR.D&C.02.02A).
+
+If the amount owed by the customer represents more than one invoice, a statement should be enclosed with the reminder letter so that the amount payable by the customer can be easily verified. See:
+Statement of Account – Standard Format (TR.D&C.02.03);
+Statement of Account – Limited Company – Logo Version (TR.SA.02L); and
+Statement of Account – Sole Trader – Logo Version (TR.SA.03L).
+
+Repayment Agreements
+
+It may be that, once payment reminders have been sent, the customer accepts that money is owing and is willing to make arrangements for the debt to be repaid.
+
+If the customer makes a proposal to repay the debt in instalments, a letter should be sent setting out the agreed instalment plan (this can include payment of interest) and the consequences for the customer if the instalments are not paid on time. See:
+Letter – Accepting Proposal to Clear Debt (TR.D&C.02.04).
+
+The business may agree to forgo part of the debt so long as the customer pays a certain amount. Such an arrangement should be documented using the Agreement – Debt Compromise (TR.D&C.02.04A).
+
+Sometimes a third party will agree to pay the customer’s debt, in exchange for receiving the goods that the customer has received from the business. This tripartite arrangement should be recorded using the Agreement – Assumption of Debt in Exchange for Goods (TR.D&C.02.04B).
+
+If the customer requests an extension of time to pay the debt, and the business agrees to this, this agreement can be documented using the Agreement – Extension of Date for Debt Repayment (TR.D&C.02.04C).
+
+Possible Alternatives to Taking Legal Action
+
+Options where the debt remains unpaid but the amount owing is not disputed
+
+If the customer does not dispute that money is owed, and the amount of debt is not in dispute, the business may wish to instruct a debt collection agency. Organisations working in debt collection include debt recovery agents and credit agents. These are not the same as bailiffs; they cannot repress goods without a court order.
+
+Debt collection agents engage solicitors and take legal action to recover your money. Some credit agencies, though not all, will completely take over the collection of debt. If successful, the creditor will receive an agreed proportion of the total amount owing, while the agency will keep the rest. They usually try to recover the debt by sending out routine letters and telephoning customers.
+
+There is an industry association of debt recovery agents, the ‘Credit Services Association’. Its website lists it members.
+
+Options where the customer disputes the amount due
+
+There are several options available where the customer accepts that money is owed but disputes the amount due. These include:
+Mediation/debt compromise: an independent person helps the two parties to find a solution to the problem. Any agreement reached is entirely voluntary, which means the parties cannot be forced to stick to it. The claim may still end up being resolved through the courts.
+Arbitration: an independent arbitrator hears both sides and makes a decision. Arbitration is binding on both sides, and the parties cannot go to court after an arbitrator has made a decision.
+Statutory demand: the creditor issues a statutory demand, warning of an application to court for the formal winding up of the customer’s business, if payment is not made within 21 days. This is quite a radical step, and only to be taken if the relationship with the customer has broken down irretrievably. Further information about statutory demands appears in Appendix A below.
+
+Taking Legal Action Against a Customer
+
+Point to consider before taking legal action
+
+A business should think carefully before taking a customer to court, for the following reasons:
+Even if the court action is successful, there is no guarantee that the debt will be recovered. It may not be possible to enforce the judgment against the customer, particularly if he has no assets. There may be other debts outstanding against the customer, which reduces the likelihood of the debt in question being paid.
+Significant sums may be incurred in pursuing the case. The costs may escalate if the customer disputes the claim.
+
+Legal terminology
+
+The terminology used in court can be intimidating. Below are some of the terms that might crop up in a court action relating to a debt:
+
+Creditor
+The person or business who is owed money
+
+Debtor
+The person or business that owes money
+
+Claimant
+The person or company issuing the court action for monies owed (in this case, the creditor)
+
+Defendant
+The person being sued, i.e. the customer who owes money to the claimant (the debtor)
+
+Judgment
+Court order for payment of sums owed
+
+Enforcement
+The processes carried out to force the creditor to pay, once a court order has been issued ordering them to pay
+
+Letter of Claim
+
+If the payment reminders and other measures described above have been unsuccessful in prompting payment, it is essential to give the customer a final chance to pay before starting legal action. The claimant must set out a claim in writing before issuing proceedings. This is done by a formal ‘Letter of Claim’. See:
+Letter of Claim for Debt Recovery (Protocol Version) (TR.D&C.02.14); and
+Letter of Claim for Debt Recovery (Alternative Version) (TR.D&C.02.05). 
+
+The ‘Protocol Version’ of the Letter of Claim complies with the Pre-Action Protocol for Debt Claims which took effect in October 2017. This Protocol applies to claims against individuals, including sole traders. The Protocol does not apply to business-to-business debts unless the debtor is a sole trader, and therefore the Alternative Version of the Letter of Claim can be used in such cases.
+
+These letters give detailed information about the debt and give the debtor 30 days to reply. The letters warn the debtor that court action will be initiated if they fail to reply within the given time.
+
+This step – of trying to settle a claim before taking court action – is important. The courts may penalise a claimant who does not make attempts to settle a claim before taking legal action.
+
+Where the Protocol applies, the claimant must give the customer 14 days’ notice of their intention to start court proceedings. See:
+Letter - 14 Days’ Notice of Court Proceedings to Recover Debt (TR.D&C.02.15).
+
+County Court claim
+
+Most claims are issued in the County Court. An application can be made online or on paper. These methods are explored below. The County Court will decide which ‘track’ to allocate the case to. This decision will then determine whether the case will be conducted in the County Court or the High Court, and how the case will proceed from that point on. Note that there is no such thing as a ‘small claims court’. Rather, smaller scale claims will be allocated to the ‘small claims track’ – and will normally be heard in the County Court.
+
+Rarely, a claim will be issued in the High Court (basically, if the claim is for more than £100,000). Legal advice should be sought before issuing a claim in the High Court.
+
+Issuing a claim online
+
+It is now possible to issue a claim on the internet at Money Claim Online.
+
+To qualify for online issue, the claim must be:
+For a fixed amount less than £100,000;
+Against no more than two people or organisations;
+Sent to an address in England or Wales with a valid postcode.
+
+Usually, the court will issue, print and send the Claim Form to the defendant on the day that it is submitted online. Court fees for online claims must be paid by credit or debit card.
+
+Claims started online are always issued in the name of ‘Northampton County Court’ where all such claims are processed. However, it will not be necessary to go to Northampton to attend a hearing – if the claim progresses, it will be transferred automatically to either the claimant’s or defendant’s local County Court to be heard.
+
+As well as issuing the initial claim online, it is also possible to enter judgment, and to apply for a warrant of control, online. These steps are discussed below.
+
+Paper applications to court
+
+A claim can be started in any County Court. The claimant completes Form N1
+See:
+Form N1 – County Court Claim Form which you can reach by clicking here. This form gives details of the claimant and defendant and the sum being claimed. The Claim Form includes space for the particulars of claim (the details).
+	
+	Use Notes N1A for guidance. See:
+County Court Notes for Claimant N1A which you can reach by clicking  HYPERLINK "https://www.gov.uk/government/publications/form-n1-claim-form-cpr-part-7" here.
+
+The claimant then sends or takes two copies of the Form N1 to the court where he or she wants to start court action, together with a covering letter. See: 
+Letter to County Court Enclosing Claim Form N1 (TR.D&C.02.06).
+
+If the claim is based on a written agreement (such as an agreement to purchase goods or services), a copy of the agreement should be attached to the Claim Form. A claimant may be able to claim interest on their claim, under the Late Payment of Commercial Debts (Interest) Act 1998. The interest claim must be included on Form N1.
+
+The court will stamp the Claim Form and in most cases serve it on the defendant by sending it to the defendant by first class post.
+
+The claim will be dealt with at the court to which Form N1 was submitted, or will be automatically transferred to the defendant’s nearest County Court if:
+The case is defended; and
+The claim is for a fixed amount; and
+The defendant is an individual, not a company.
+
+In other cases, either party can ask for the case to be transferred to another County Court.
+
+How the court action will progress
+
+324485-56515Issue Claim
+Form N1
+No response from the defendant
+The defendant admits the claim (files Form N9A)
+The defendant contests the claim (by filing a Defence)
+Claimant requests ‘judgment by default’ (Form N225 or Form N227)
+Claimant enters a ‘request for judgment and reply to admission’ (Form N225)
+The case proceeds via an Allocation Questionnaire, to a hearing (unless settled before then)
+00Issue Claim
+Form N1
+No response from the defendant
+The defendant admits the claim (files Form N9A)
+The defendant contests the claim (by filing a Defence)
+Claimant requests ‘judgment by default’ (Form N225 or Form N227)
+Claimant enters a ‘request for judgment and reply to admission’ (Form N225)
+The case proceeds via an Allocation Questionnaire, to a hearing (unless settled before then)
+
+The defendant is not defending the case
+
+There are two scenarios where the defendant does not defend the case; either they do not respond at all, or they respond by admitting that the money is owed.
+
+If the defendant does not respond at all, it is relatively easy for the claimant to obtain judgment and thereafter to take enforcement action. If the claim was issued online via Money Claim Online, ‘judgment by default’ can be requested online. If the case was not started online, the claimant will have received a Notice of Issue from the court when the claim was issued. The Notice of Issue includes a tear-off section in which the claimant can request judgment by default.
+
+If the claim is for a specified amount of money, the tear-off section will be a Form N225. See:
+Form N225 – County Court Form Requesting Judgment and Reply to Admission) which you can reach by clicking  HYPERLINK "https://www.gov.uk/government/publications/form-n225-request-for-judgment-and-reply-to-admission-specified-amount" here. 
+
+This should be sent to the court with a covering letter. See: 
+Letter – Request to County Court for Judgment in Default on Form N225 (TR.D&C.02.07B1).
+
+If the claim is for an unspecified amount to be determined by the court, the tear-off section will be a Form N227. See:
+Form N227 – County Court Form Requesting Judgment in Default which you can reach by clicking here. 
+This should be sent to the court with a covering letter. See: 
+Letter – Request to County Court for Judgment in Default on Form N227 (TR.D&C.02.07a2).
+
+If the defendant responds by admitting the claim, (i.e. they acknowledge that they owe the sums in question), they will have filed Form N9A. The defendant may offer to pay the money in instalments or in one lump sum at a date in the future. Alternatively, the defendant may fail to make any proposal for payment. There are three ways in which the claimant may respond.
+
+If the claimant accepts the defendant’s proposal for payment, the claimant should complete Form N225 (referred to above) and send it to the court with a covering letter. See:
+Letter – Request to County Court Accepting Payment Proposal on Form N225 (TR.D&C.02.07B2).
+If the defendant's offer is not accepted, the claimant must give reasons in Form N225. The Form should be sent to the court with a covering letter. See:
+Letter – Request to County Court Objecting to Payment Offer on Form N225 (TR.D&C.02.07B4). 
+A court official will decide what a reasonable arrangement should be.
+If the defendant has admitted the claim but has not made any proposal for payment, Form N225 should be completed and sent to the court with a covering letter. See:
+Letter – Request to County Court for Judgment of Payment on Form N225 (TR.D&C.02.07B3).
+Following receipt of the claimant’s response, the court will send both parties an Order for Payment.
+The defendant disputes the claim
+
+If the defendant disputes the claim, he will have to respond to the N1 Claim Form with a ‘Defence’. Once the Defence is returned to the court, the court will send an Allocation Questionnaire to both parties. The court will use the information provided on the allocation questionnaire to decide which track the case will be allocated to, and then the court will provide ‘directions’, in other words, tell the participants what they need to do and by when. It is important to follow directions exactly, as otherwise a penalty may be imposed, or the case postponed.
+The directions may give a trial date or, if there are matters to be dealt with before trial, may list the case for a preliminary hearing at which further directions will be made. A request to change the hearing date can be made if required. See:
+Letter – Request Postponement of Preliminary Hearing (TR.D&C.02.08).
+If the parties are able to agree on the directions that should be made at the preliminary hearing, they can write to the court asking the court to make such directions without a hearing taking place. There would usually be an exchange of correspondence between the parties suggesting and agreeing to proposed directions. This correspondence can then be sent to the court with a request that the court make the agreed directions. See:
+Letter – Proposal for Directions for Trial to be Agreed between Parties (TR.D&C.02.09).
+The directions may require the parties to disclose documents that are relevant to their case. This is done by serving a list of documents on the other party. The list must include both documents that the party relies on and documents which are adverse to that party’s case. The other party is entitled to inspect any document in the list. See:
+Letter – Request to Defendant for Copies of Documents (TR.D&C.02.10).
+If the parties are able to settle the case before trial, this should be confirmed in writing and a copy of the exchange of correspondence should be sent to the court. See:
+Letter – Settlement of Debt Confirming Discontinuation of Court Case (TR.D&C.02.11).
+When the trial has taken place, a court order will be sent to the parties. Reasons for the decision are not normally given. Occasionally, a case may be dealt with by the court without a hearing (based on the papers before them), but this will only happen if the parties agree.
+
+Effect of Court Orders and Enforcement
+
+Requesting payment from the debtor
+
+If the claim has been successful, the judgment will order the debtor to pay the claimant directly. A letter can be sent requesting payment and reminding the debtor of the terms of the court order. See:
+Letter – Request for Payment after Judgment (TR.D&C.02.12).
+
+Information about the debtor’s finances
+
+If the debtor does not pay, the claimant should firstly check to see that the customer can afford to pay. If little is known about the customer’s finances, the claimant can apply to the court for an order that the debtor (or an officer of the debtor company) attend court for questioning. This will establish the debtor’s financial standing. The application is made on Form N316 (for an individual debtor) or Form N316A (for a corporate debtor). See:
+Form N316 – County Court Application Form for Questioning Individual Debtor which you can reach by clicking  HYPERLINK "https://www.gov.uk/government/publications/form-n316-application-for-order-that-debtor-attend-court-for-questioning" here; and
+Form N316A – County Court Application Form for Questioning Corporate Debtor which you can reach by clicking here.
+
+Enforcement of a court order
+
+Once the debtor’s circumstances are known, the next step is to decide whether it’s worth applying to court for one of the enforcement orders described below, and which one will be most appropriate. A further fee will be payable to the court to commence an enforcement action.
+
+Warrant of Control – seizure of debtor’s property
+
+A Warrant of Control (formally known as a Warrant of Execution) gives a County Court bailiff authority to enter the debtor’s property to collect the debt. If the debt is not paid, the bailiff is authorised to remove and sell belongings in order to recover the money owed. Creditors should establish the make, model and number plate of the debtor’s car as this is usually the most effective method for the bailiff to recover funds.
+
+A Warrant of Control can be applied for via the Money Claim Online website or by paper application on Form N323. See:
+Form N323 – County Court Form Requesting Warrant of Control which you can reach by clicking here.
+
+Attachment of Earnings Order – obtaining debtor’s salary
+
+If the debtor is an individual, the court can make an Attachment of Earnings Order. This directs the debtor’s employer to deduct an amount from the debtor’s earnings each pay day, and send it to the creditor.
+
+An application for such an order is made on Form N337. See:
+Form N337 – County Court Form Requesting Attachment of Earnings Order which you can reach by clicking here.
+
+Third Party Debt Order – obtaining funds from third party
+
+If the debtor has assets in a bank, or is owed money by any other person, the court can make a Third Party Debt Order. This usually stops the defendant from taking money out of the bank and the money owed is paid directly to the creditor from the account.
+
+An application for such an order is made on Form N349. See:
+Form N349 – County Court Application Form for Third Party Debt Order which you can reach by clicking here.
+Appendix A 
+
+Issuing a Statutory Demand – the Threat and how it Works
+
+If the customer is solvent, and the debt is for an amount greater than £750 in the case of a corporate debtor or more than £5,000 in the case of an individual debtor (including a sole trader), the creditor can issue a statutory demand. A statutory demand gives the debtor 21 days warning to pay the debt. 
+If the debtor does not respond by either paying off the debt, or applying for the statutory demand to be set aside (within the 21 days), the creditor can apply for a bankruptcy petition (for individuals and sole traders) or a winding-up petition (for companies). This effectively stops the debtor’s business from functioning. 
+The law assumes that a statutory demand paves the way for a petition for bankruptcy or winding up. But a statutory demand can be an effective debt collecting device in its own right, without the need to proceed to a petition. Frequently, a statutory demand is used as a ‘bluff’, and it is actually rare for it to be followed by a petition for bankruptcy or winding up. Issuing a statutory demand is effective as a threat, for the following reasons:
+A statutory demand is simple and cheap to issue; the demand can be prepared by the creditor themselves, and no solicitor or court needs to be involved.
+A statutory demand can be served as soon as the debt is due and it is not necessary to obtain a court judgment first.
+The statutory demand can be sent by recorded post (there is no need for personal delivery).
+The recipient will often be intimidated into paying immediately or, alternatively, they may offer property as security, or agree to pay in another way such as by instalments. 
+In theory, if the debtor does not either pay or respond, the next step is to present the county court with a bankruptcy petition or a winding up petition. If the court finds in favour of the creditor, the debtor will be wound up or made bankrupt. However, this may still not result in the creditor being paid! Unfortunately, the bankruptcy / winding-up petitioner does not get priority over whatever money becomes available.
+Important note – a statutory demand should only be served if the money is definitely owing. If the service of the statutory demand is followed by the issue of a bankruptcy or winding up petition, the court will halt the proceedings if there is any dispute about the sum outstanding. It is relatively easy for a debtor to have a statutory demand set aside, and this may result in an order for costs being made against the creditor.
+In summary, a statutory demand can be used as a threat, where there is no question that the debt is owed and where the amount of the debt is certain. However, serving a statutory demand is a serious step, and should not be used unless the relationship with the customer has totally broken down. 
+Please refer to the relevant pages on the Government website (which you can reach by clicking here) for further information about statutory demands and to obtain the appropriate form.
+Appendix B
+
+Debt Respite Scheme (Breathing Space Moratorium and Mental Health Crisis Moratorium) (England and Wales) Regulations 2020 made 17 Nov 2020, coming into force 04 May 2021 (“the Regulations”)
+
+The following briefly describes the purpose and some aspects of the Regulations in relation to how and when creditors are prohibited from taking certain steps to collect debts.
+The Regulations were developed to assist individuals with problem debt. They:
+make provision for a “breathing space moratorium” and for a “mental health crisis moratorium”, forms of legal protection for debtors. In each case, the protection is from collection of debt by creditors in certain instances. See below as to the nature of each of these types of protection.
+afford protection in relation to most, but not all, types of debt (“qualifying debt”, as defined by the Regulations), including rent arrears.
+provide protection in respect of:
+an individual’s consumer debts; and 
+business debts of certain individuals (i.e. debts of unincorporated businesses sole traders who are not VAT registered). 
+A ‘breathing space moratorium’ lasts for up to 60 days. 
+A ‘mental health crisis moratorium’ lasts for 30 days after the debtor stops receiving mental health crisis treatment. 
+Creditors receive notification from the Insolvency Service of any debt which is subject to a moratorium, and then must stop all debt collection action.
+During the moratorium period in each case, it is prohibited for the creditor to take any step towards collection of the debt/s concerned. (Any such act will be null and void.) Such an act would include a creditor communicating with a debtor (unless debtor requests it) in such a way as might appear to be pressure on the debtor to pay, attempting to enforce a court judgment or order (without court permission), selling or taking control of the debtor’s property or goods, starting any legal action or legal proceedings (including a bankruptcy petition) against the debtor, or serving a notice on the grounds of rent arrears to take possession of a property let to the debtor. 
+However, apart from bankruptcy proceedings, court proceedings about the debt (other than enforcement of court judgments or orders) can continue during a moratorium period until the court or tribunal makes an order or judgment.
+The following outlines how each type of moratorium is initiated. 
+A “breathing space moratorium” or a ‘mental health crisis moratorium’ can only be started by a debt adviser (FCA authorised debt counsellor or local authority debt adviser). 
+In the case of a “breathing space moratorium”, the debt adviser who provides advice to the debtor about the relevant debts must first be satisfied – before allowing the moratorium -  that the debtor is unlikely to be able to repay all or some of their debt and also that a breathing space is appropriate for the debtor: the adviser must determine that the debtor is in significant financial difficulty and could benefit from entering a debt solution.
+In the case of a ‘mental health crisis moratorium’, the debt adviser does not first have to give advice or make any assessment about those matters which they must consider in the case of a “breathing space moratorium”, but can instead initiate the moratorium based only on their view that the debtor is unlikely to be able to repay all or some of their debt and that a breathing space would be appropriate, and on certification by a mental health professional that the debtor is receiving treatment. 
+A creditor can within 20 days of start of a moratorium ask a debt adviser to review and cancel a moratorium or specific debts included in it, in certain stated circumstances. If the debt adviser considers that the moratorium unfairly prejudices the interests of the creditor and provided the debt adviser does not consider that the debtor’s personal circumstances would make it unfair or unreasonable, the debt adviser must cancel a standard moratorium for one or more of the related debts. If the debt adviser refuses to cancel, the creditor can appeal to court.
+A moratorium is not a payment holiday. Whilst a creditor cannot enforce a moratorium debt during the period of a moratorium, or charge interest or fees on it, a debtor is still legally required to pay their debts and liabilities. 
+We strongly recommend that you read the Regulations in full.

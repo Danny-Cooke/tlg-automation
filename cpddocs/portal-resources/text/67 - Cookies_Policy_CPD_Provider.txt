@@ -1,0 +1,91 @@
+COOKIES POLICY
+[Company Name] is committed to protecting your privacy and being transparent about the technologies we use on our website and learning platform. This policy explains what cookies are, how we use them, and the choices available to you.
+This policy should be read alongside our Privacy Policy and Terms and Conditions.
+
+This policy is provided in accordance with the UK Privacy and Electronic Communications Regulations 2003 (PECR), as amended, and the UK General Data Protection Regulation (UK GDPR) / Data Protection Act 2018, which together govern the use of cookies and similar tracking technologies on websites accessed by users in the United Kingdom.
+
+What Are Cookies?
+Cookies are small text files placed on your computer or device by our website or by third-party services we use. The information stored in cookies helps us to provide you with a better experience when using our website and CPD learning platform.
+Many of the cookies we use are deleted automatically when you log out of your learning account or close your web browser. None of our own cookies contain any personally identifiable information.
+
+How We Use Cookies
+Because our CPD learning platform relies on cookies to function correctly and deliver your training effectively, we ask for your consent to use cookies when you first visit our website. By continuing to use our website and learning platform after accepting our cookie notice, you are agreeing to our use of cookies as described in this policy.
+
+Our learning platform and e-commerce system depend on certain cookies to operate. If you choose to block or disable cookies, some or all of the functionality of our website and learning platform may not work correctly. We are unable to provide technical support to users who experience issues as a result of blocking cookies.
+
+Managing Your Cookie Preferences
+You have several options for controlling how cookies are used on your device:
+
+Set your web browser to refuse cookies from our website
+Use your browser's private or anonymous browsing mode — this is called 'Incognito' in Google Chrome, 'InPrivate' in Microsoft Edge, and 'Private Browsing' in Firefox and Safari
+Use your browser's built-in cookie management settings to review and delete cookies that have already been placed on your device
+For more information on cookies and how to control them, visit www.allaboutcookies.org
+
+Please be aware that restricting cookies may affect your ability to use our website and learning platform. In particular, you will not be able to complete purchases through our website if your browser is set to block cookies, as our payment system requires them to process transactions securely.
+
+The Cookies We Use
+
+Session Cookies
+Session cookies are temporary cookies that exist only for the duration of your visit and are deleted when you close your browser or log out of your account. We use session cookies for purposes including:
+Identifying you securely when you log in to our website or learning platform
+Keeping you logged in as you move between different areas of our platform
+Greeting you by name when you are signed in
+Remembering items you have added to your shopping basket
+Optimising the performance and security of our web servers
+
+We consider session cookies to be strictly necessary for the secure and efficient operation of our website and learning platform. If these cookies are blocked or disabled, core functionality — including the ability to log in and access your CPD learning — will not work.
+
+Persistent Cookies
+Persistent cookies remain on your device between visits, up to a defined expiry date. We use persistent cookies for purposes including:
+Returning you to the point in your CPD course that you had reached on your last visit, so you can continue where you left off
+Remembering content or courses you have previously viewed, to make it easier to find them again
+Ensuring you are not shown the same surveys, alerts, or notifications repeatedly
+
+If persistent cookies are blocked or disabled, our platform will remain usable but your experience will be affected — for example, you may lose your progress within a course when you log out.
+
+Analytics Cookies
+We use analytics cookies to help us understand how visitors use our website and learning platform. This information is collected in an aggregated, anonymous form and helps us to improve our content, navigation, and learner experience. Analytics cookies may be set by us or by trusted third-party analytics providers (such as Google Analytics).
+You can opt out of Google Analytics tracking at any time by installing the Google Analytics Opt-out Browser Add-on, available at tools.google.com/dlpage/gaoptout.
+
+Advertising Cookies
+We may use advertising or tracking cookies on some pages of our website to measure the effectiveness of our online advertising campaigns. These cookies help us to understand which adverts have led visitors to our website, so that we can assess the performance of our marketing activity and avoid showing you the same advert repeatedly.
+These cookies are typically set by trusted third-party advertising platforms. You can opt out of interest-based advertising by visiting your ad platform's privacy settings or by using the Your Online Choices opt-out tool at www.youronlinechoices.com.
+
+Social Media Cookies
+Some pages on our website include social media sharing or 'like' buttons (for example, LinkedIn, Facebook, or X/Twitter). When these buttons are present, the relevant social network may place a cookie on your device — including if you are already logged in to that network but do not click the button.
+[Company Name] does not control these cookies or the code that powers them. Before using social media sharing features on our website, we recommend reviewing the privacy policy of the relevant social network to understand how they collect and use your data, and how to opt out of tracking if you wish.
+
+Summary of Cookies Used
+
+Cookie Type
+Duration
+Purpose
+Session Cookies
+Duration of session
+Essential for login, navigation, shopping basket, and platform security.
+Persistent Cookies
+Up to 12 months
+Saving course progress, remembering viewed content, and managing notification frequency.
+Analytics Cookies
+Up to 24 months
+Anonymised tracking of website and platform usage to improve the learner experience.
+Advertising Cookies
+Up to 90 days
+Measuring the effectiveness of online advertising campaigns.
+Social Media Cookies
+Set by third parties
+Enabling social sharing buttons. Controlled by the relevant social network.
+
+Policy Review
+This policy will be reviewed annually, or sooner if there are changes to the cookies we use, the services we operate, or relevant legislation. We will notify users of any significant changes by updating the policy on our website.
+
+Policy Approval
+Name
+
+Position
+
+Date
+
+Signature
+
+Review Date

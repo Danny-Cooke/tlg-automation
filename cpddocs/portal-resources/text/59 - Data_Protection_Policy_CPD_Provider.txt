@@ -1,0 +1,237 @@
+DATA PROTECTION POLICY
+1. Introduction
+This policy sets out the obligations of [Company Name] ("the Company") regarding data protection and the rights of learners, customers, and business contacts ("data subjects") in respect of their personal data under the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
+The UK GDPR defines "personal data" as any information relating to an identified or identifiable natural person (a "data subject"). An identifiable natural person is one who can be identified, directly or indirectly, in particular by reference to an identifier such as a name, an identification number, location data, an online identifier, or to one or more factors specific to the physical, physiological, genetic, mental, economic, cultural, or social identity of that natural person.
+This policy sets out the Company's obligations regarding the collection, processing, transfer, storage, and disposal of personal data. The procedures and principles set out in this policy must be followed at all times by the Company, its employees, agents, contractors, and any other parties working on its behalf.
+The Company is committed not only to the letter of the law but to the spirit of the law, and places high importance on the correct, lawful, and fair handling of all personal data, respecting the legal rights, privacy, and trust of all individuals with whom it deals.
+
+2. The Data Protection Principles
+This policy aims to ensure compliance with the UK GDPR and the Data Protection Act 2018. All personal data collected, held, and processed by the Company must be:
+Processed lawfully, fairly, and in a transparent manner in relation to the data subject.
+Collected for specified, explicit, and legitimate purposes and not further processed in a manner that is incompatible with those purposes.
+Adequate, relevant, and limited to what is necessary in relation to the purposes for which it is processed.
+Accurate and, where necessary, kept up to date. Every reasonable step must be taken to ensure that inaccurate personal data is erased or rectified without delay.
+Kept in a form which permits identification of data subjects for no longer than is necessary for the purposes for which it is processed.
+Processed in a manner that ensures appropriate security, including protection against unauthorised or unlawful processing and against accidental loss, destruction, or damage, using appropriate technical and organisational measures.
+
+3. The Rights of Data Subjects
+The UK GDPR provides data subjects with the following rights, each of which the Company is committed to upholding:
+The right to be informed
+The right of access
+The right to rectification
+The right to erasure (the "right to be forgotten")
+The right to restrict processing
+The right to data portability
+The right to object
+Rights in relation to automated decision-making and profiling
+
+4. Lawful, Fair, and Transparent Data Processing
+The UK GDPR requires that personal data is processed lawfully, fairly, and transparently. Processing of personal data is lawful where at least one of the following conditions applies:
+The data subject has given consent to the processing of their personal data for one or more specific purposes.
+The processing is necessary for the performance of a contract to which the data subject is a party, or in order to take steps at the request of the data subject prior to entering into a contract.
+The processing is necessary for compliance with a legal obligation to which the Company is subject.
+The processing is necessary to protect the vital interests of the data subject or another natural person.
+The processing is necessary for the performance of a task carried out in the public interest or in the exercise of official authority.
+The processing is necessary for the purposes of the legitimate interests pursued by the Company or by a third party, except where such interests are overridden by the fundamental rights and freedoms of the data subject.
+
+Where the personal data in question is special category data (for example, data concerning health, ethnicity, or religious belief), at least one of the following additional conditions must also be met:
+The data subject has given explicit consent to the processing of such data for one or more specified purposes, unless UK law prohibits them from doing so.
+The processing is necessary to protect the vital interests of the data subject or another person where the data subject is physically or legally incapable of giving consent.
+The processing relates to personal data which has been clearly made public by the data subject.
+The processing is necessary for the conduct of legal claims or where courts are acting in their judicial capacity.
+
+5. Specified, Explicit, and Legitimate Purposes
+The Company collects and processes personal data only for the specific, legitimate purposes set out in this policy, or for other purposes expressly permitted by the UK GDPR and the Data Protection Act 2018. Data subjects are kept informed at all times of the purpose or purposes for which the Company uses their personal data.
+The Company does not use personal data collected for one purpose for a different, incompatible purpose without first obtaining the data subject's consent or establishing another lawful basis for doing so.
+
+6. Adequate, Relevant, and Limited Data Processing
+The Company will only collect and process personal data to the extent necessary for the specific purpose or purposes for which data subjects have been informed. Personal data that is not required for a stated purpose will not be collected.
+
+7. Accuracy of Data and Keeping Data Up to Date
+The Company shall ensure that all personal data collected, processed, and held is kept accurate and up to date. This includes the rectification of personal data at the request of a data subject. The accuracy of personal data will be checked when it is collected and at regular intervals thereafter. If any personal data is found to be inaccurate or out of date, all reasonable steps will be taken without delay to amend or erase that data as appropriate.
+
+8. Data Retention
+The Company shall not keep personal data for any longer than is necessary in light of the purpose or purposes for which it was originally collected, held, and processed. When personal data is no longer required, all reasonable steps will be taken to erase or otherwise dispose of it without delay.
+For full details of the Company's approach to data retention, including retention periods for specific categories of personal data, please refer to the separate Data Retention Policy.
+
+9. Secure Processing
+The Company shall ensure that all personal data collected, held, and processed is kept secure and protected against unauthorised or unlawful processing and against accidental loss, destruction, or damage. Details of the technical and organisational measures in place are set out in Sections 15 to 19 of this policy.
+
+10. Accountability and Record-Keeping
+The Company's Data Protection Lead is:
+
+Name
+Email
+Telephone
+[Name]
+[email@companyname.com]
+[00000 000000]
+
+The Data Protection Lead is responsible for overseeing the implementation of this policy and for monitoring compliance with this policy, the Company's other data protection-related policies, and with the UK GDPR and Data Protection Act 2018.
+Note: Not all organisations are legally required to appoint a formally designated Data Protection Officer (DPO) under the UK GDPR. The requirement applies primarily to public authorities and organisations whose core activities involve large-scale processing of special category data or large-scale, regular, and systematic monitoring of individuals. If this applies to your organisation, a formally appointed DPO should be named above. If you are unsure whether a formal DPO is required, seek advice from the Information Commissioner's Office (ICO) at ico.org.uk.
+
+The Company shall keep written internal records of all personal data collection, holding, and processing, which shall incorporate:
+The name and details of the Company and its Data Protection Lead.
+The purposes for which the Company collects, holds, and processes personal data.
+Details of the categories of personal data collected, held, and processed by the Company, and the categories of data subject to which that personal data relates.
+Details of any transfers of personal data to countries outside the UK, including all mechanisms and security safeguards.
+Details of how long personal data will be retained by the Company.
+Descriptions of all technical and organisational measures taken by the Company to ensure the security of personal data.
+
+11. Data Protection Impact Assessments
+The Company shall carry out Data Protection Impact Assessments (DPIAs) for any new projects or new uses of personal data that are likely to result in a high risk to the rights and freedoms of data subjects. DPIAs shall be overseen by the Data Protection Lead and shall address:
+The type(s) of personal data that will be collected, held, and processed.
+The purpose(s) for which personal data is to be used.
+How personal data is to be used and by whom.
+The necessity and proportionality of the data processing with respect to the purpose(s) for which it is processed.
+Risks posed to data subjects and proposed measures to minimise and manage those risks.
+Risks posed to the Company and proposed mitigations.
+
+12. Keeping Data Subjects Informed
+The Company shall provide the following information to every data subject at the point of data collection, or as soon as reasonably practicable thereafter:
+The identity and contact details of the Company and its Data Protection Lead.
+The purpose(s) for which the personal data is being collected and processed, and the lawful basis for that processing.
+Where applicable, the legitimate interests upon which the Company is relying to collect and process the personal data.
+Where the personal data is obtained from a third party, the categories of personal data collected and processed.
+Where the personal data is to be transferred to one or more third parties, details of those parties.
+Where the personal data is to be transferred to a country outside the UK, details of that transfer including the safeguards in place.
+Details of data retention periods.
+Details of the data subject's rights under the UK GDPR.
+Details of the data subject's right to withdraw consent at any time.
+Details of the data subject's right to complain to the Information Commissioner's Office (ICO).
+Where applicable, details of any legal or contractual requirement necessitating the collection and processing of the personal data.
+Details of any automated decision-making or profiling that will take place using the personal data.
+
+13. Subject Access Requests
+Data subjects may submit a Subject Access Request (SAR) at any time to find out what personal data the Company holds about them, what it is doing with that data, and why. SARs should be submitted in writing to the Data Protection Lead at the contact details set out in Section 10.
+The Company will normally respond to a SAR within one calendar month of receipt. This period may be extended by up to two further months where the SAR is complex or where the Company has received a number of requests from the same individual. Where an extension is required, the data subject will be informed within one month of receiving the request.
+The Company does not charge a fee for handling a standard SAR. A reasonable fee may be charged for manifestly unfounded or excessive requests, or for additional copies of information that has already been provided.
+
+14. Exercising Data Subject Rights
+Rectification
+Data subjects have the right to require the Company to rectify any inaccurate or incomplete personal data. The Company will rectify the data and inform the data subject within one month of being notified of the issue. Where affected personal data has been disclosed to third parties, those parties will also be informed of the rectification.
+Erasure
+Data subjects have the right to request the erasure of their personal data in the following circumstances:
+It is no longer necessary for the Company to hold that data for the purpose for which it was collected.
+The data subject withdraws their consent and there is no other lawful basis for processing.
+The data subject objects to processing and there is no overriding legitimate interest.
+The personal data has been processed unlawfully.
+Erasure is required to comply with a legal obligation.
+
+Unless the Company has reasonable grounds to refuse, all requests for erasure will be complied with and the data subject informed within one month. Where data to be erased has been shared with third parties, those parties will also be notified.
+Restriction of Processing
+Data subjects may request that the Company restricts its processing of their personal data. Where such a request is received, the Company will retain only the amount of personal data necessary to ensure processing does not continue beyond what has been agreed. Third parties who have received the personal data will be informed of any applicable restrictions.
+Objection to Processing
+Data subjects have the right to object to the Company processing their personal data based on legitimate interests, direct marketing (including profiling), and scientific or historical research purposes. Where an objection to legitimate interest processing is received, the Company will cease processing immediately unless it can demonstrate compelling legitimate grounds that override the data subject's rights, or unless the processing is necessary for legal claims. Where an objection to direct marketing is received, the Company will cease processing immediately and without exception.
+
+15. Personal Data Collected, Held, and Processed
+The following categories of personal data are collected, held, and processed by the Company in connection with its CPD training activities:
+
+Category
+Type of Data
+Purpose
+Learner records
+Name, contact details, job title, employer, course enrolment and completion records, CPD certificates issued.
+To administer and deliver CPD training; to issue certificates of completion; to maintain records for the purposes of CPD accreditation and verification.
+Account and login data
+Username, email address, password (encrypted), login activity.
+To manage access to the learning platform and to ensure the security of learner accounts.
+Payment and billing data
+Name, billing address, payment confirmation reference. Note: full card or bank details are not held by the Company; payments are processed by a PCI-compliant third-party provider.
+To process purchases of CPD training programmes and to maintain financial records.
+Course progress and assessment data
+Module completion, assessment scores, time spent on course, learner feedback.
+To track learner progress; to issue certificates; to support quality assurance and course improvement.
+Marketing and communications data
+Name, email address, communication preferences.
+To send marketing communications to individuals who have consented to receive them, and to manage opt-out requests.
+Business contact data
+Name, job title, organisation, email address, telephone number.
+To manage relationships with client organisations, suppliers, and professional contacts.
+Employee and contractor data
+Name, contact details, employment records, payroll data, next of kin details.
+For employment and contractual purposes, as required by law.
+
+16. Data Security — Transferring Personal Data and Communications
+The Company shall ensure that the following measures are taken in respect of all communications and transfers involving personal data:
+All emails containing personal data must be appropriately protected, for example by encryption, before sending.
+All emails containing personal data must be marked as confidential.
+Personal data may only be transmitted over secure networks. Transmission over unsecured or public networks is not permitted.
+Personal data must not be transmitted over a wireless network where a secure wired alternative is reasonably practicable.
+Personal data contained in an email should be copied to a secure location and the original email deleted once processing is complete.
+Where personal data is to be sent by post, it should be sent by Royal Mail Tracked or Signed For service and transferred in a sealed, confidential envelope or package.
+All physical transfers of personal data shall be made in a suitable container clearly marked as confidential.
+
+17. Data Security — Storage
+The Company shall ensure the following measures are taken in respect of the storage of personal data:
+All electronic copies of personal data shall be stored securely using passwords and, where appropriate, encryption.
+All physical copies of personal data, and electronic copies stored on removable media, shall be stored securely in a locked cabinet or other secure physical location.
+All personal data stored electronically shall be backed up regularly, with backups encrypted and stored securely.
+No personal data shall be stored on personal mobile devices unless formally approved in writing by the Data Protection Lead, and only in strict accordance with the conditions attached to that approval.
+Personal data shall not be transferred to any device or system belonging to an employee or third party unless that party has agreed to comply fully with this policy and the UK GDPR.
+
+18. Data Security — Disposal
+When personal data is to be erased or otherwise disposed of — including where copies have been made and are no longer needed — it shall be securely deleted using appropriate software or physically destroyed. Disposal will be carried out in accordance with the Company's Data Retention Policy.
+
+19. Data Security — Use of Personal Data
+The Company shall ensure the following measures are taken in respect of the use of personal data:
+No personal data may be shared informally. Access to personal data must be formally requested from and approved by the Data Protection Lead.
+Personal data must not be transferred to employees, agents, contractors, or other parties without the authorisation of the Data Protection Lead.
+Personal data must be handled carefully at all times and must not be left unattended or in view of unauthorised persons.
+Computer screens displaying personal data must be locked when left unattended, even for short periods.
+Where personal data is used for marketing purposes, it is the responsibility of the Data Protection Lead to ensure that appropriate consent has been obtained and that data subjects have not opted out.
+
+20. Data Security — IT and Information Security
+The Company shall ensure the following measures are taken in respect of IT and information security:
+All passwords used to protect personal data must be strong, changed regularly, and must not be shared with any other individual under any circumstances.
+If a password is forgotten it must be reset through the standard process. Passwords must never be written down.
+All software, including operating systems and applications, shall be kept up to date with security patches and updates installed promptly.
+No software may be installed on a Company-owned computer or device without prior approval.
+
+21. Organisational Measures
+The Company shall ensure the following organisational measures are in place:
+All employees, agents, contractors, and other parties working on behalf of the Company shall be made aware of their responsibilities under the UK GDPR, the Data Protection Act 2018, and this policy, and shall be provided with a copy of this policy.
+Access to personal data shall be restricted to only those individuals who require it to carry out their duties.
+All individuals handling personal data will receive appropriate training and supervision.
+All individuals handling personal data shall be required to exercise care and discretion when discussing work-related matters involving personal data.
+Methods of collecting, holding, and processing personal data will be regularly evaluated and reviewed.
+All agents, contractors, and third parties handling personal data on behalf of the Company must ensure that their own employees and sub-contractors are bound to the same data protection obligations.
+Where any third party working on behalf of the Company fails in their data protection obligations, that party shall indemnify the Company against any resulting costs, liabilities, or claims.
+
+22. Transferring Personal Data Outside the UK
+The Company may from time to time transfer personal data to countries outside the United Kingdom. Such transfers will only take place where one or more of the following conditions is met:
+The transfer is to a country or territory that the UK Secretary of State has determined provides an adequate level of protection for personal data (known as an "adequacy regulation").
+The transfer is subject to appropriate safeguards, such as UK International Data Transfer Agreements (IDTAs) or UK Addendums to EU Standard Contractual Clauses, as approved by the Information Commissioner's Office (ICO).
+The transfer is made with the informed consent of the relevant data subject.
+The transfer is necessary for the performance of a contract between the data subject and the Company.
+The transfer is necessary for important reasons of public interest.
+The transfer is necessary for the conduct of legal claims.
+The transfer is necessary to protect the vital interests of the data subject or another person where the data subject is unable to give consent.
+
+For guidance on international transfers under UK GDPR, refer to the ICO's guidance at ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/international-transfers.
+
+23. Data Breach Notification
+All personal data breaches must be reported immediately to the Company's Data Protection Lead. Where a breach is likely to result in a risk to the rights and freedoms of data subjects, the Data Protection Lead must ensure that the Information Commissioner's Office (ICO) is informed without delay and in any event within 72 hours of becoming aware of the breach.
+Where a breach is likely to result in a high risk to the rights and freedoms of data subjects, all affected individuals must also be informed directly and without undue delay.
+Data breach notifications to the ICO shall include the following information:
+The categories and approximate number of data subjects affected.
+The categories and approximate number of personal data records affected.
+The name and contact details of the Data Protection Lead.
+The likely consequences of the breach.
+The measures taken or proposed to address the breach, including measures to mitigate its possible adverse effects.
+
+To report a data breach to the ICO, visit ico.org.uk/for-organisations/report-a-breach.
+
+24. Policy Review
+This policy will be reviewed annually, or sooner if there are relevant changes to legislation, ICO guidance, or the Company's data processing activities. All revisions will be documented and communicated to relevant staff and contractors.
+
+Policy Approval
+Name
+
+Position
+
+Date
+
+Signature
+
+Review Date

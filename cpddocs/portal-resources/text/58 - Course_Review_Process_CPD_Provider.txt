@@ -1,0 +1,111 @@
+COURSE REVIEW PROCESS
+1. Purpose
+[Company Name] is committed to ensuring that all CPD training programmes are accurate, current, and of a consistently high quality. This document sets out the process by which courses are reviewed, updated, and approved before being made available to learners.
+Regular course review is essential to maintaining the integrity of our CPD provision, ensuring compliance with any relevant legislative or regulatory changes, and providing learners with a positive and credible learning experience.
+
+2. Scope
+This process applies to all CPD training programmes offered by [Company Name], including standard programmes and any bespoke courses developed for specific clients. It covers reviews triggered both by scheduled intervals and by specific events or issues.
+
+3. When Reviews Take Place
+Course reviews are conducted either on a scheduled basis or in response to a specific trigger. The table below sets out the review types, their frequency, and what prompts them.
+
+Review Type
+Frequency
+Triggers
+Content and Accuracy Review
+Annually as a minimum
+Scheduled annual review; change in legislation, regulation, or recognised best practice; feedback from learners or clients indicating content concerns.
+Delivery and Learner Experience Review
+Quarterly
+Scheduled quarterly check; learner feedback highlighting delivery issues; concerns raised by the client services team.
+Bespoke Client Course Review
+As agreed with the client
+Client request; change in the client's internal requirements or relevant external standards; approaching contract renewal.
+Ad Hoc Review
+As required
+Significant error identified in course content; urgent regulatory change; safeguarding or quality concern raised.
+
+4. The Review Process
+All course reviews follow a standard procedure to ensure consistency and quality. The steps below apply to both scheduled and ad hoc reviews.
+
+1
+Review Initiated
+The Training Manager schedules the review or logs the trigger that has prompted an unplanned review. The relevant course and review type are recorded.
+2
+Content Review by Subject Matter Expert
+A qualified Subject Matter Expert (SME) reviews the course content for accuracy, currency, and alignment with current legislation, regulation, and best practice. The SME documents any required changes on the Course Edit Sheet (see Section 5).
+3
+Delivery Review
+Where the review includes a learner experience or delivery check, the Training Manager or a nominated colleague reviews the programme from the learner's perspective, assessing clarity, structure, timing, and accessibility. Any issues are recorded on the Edit Sheet.
+4
+Edit Sheet Returned to Training Manager
+The completed Edit Sheet is returned to the Training Manager, who reviews the proposed changes, confirms priorities, and coordinates the update with the relevant team members responsible for content development.
+5
+Changes Actioned
+The required updates are made to the course materials. For bespoke client courses, the Training Manager liaises with the Sales and Client Services teams to confirm scope, costs, and delivery timescales with the client before work begins.
+6
+Quality Assurance Check
+Once updates have been made, the revised course is reviewed by the Training Manager to confirm that all changes have been applied correctly and that the overall quality of the programme meets [Company Name]'s standards.
+7
+Subject Matter Expert Sign-Off
+The updated course is returned to the SME for final sign-off, confirming that the content is accurate and appropriate for release.
+8
+Version Control and Release
+The approved course is version-controlled, with the update recorded in the course version log. The revised programme is then released and made available to learners. Where the course holds CPD accreditation, any significant content changes are notified to the relevant accreditation body as required.
+
+5. The Course Edit Sheet
+All changes identified during a review are recorded on the Course Edit Sheet. This is a standard document used to log:
+The course name and version being reviewed
+The date of the review and the name of the reviewer
+A description of each change required, with the reason (e.g. regulatory update, learner feedback, error correction)
+The section or page of the course to which each change applies
+The priority level of each change (urgent, standard, or minor)
+The date the change was actioned and by whom
+Sign-off confirmation from the Subject Matter Expert
+
+The Training Manager is responsible for maintaining a file of all completed Edit Sheets. These records form part of the organisation's quality assurance documentation and may be made available during CPD accreditation reviews.
+
+6. Version Control
+Every course maintained by [Company Name] carries a version number. Version numbers are updated whenever a review results in changes to the course content or delivery. A version log is maintained for each course, recording:
+The version number
+The date of release
+A summary of the changes made
+The name of the Subject Matter Expert who signed off the version
+
+Previous versions of course materials are archived and retained for a minimum of three years, in accordance with our data retention policy.
+
+7. CPD Accreditation Considerations
+Where a course holds CPD accreditation, it is the responsibility of the Training Manager to assess whether any changes made during a review are significant enough to require notification to the accrediting body. This includes, but is not limited to:
+Changes to the stated learning outcomes of the programme
+Significant changes to the volume or structure of the content
+Changes to the assessment or evaluation methods used
+Additions or removals of entire modules or subject areas
+
+Minor updates such as corrections to typographical errors, refreshed examples, or updated statistics that do not alter the substance of the learning outcomes do not typically require accreditation notification. When in doubt, the Training Manager should contact the accrediting body for guidance.
+
+8. Responsibilities
+
+Role
+Responsibilities
+Training Manager
+Schedules and coordinates all course reviews; manages the Edit Sheet process; oversees quality assurance checks; maintains version control records; liaises with accreditation bodies as required.
+Subject Matter Expert (SME)
+Reviews course content for accuracy and currency; documents required changes on the Edit Sheet; provides final sign-off on updated course versions.
+Content Development Team
+Actions changes identified during review in line with the Training Manager's instructions; updates course materials and version records.
+Sales and Client Services Team
+Liaises with clients regarding reviews of bespoke courses; agrees scope, costs, and delivery timescales for client-specific updates.
+
+9. Policy Review
+This process will be reviewed annually, or sooner if there are changes to organisational structure, the range of programmes offered, or relevant accreditation requirements.
+
+Policy Approval
+Name
+
+Position
+
+Date
+
+Signature
+
+Review Date
