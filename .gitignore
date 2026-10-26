@@ -30,3 +30,6 @@ lambda.zip
 
 # Client message history pulled by scripts/message_history.py (personal data)
 .local/
+
+# Academy: generated copy of academy/content for local serving; the deploy workflow copies it
+academy/web/content/

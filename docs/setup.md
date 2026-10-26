@@ -442,3 +442,58 @@ dates from then. It must stay off: switched on it would answer clients
 about prices and products from Meta's guesses, over the top of our bot.
 If a thread ever shows "AI responding" again, check this page first.
 
+## 7. TLG Academy (plan job 17, `docs/academy.md`)
+
+Its own workflow, `.github/workflows/academy.yml`, its own stack,
+`terraform/academy/`. Nothing here touches the bots.
+
+1. **GitHub prod environment**, all prefixed `TLG_ACADEMY_`:
+   `TLG_ACADEMY_ENABLED=true` (anything else plans only),
+   `TLG_ACADEMY_DOMAIN=academy.tlg-beauty.co.uk`,
+   `TLG_ACADEMY_DOMAIN_READY=false` (for now),
+   `TLG_ACADEMY_ACCREDITATION_PENDING=true`,
+   `TLG_ACADEMY_ADMIN_EMAILS=<Jess's email>`,
+   `TLG_ACADEMY_CONTACT_EMAIL`, `TLG_ACADEMY_SUPPORT_PHONE`. No secrets.
+2. **First deploy** (push, or run the Academy workflow by hand). It creates
+   everything, publishes the site on CloudFront's own domain, and prints two
+   DNS records at the end of the job: the certificate validation CNAME and
+   the `academy` CNAME to CloudFront. The site works at the
+   `cloudfront.net` address straight away; the login works there too.
+3. **Krystal**: client area, the hosting package, cPanel, Domains, Zone
+   Editor, Manage next to tlg-beauty.co.uk, Add Record, CNAME, twice. Not
+   the Subdomains tool (that would create a folder and an A record on
+   Krystal that fights the CNAME). Nothing else on the zone changes.
+4. **Second deploy**: set `TLG_ACADEMY_DOMAIN_READY=true`, run the workflow.
+   The certificate validates (it waits up to 20 minutes for the record to
+   resolve) and CloudFront answers on `academy.tlg-beauty.co.uk`.
+5. **WordPress**: a menu item "Academy" to the subdomain and a one-paragraph
+   `/academy/` page with the same link.
+6. **Jess**: she registers on the site like any student (hosted UI, email
+   code). Because her email is in `TLG_ACADEMY_ADMIN_EMAILS`, the
+   post-confirmation trigger puts her in the `admins` group and the
+   Approvals page appears in her menu. Students request access on a course
+   page; she approves or rejects on Approvals.
+7. **The manual**: `academy/files/` is synced to the private files bucket on
+   every deploy; `courses.json` names the key (`builder-gel/B01 Builder Gel
+   Learner Manual.pdf`). Approved learners get a five-minute signed link
+   from the course page. Placeholder courses (`"placeholder": true`) show
+   "coming soon" and cannot be requested.
+8. **Placeholder videos**: put a YouTube id in `youtube_id` for a lesson in
+   `academy/content/courses.json` and push. Empty means "video coming soon".
+9. **CPD marks**: The CPD Group rosette, the Approved Provider logo and the
+   Register badge are on the home page, the about page, every course page
+   and the footer; the Accredited Activity badge (the example from their
+   brand guidelines until the real one is issued) sits on each course with
+   the "pending" label. When a course is accredited, replace
+   `assets/cpd-accredited-activity.png` with the badge they issue, fill the
+   course's `cpd` block in `courses.json` and set
+   `TLG_ACADEMY_ACCREDITATION_PENDING=false`. The site is for the owners
+   while in development; the brand rules on where their logos may appear
+   apply when it goes public.
+
+Local check: `python -m http.server 8080 -d academy/web` after copying
+`academy/content` to `academy/web/content`; public pages work without
+config, login needs the values from `terraform output -json web_config`
+pasted into `academy/web/config.js`. Tests: `python -m pytest -q
+tests/test_academy.py`.
+

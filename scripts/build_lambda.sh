@@ -5,6 +5,7 @@
 #   scripts/build_lambda.sh menu_sync              -> build/menu_sync     (that package only)
 #   scripts/build_lambda.sh fresha_watch menu_sync -> build/fresha_watch  (named after the first package,
 #                                                                          holds every package listed)
+#   scripts/build_lambda.sh academy                -> build/academy       (no pip install; copies the course catalogue)
 #
 # Installs deps for the Lambda target (arm64, python3.12) and copies the named
 # src/ packages next to them. The persona and the rendered salon config ship
@@ -24,6 +25,9 @@ fi
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
+# The academy API needs only boto3, which the runtime provides, so its
+# bundle skips the dependency install.
+if [ "${PACKAGES[0]}" != "academy" ]; then
 python -m pip install \
   --quiet \
   --requirement "$ROOT/src/requirements.txt" \
@@ -32,10 +36,16 @@ python -m pip install \
   --implementation cp \
   --python-version 3.12 \
   --only-binary=:all:
+fi
 
 for pkg in "${PACKAGES[@]}"; do
   cp -r "$ROOT/src/$pkg" "$OUT/$pkg"
 done
+if [ -d "$OUT/academy" ]; then
+  # The course catalogue the API validates against is the one the site serves.
+  mkdir -p "$OUT/academy/content"
+  cp "$ROOT/academy/content/courses.json" "$OUT/academy/content/courses.json"
+fi
 if [ -d "$OUT/bot" ]; then
   # The persona is the whole folder: jess.md, voice-guide.md, vocabulary.md.
   mkdir -p "$OUT/bot/persona"

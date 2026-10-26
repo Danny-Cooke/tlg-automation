@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>TLG Academy</title>
+  <meta name="description" content="The Looking Glass Beauty School academy: pre-course study, manuals and support videos for our CPD courses.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js" defer></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="#/">
+      <span class="brand-name">The Looking Glass Beauty School</span>
+      <span class="brand-sub">Academy</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="#/courses">Courses</a>
+      <a href="#/about">About</a>
+      <a href="#/admin" data-admin hidden>Approvals</a>
+      <a href="#/account" data-when="in">Account</a>
+      <button type="button" class="btn btn-small" data-action="login" data-when="out">Log in</button>
+    </nav>
+  </header>
+
+  <main id="main" class="site-main" aria-live="polite"></main>
+
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div>
+        <p class="footer-title">The Looking Glass Beauty School</p>
+        <p>TLG Beauty Limited, 4a Roushill, Shrewsbury SY1 1PQ</p>
+        <p><a data-contact-email href="#">Email the academy</a> <span data-contact-phone></span></p>
+        <p><a href="#/privacy">Privacy notice</a> · <a href="https://tlg-beauty.co.uk/" rel="noopener">Main website</a></p>
+      </div>
+      <div class="footer-cpd">
+        <a href="https://thecpdregister.com/providers/cpd-group-providers--789824" rel="noopener" target="_blank" data-provider-logo>
+          <img src="assets/cpd-approved-provider-789824.png" alt="The CPD Group Approved Provider, provider number 789824" width="160">
+        </a>
+        <a href="https://thecpdregister.com/providers/cpd-group-providers--789824" rel="noopener" target="_blank" data-provider-logo>
+          <img src="assets/cpd-register-listed-on.png" alt="Listed on The CPD Register" width="120">
+        </a>
+        <a href="https://thecpd.group/" rel="noopener" target="_blank"><img src="assets/cpd-group-rosette.png" alt="The CPD Group" width="90"></a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

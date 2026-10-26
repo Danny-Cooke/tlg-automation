@@ -28,6 +28,19 @@ facts in `knowledge/`.
   (SMS sandbox, chaser texts, job 11 rulings, Fresha test client
   "TLG Bot Test" id 305395953 still to delete).
 
+## Second strand: CPD course accreditation (started 2026-10-26)
+
+Separate from the bot. Jess's nail courses are being accredited by The CPD
+Group and keep being returned; everything they have published or sent us is
+in `cpddocs/`, our course files are in `cpd-tlg/`, and the summary for the
+knowledge server is `knowledge/cpd-accreditation.md`. State on 2026-10-26:
+the Builder Gel course manual was critiqued and rebuilt as v1.1 with a full
+assessment pack; Jess has a checklist of what to check and what only she
+can supply (CV, photographs, the application form text). Gel Polish #21252
+needs the same treatment next; Acrylic #20893 is in review. Picking this
+strand up: read `knowledge/cpd-accreditation.md`, then
+`cpd-tlg/builder-gel-course/working-files/B01-fix-log-2026-10-26.md`.
+
 ## Agreed foundations
 
 - **Region:** everything in eu-west-2 (London).
@@ -706,6 +719,38 @@ availability lookup checks the main service alone, so a slot with no room
 for the add-on is caught by the booking tool ("not free with the add-on
 time") and the bot offers another time; a basket lookup would avoid that
 round trip.
+
+### 17. TLG Academy: student login, Jess's approval gate, course pages with placeholder videos (BUILT 2026-10-26, not yet deployed; design in `docs/academy.md`, operator steps in `docs/setup.md` section 7)
+
+The user: "we want to create an online academy for our courses... a tlg
+academy page with a student logon... placeholder youtube videos... a
+redirection page from our website hosted in krystal which forwards us to
+the aws infrastructure". Decisions the same day: a subdomain
+`academy.tlg-beauty.co.uk` rather than a redirect page; students
+self-register but see no course until Jess approves them for it from her
+own login; every variable and secret prefixed `TLG_ACADEMY_`, including
+`TLG_ACADEMY_ACCREDITATION_PENDING` for the CPD wording; desktop, Android
+and iPhone; demo for the owners, no payments, no certificates.
+
+Third Terraform stack (`terraform/academy/`): S3 + CloudFront + ACM for
+the site, Cognito hosted UI for login with `students` and `admins`
+groups, HTTP API + Python Lambdas + one DynamoDB table for profiles,
+enrolment requests and lesson progress, a private bucket for the manual.
+CPD brand rules are baked into the templates (provider logo on home and
+about only, linked to the register; a per-course badge slot that stays
+empty until accredited; no certificates). Krystal only needs two CNAME
+records in cPanel's Zone Editor and a nav link.
+
+Built the same day: `terraform/academy/` (validated), `src/academy/` with
+six tests, `academy/web/` (hash-routed app, PKCE login against the hosted
+UI, admin approvals page, responsive CSS), the Builder Gel course as eight
+lessons in `academy/content/`, and `.github/workflows/academy.yml`, a
+separate workflow (user's decision) gated by `TLG_ACADEMY_ENABLED`. Left
+for deploy day: the GitHub variables, the first run, the two Krystal
+records, the second run with `TLG_ACADEMY_DOMAIN_READY=true`, the manual
+PDF into the files bucket, Jess registering, and testing on an Android
+phone and an iPhone (the layout was checked in Chrome only). No video
+ids yet: every lesson shows "video coming soon" until one is set.
 
 ## Open questions for the user
 

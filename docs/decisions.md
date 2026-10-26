@@ -861,3 +861,42 @@ sentinel row in the conversations table (`_fresha-session-nag`, written
 with a condition, TTL a week) decides which container speaks. A failure in
 the nag is logged and never stops a reply.
 
+## 2026-10-26: a second strand, CPD course accreditation, lives in this repo
+
+The user: "this is the CPD accreditors which we are working with... we are
+finding creating the courses very hard work as they keep getting rejected."
+Everything The CPD Group has published, every template in their portal
+library, the signed contracts and the assessors' full reports on our four
+applications were pulled into `cpddocs/` (440 items) so the reasons for
+rejection could be read rather than guessed. The Builder Gel manual Jess
+wrote was then critiqued against that material and rebuilt as v1.1 (the
+gel-polish leftovers that contradicted the course, missing technique
+images, no conclusion, no assessment papers), with a theory paper, mark
+scheme, practical marking sheet, lesson plan and cover note written to The
+CPD Group's own templates. It stays in this repo because the user wants one
+place for the salon's work, but it is a documents strand: nothing in it
+touches the bot, AWS or Terraform, and course manuals are edited in Word
+from here on, not by script. Salon-side facts about it are in
+`knowledge/cpd-accreditation.md` for the knowledge server.
+
+## 2026-10-26: the academy is its own stack, its own workflow, and the browser never decides access
+
+The user wanted "a tlg academy page with a student logon", placeholder
+YouTube videos for now, and "a redirection page from our website hosted in
+krystal"; on discussion: a subdomain rather than a redirect page, students
+self-register but "gaining access does not give access to the courses",
+Jess approves from her login, every variable prefixed `TLG_ACADEMY_` with
+"accreditation pending" switchable, and "a different github action
+workflow for the academy deploy". So: `terraform/academy/` with its own
+state key and `.github/workflows/academy.yml`, so an academy change can
+never redeploy the bots and a bot change never touches the academy. The
+site is static with no build step (plain ES modules, Markdown lessons) to
+keep the pipeline to a sync and an invalidation. Access is enforced in
+the API on every lesson-complete and file-link call, not in the page:
+the page only reflects what `/me` returns. The custom domain is a
+two-deploy affair (`TLG_ACADEMY_DOMAIN_READY`) because the validation
+CNAME has to be added by hand in Krystal between them. The CPD Group's
+brand rules are written into the templates: provider logo on home, about
+and footer only, linked to the register; one empty badge slot per course;
+"CPD accreditation pending" forced by a variable; no certificates.
+

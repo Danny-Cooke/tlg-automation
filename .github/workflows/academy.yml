@@ -1,0 +1,153 @@
+name: Academy
+
+# Deploys the TLG Academy on its own (plan job 17, docs/academy.md): the
+# terraform/academy stack, then the site files to S3 and a CloudFront
+# invalidation. Never touches the bot stacks; deploy.yml never touches this.
+#
+# GitHub environment "prod", everything prefixed TLG_ACADEMY_:
+#   variables: TLG_ACADEMY_ENABLED              (true to apply; anything else plans only)
+#              TLG_ACADEMY_DOMAIN               (academy.tlg-beauty.co.uk; empty for CloudFront's own domain)
+#              TLG_ACADEMY_DOMAIN_READY         (true once both CNAME records exist in Krystal's DNS)
+#              TLG_ACADEMY_ACCREDITATION_PENDING (true: every course says "CPD accreditation pending", no badges)
+#              TLG_ACADEMY_ADMIN_EMAILS         (Jess's email; comma-separated for more)
+#              TLG_ACADEMY_CONTACT_EMAIL, TLG_ACADEMY_SUPPORT_PHONE (shown in the footer)
+#   secrets:   none yet; any added later keep the prefix.
+#   Also uses AWS_ROLE_ARN and OWNER_EMAIL like the other workflow.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "academy/**"
+      - "src/academy/**"
+      - "terraform/academy/**"
+      - "tests/test_academy.py"
+      - "scripts/build_lambda.sh"
+      - ".github/workflows/academy.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "academy/**"
+      - "src/academy/**"
+      - "terraform/academy/**"
+      - "tests/test_academy.py"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('academy-pr-{0}', github.event.number) || 'academy-prod' }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r src/requirements.txt -r requirements-dev.txt
+      - run: python -m pytest -q tests/test_academy.py
+      - name: Course content is valid
+        run: python -c "import json; d=json.load(open('academy/content/courses.json')); [open('academy/content/'+l['file']).close() for c in d['courses'] for l in c['lessons']]; print(len(d['courses']), 'course(s) ok')"
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AWS_REGION: eu-west-2
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "0"
+      TF_VAR_environment: prod
+      TF_VAR_owner_email: ${{ vars.OWNER_EMAIL || '' }}
+      TF_VAR_academy_domain: ${{ vars.TLG_ACADEMY_DOMAIN || '' }}
+      TF_VAR_academy_domain_ready: ${{ vars.TLG_ACADEMY_DOMAIN_READY || 'false' }}
+      TF_VAR_academy_accreditation_pending: ${{ vars.TLG_ACADEMY_ACCREDITATION_PENDING || 'true' }}
+      TF_VAR_academy_admin_emails: ${{ vars.TLG_ACADEMY_ADMIN_EMAILS || '' }}
+      TF_VAR_academy_contact_email: ${{ vars.TLG_ACADEMY_CONTACT_EMAIL || '' }}
+      TF_VAR_academy_support_phone: ${{ vars.TLG_ACADEMY_SUPPORT_PHONE || '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+          terraform_wrapper: false
+
+      - name: The deploy role must be named in the prod environment
+        env:
+          ROLE: ${{ vars.AWS_ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE" ]; then
+            echo "::error::AWS_ROLE_ARN is not set on the prod environment."
+            exit 1
+          fi
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build the Lambda bundle
+        run: bash scripts/build_lambda.sh academy
+
+      - name: Decide whether to apply
+        id: gate
+        env:
+          ENABLED: ${{ vars.TLG_ACADEMY_ENABLED }}
+        run: |
+          if [ "$ENABLED" = "true" ]; then
+            echo "apply=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "apply=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Plan only. Set TLG_ACADEMY_ENABLED=true on the prod environment to apply."
+          fi
+
+      - name: Academy - init
+        working-directory: terraform/academy
+        run: terraform init
+
+      - name: Academy - plan
+        working-directory: terraform/academy
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Academy - apply
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform/academy
+        run: terraform apply -no-color -auto-approve tfplan
+
+      - name: Academy - write the site config from the stack outputs
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform/academy
+        run: |
+          echo "window.TLG_ACADEMY = $(terraform output -json web_config);" > ../../academy/web/config.js
+          cat ../../academy/web/config.js
+
+      - name: Academy - publish the site
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform/academy
+        run: |
+          BUCKET="$(terraform output -raw site_bucket)"
+          DIST="$(terraform output -raw cloudfront_distribution_id)"
+          rm -rf ../../academy/web/content && cp -r ../../academy/content ../../academy/web/content
+          aws s3 sync ../../academy/web "s3://$BUCKET" --delete --cache-control "public, max-age=300"
+          aws cloudfront create-invalidation --distribution-id "$DIST" --paths "/*" >/dev/null
+          FILES="$(terraform output -raw files_bucket)"
+          aws s3 sync ../../academy/files "s3://$FILES"
+          echo "Site: $(terraform output -raw site_url)"
+
+      - name: Academy - DNS records for Krystal (until the domain is ready)
+        if: steps.gate.outputs.apply == 'true'
+        working-directory: terraform/academy
+        run: |
+          echo "Certificate validation record:"; terraform output -json certificate_validation_record
+          echo "Site record:"; terraform output -json domain_record

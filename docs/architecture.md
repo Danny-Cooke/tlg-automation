@@ -263,6 +263,26 @@ Run it by hand after a deploy:
 aws lambda invoke --region eu-west-2 --function-name $(terraform output -raw monitor_function_name) --cli-binary-format raw-in-base64-out --payload "{}" out.json && cat out.json
 ```
 
+### TLG Academy (plan job 17, separate stack and workflow)
+
+- **Site:** static files in `academy/web/` (no build step; plain ES
+  modules, Markdown lessons rendered in the browser) on a private S3
+  bucket behind CloudFront with origin access control, security headers,
+  and `academy.tlg-beauty.co.uk` once Krystal's CNAMEs exist.
+- **Login:** Cognito user pool, hosted UI, authorization code with PKCE
+  done by `academy/web/auth.js`; `admins` group; a post-confirmation
+  Lambda puts `TLG_ACADEMY_ADMIN_EMAILS` into the group on sign-up.
+- **API:** HTTP API with the Cognito JWT authoriser on every route,
+  one Lambda (`src/academy/handler.py`): profile, request access, lesson
+  complete, signed file link, admin list and decide. Approval status is
+  checked server-side on every lesson and file request.
+- **Data:** one DynamoDB table (PK/SK, GSI1 on enrolment status) and a
+  private files bucket for the manual.
+- **CPD rules in the templates:** provider logo only on home/about and the
+  footer, linked to the register; per-course badge slot empty until
+  accredited; `TLG_ACADEMY_ACCREDITATION_PENDING` forces "pending"
+  everywhere; no certificates generated.
+
 ## Build order
 
 1. Persona and salon config, with unit tests on the prompt builder.

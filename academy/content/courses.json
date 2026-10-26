@@ -1,0 +1,157 @@
+{
+  "courses": [
+    {
+      "id": "builder-gel",
+      "title": "Builder Gel Overlay and Short Extension CPD Course",
+      "accredited_title": "Builder Gel Overlay and Short Extension CPD Course",
+      "short": "Add builder gel overlays and short extensions to your services: a one-day classroom course with online pre-course study, assessed by theory paper, observed practical and three case studies.",
+      "delivery": "Classroom course at The Looking Glass Beauty School, Shrewsbury, with the pre-course study, manual and support videos here.",
+      "hours": 17.5,
+      "hours_breakdown": "2.5 hours pre-course study here, 7.5 guided learning hours on the taught day, about 7.5 hours for three case studies.",
+      "prerequisites": "Aged 18 or over, with a Level 2 Beauty Therapy, Nail Services or equivalent qualification covering manicure, nail structure and safe salon practice. Prior gel polish experience strongly recommended. Not open to anyone with a known acrylate or methacrylate sensitivity.",
+      "outcomes": [
+        "Explain the purpose, benefits, limitations and client suitability of builder gel, and compare it with gel polish, hard gel and liquid-and-powder acrylic.",
+        "Identify the structures of the nail unit and recognise conditions that require the service to be adapted, postponed or refused.",
+        "Conduct and record a professional consultation, obtain informed consent and create an individual treatment plan.",
+        "Explain oligomers, monomers, photoinitiators, polymerisation, lamp compatibility, under-curing and the inhibition layer.",
+        "Explain why builder gel carries a heat-spike risk that gel polish does not, and control it.",
+        "Select, handle, store and dispose of products and equipment in accordance with risk assessment, COSHH, manufacturer instructions and current UK requirements.",
+        "Prepare the natural nail without avoidable damage to the plate or living tissue.",
+        "Apply a slip layer and build a balanced overlay with a correctly placed apex, straight sidewalls and an even C-curve.",
+        "Create a short extension on a tip or form within the product's stated capability.",
+        "Infill, rebalance and remove builder gel safely by the method the product requires, and provide appropriate aftercare."
+      ],
+      "assessment": "A written theory paper (50 marks, pass 80%), a directly observed practical on a suitable adult model (80% overall and every safety-critical criterion met) and three post-course case studies. The certificate is issued only when all three are satisfactory; attendance alone is not sufficient.",
+      "cpd": {
+        "accreditation_number": "",
+        "register_url": "https://thecpdregister.com/providers/cpd-group-providers--789824",
+        "badge": "assets/cpd-accredited-activity.png"
+      },
+      "files": [
+        {
+          "id": "manual",
+          "label": "Learner manual (PDF)",
+          "key": "builder-gel/B01 Builder Gel Learner Manual.pdf"
+        }
+      ],
+      "lessons": [
+        {
+          "id": "01-welcome",
+          "title": "Welcome, scope and how the course works",
+          "minutes": 15,
+          "youtube_id": "",
+          "file": "builder-gel/01-welcome.md"
+        },
+        {
+          "id": "02-what-builder-gel-is",
+          "title": "What builder gel is, and when another system is the honest answer",
+          "minutes": 20,
+          "youtube_id": "",
+          "file": "builder-gel/02-what-builder-gel-is.md"
+        },
+        {
+          "id": "03-nail-anatomy",
+          "title": "Nail anatomy and the conditions that mean adapt, postpone or refer",
+          "minutes": 30,
+          "youtube_id": "",
+          "file": "builder-gel/03-nail-anatomy.md"
+        },
+        {
+          "id": "04-consultation",
+          "title": "Consultation, treatment planning and consent",
+          "minutes": 20,
+          "youtube_id": "",
+          "file": "builder-gel/04-consultation.md"
+        },
+        {
+          "id": "05-curing-and-heat",
+          "title": "How gel cures, under-curing, allergy and the heat spike",
+          "minutes": 25,
+          "youtube_id": "",
+          "file": "builder-gel/05-curing-and-heat.md"
+        },
+        {
+          "id": "06-architecture",
+          "title": "Apex, stress area, C-curve: the structure that makes a nail last",
+          "minutes": 20,
+          "youtube_id": "",
+          "file": "builder-gel/06-architecture.md"
+        },
+        {
+          "id": "07-safety-and-law",
+          "title": "Health, safety, hygiene and UK legislation",
+          "minutes": 25,
+          "youtube_id": "",
+          "file": "builder-gel/07-safety-and-law.md"
+        },
+        {
+          "id": "08-before-the-day",
+          "title": "Before the taught day: your pre-course tasks",
+          "minutes": 15,
+          "youtube_id": "",
+          "file": "builder-gel/08-before-the-day.md"
+        }
+      ]
+    },
+    {
+      "id": "gel-polish",
+      "title": "Gel Polish Nails CPD Course",
+      "accredited_title": "Gel Polish Nails CPD Course",
+      "placeholder": true,
+      "short": "Placeholder. Professional gel polish application, maintenance and removal on the natural nail. Content to follow.",
+      "delivery": "Classroom course at The Looking Glass Beauty School, Shrewsbury, with the pre-course study, manual and support videos here.",
+      "hours": 0,
+      "hours_breakdown": "To be confirmed when the course is published.",
+      "prerequisites": "To be confirmed. Expect a Level 2 Beauty Therapy, Nail Services or equivalent qualification and a minimum age of 18.",
+      "outcomes": [
+        "Learning outcomes will appear here when the course is published."
+      ],
+      "assessment": "Theory paper, observed practical and post-course case studies, in line with our other CPD courses.",
+      "cpd": {
+        "accreditation_number": "",
+        "register_url": "https://thecpdregister.com/providers/cpd-group-providers--789824",
+        "badge": "assets/cpd-accredited-activity.png"
+      },
+      "files": [],
+      "lessons": [
+        {
+          "id": "01-coming-soon",
+          "title": "Course content coming soon",
+          "minutes": 0,
+          "youtube_id": "",
+          "file": "gel-polish/01-coming-soon.md"
+        }
+      ]
+    },
+    {
+      "id": "acrylic",
+      "title": "Liquid and Powder Acrylic Enhancement CPD Course",
+      "accredited_title": "Liquid and Powder Acrylic Enhancement CPD Course",
+      "placeholder": true,
+      "short": "Placeholder. Liquid-and-powder acrylic overlays and extensions. Content to follow.",
+      "delivery": "Classroom course at The Looking Glass Beauty School, Shrewsbury, with the pre-course study, manual and support videos here.",
+      "hours": 0,
+      "hours_breakdown": "To be confirmed when the course is published.",
+      "prerequisites": "To be confirmed. Expect a Level 2 Beauty Therapy, Nail Services or equivalent qualification and a minimum age of 18.",
+      "outcomes": [
+        "Learning outcomes will appear here when the course is published."
+      ],
+      "assessment": "Theory paper, observed practical and post-course case studies, in line with our other CPD courses.",
+      "cpd": {
+        "accreditation_number": "",
+        "register_url": "https://thecpdregister.com/providers/cpd-group-providers--789824",
+        "badge": "assets/cpd-accredited-activity.png"
+      },
+      "files": [],
+      "lessons": [
+        {
+          "id": "01-coming-soon",
+          "title": "Course content coming soon",
+          "minutes": 0,
+          "youtube_id": "",
+          "file": "acrylic/01-coming-soon.md"
+        }
+      ]
+    }
+  ]
+}
