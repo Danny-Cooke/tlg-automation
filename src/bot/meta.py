@@ -15,7 +15,15 @@ from typing import Iterable
 log = logging.getLogger(__name__)
 
 GRAPH_VERSION = os.environ.get("GRAPH_API_VERSION", "v21.0")
-GRAPH_BASE = f"https://graph.facebook.com/{GRAPH_VERSION}"
+# Messenger talks to graph.facebook.com with a Page token. Instagram, since
+# plan job 18 (2026-10-27), talks to graph.instagram.com with the salon
+# account's own token ("Instagram API with Instagram Login"): no Facebook
+# Page in the path, and Standard Access reaches the public, so no App Review.
+GRAPH_HOST = os.environ.get("META_GRAPH_HOST", "graph.facebook.com")
+GRAPH_BASE = f"https://{GRAPH_HOST}/{GRAPH_VERSION}"
+# appsecret_proof is a graph.facebook.com thing ("Require app secret" in the
+# app's Advanced settings). graph.instagram.com is not documented to take it.
+PROOF_HOSTS = frozenset({"graph.facebook.com"})
 
 
 @dataclass(frozen=True)
@@ -36,12 +44,23 @@ def verify_challenge(query: dict, verify_token: str) -> str | None:
     return None
 
 
-def verify_signature(raw_body: bytes, header_value: str | None, app_secret: str) -> bool:
-    """Check X-Hub-Signature-256 against the raw request body."""
+def verify_signature(raw_body: bytes, header_value: str | None, app_secret: str, *fallback_secrets: str) -> bool:
+    """Check X-Hub-Signature-256 against the raw request body.
+
+    Any of the secrets may have signed it: on the Instagram Login route Meta
+    documents the Instagram app secret, and the Facebook app secret of the
+    same app is kept as a fallback until a real delivery shows which one
+    Meta uses (plan job 18)."""
     if not header_value or not header_value.startswith("sha256="):
         return False
-    expected = hmac.new(app_secret.encode(), raw_body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, header_value[len("sha256="):])
+    given = header_value[len("sha256="):]
+    for secret in (app_secret, *fallback_secrets):
+        if not secret:
+            continue
+        expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+        if hmac.compare_digest(expected, given):
+            return True
+    return False
 
 
 def parse_events(body: dict) -> list[InboundMessage]:
@@ -83,6 +102,14 @@ def appsecret_proof(access_token: str, app_secret: str) -> str:
     return hmac.new(app_secret.encode(), access_token.encode(), hashlib.sha256).hexdigest()
 
 
+def token_params(access_token: str, app_secret: str | None = None, **extra) -> dict:
+    """Query parameters for a token call: the token, the proof where the host takes one, and `extra`."""
+    params = {"access_token": access_token, **extra}
+    if app_secret and GRAPH_HOST in PROOF_HOSTS:
+        params["appsecret_proof"] = appsecret_proof(access_token, app_secret)
+    return params
+
+
 def page_token_for(token: str, page_id: str, *, app_secret: str | None = None, session=None) -> str:
     """A token the Page's "me" endpoints accept.
 
@@ -99,11 +126,8 @@ def page_token_for(token: str, page_id: str, *, app_secret: str | None = None, s
     import requests
 
     http = session or requests
-    params = {"access_token": token, "fields": "access_token"}
-    if app_secret:
-        params["appsecret_proof"] = appsecret_proof(token, app_secret)
     try:
-        resp = http.get(f"{GRAPH_BASE}/{page_id}", params=params, timeout=10)
+        resp = http.get(f"{GRAPH_BASE}/{page_id}", params=token_params(token, app_secret, fields="access_token"), timeout=10)
         if resp.status_code >= 400:
             log.info("Page token exchange not available (%s); using the token as given", resp.status_code)
             return token
@@ -121,12 +145,9 @@ def send_text(recipient_id: str, text: str, page_token: str, *, app_secret: str 
     import requests  # local import keeps unit tests free of network deps
 
     http = session or requests
-    params = {"access_token": page_token}
-    if app_secret:
-        params["appsecret_proof"] = appsecret_proof(page_token, app_secret)
     resp = http.post(
         f"{GRAPH_BASE}/me/messages",
-        params=params,
+        params=token_params(page_token, app_secret),
         json={
             "recipient": {"id": recipient_id},
             "messaging_type": "RESPONSE",
@@ -157,9 +178,7 @@ def user_profile(sender_id: str, page_token: str, *, channel: str = "messenger",
     import requests
 
     http = session or requests
-    params = {"access_token": page_token, "fields": PROFILE_FIELDS.get(channel, PROFILE_FIELDS["messenger"])}
-    if app_secret:
-        params["appsecret_proof"] = appsecret_proof(page_token, app_secret)
+    params = token_params(page_token, app_secret, fields=PROFILE_FIELDS.get(channel, PROFILE_FIELDS["messenger"]))
     try:
         resp = http.get(f"{GRAPH_BASE}/{sender_id}", params=params, timeout=10)
         if resp.status_code >= 400:
@@ -185,13 +204,10 @@ def send_action(recipient_id: str, action: str, page_token: str, *, app_secret: 
     import requests
 
     http = session or requests
-    params = {"access_token": page_token}
-    if app_secret:
-        params["appsecret_proof"] = appsecret_proof(page_token, app_secret)
     try:
         resp = http.post(
             f"{GRAPH_BASE}/me/messages",
-            params=params,
+            params=token_params(page_token, app_secret),
             json={"recipient": {"id": recipient_id}, "sender_action": action},
             timeout=10,
         )

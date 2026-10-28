@@ -26,6 +26,16 @@ output "bot_function_names" {
   value = { for c in local.channels : c => aws_lambda_function.bot[c].function_name }
 }
 
+output "instagram_token_function_name" {
+  description = "The Instagram token renewer (plan job 18); the pipeline invokes it after every apply. Empty on the Facebook Login route."
+  value       = local.instagram_login ? aws_lambda_function.instagram_token[0].function_name : ""
+}
+
+output "instagram_token_secret_name" {
+  description = "Where the salon Instagram account's token is seeded (docs/setup.md step 6). Empty on the Facebook Login route."
+  value       = local.instagram_login ? local.instagram_token_secret_name : ""
+}
+
 output "meta_page_id" {
   description = "The Facebook Page the bots answer for; the pipeline uses it to subscribe the Page to each app."
   value       = var.meta_page_id

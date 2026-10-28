@@ -89,13 +89,25 @@ SALON_TZ = zoneinfo.ZoneInfo(os.environ.get("SALON_TIMEZONE", "Europe/London"))
 
 @lru_cache(maxsize=1)
 def secrets() -> dict:
-    """This channel's Meta app secret, page token and verify token from Secrets Manager."""
+    """This channel's Meta app secret, the token it sends with (`page_token`) and the verify token.
+
+    Messenger: everything is in META_SECRET_ARN, and a System User token is
+    swapped for the Page's own. Instagram on the Instagram Login route (plan
+    job 18): the salon account's own token lives in META_TOKEN_SECRET_ARN,
+    which the weekly refresh rewrites and Terraform never touches; it is
+    used as it is, there is no Page to exchange it for.
+    """
     import boto3
 
-    arn = os.environ["META_SECRET_ARN"]
-    raw = boto3.client("secretsmanager").get_secret_value(SecretId=arn)["SecretString"]
-    s = json.loads(raw)
-    if s.get("page_token"):  # a System User token is swapped for the Page's own; a Page token passes through
+    sm = boto3.client("secretsmanager")
+    s = json.loads(sm.get_secret_value(SecretId=os.environ["META_SECRET_ARN"])["SecretString"])
+    token_arn = os.environ.get("META_TOKEN_SECRET_ARN", "")
+    if token_arn:
+        held = json.loads(sm.get_secret_value(SecretId=token_arn)["SecretString"] or "{}")
+        s["page_token"] = held.get("access_token", "")
+        if not s["page_token"]:
+            log.warning("Instagram token secret is empty: seed it from the Meta console (docs/setup.md step 6)")
+    elif s.get("page_token"):  # a System User token is swapped for the Page's own; a Page token passes through
         s["page_token"] = meta.page_token_for(s["page_token"], os.environ.get("META_PAGE_ID", ""), app_secret=s.get("app_secret"))
     return s
 
@@ -183,7 +195,8 @@ def _handle_webhook(event: dict, *, store: ConversationStore | None = None) -> d
     raw = event.get("body") or ""
     body_bytes = base64.b64decode(raw) if event.get("isBase64Encoded") else raw.encode()
     headers = {k.lower(): v for k, v in (event.get("headers") or {}).items()}
-    if not meta.verify_signature(body_bytes, headers.get("x-hub-signature-256"), secrets()["app_secret"]):
+    s = secrets()
+    if not meta.verify_signature(body_bytes, headers.get("x-hub-signature-256"), s["app_secret"], s.get("fallback_app_secret", "")):
         log.warning("Bad webhook signature")
         return _resp(403, "bad signature")
 

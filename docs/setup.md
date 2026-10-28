@@ -62,9 +62,66 @@ Facebook Page. Done 2026-10-19: both apps exist.
    with a role on the app. Add your own Facebook and Instagram accounts as
    testers (App roles > Roles) so you can message the Page and see the bots
    react.
-6. **Publish, not app review.** Both apps only serve the business's own
-   Page and Instagram account, so Standard Access is enough and no App
-   Review was needed: Meta's Publish page asked for one thing, a privacy
+6. **Instagram: the Instagram Login route, no App Review (plan job 18,
+   2026-10-27).** Standard Access covers Messenger but, on the route that
+   goes through the Facebook Page, not Instagram: on 2026-10-26 a client's
+   Instagram DM never left Meta while the tester's did, and Business
+   Verification (TLG Beauty Limited, verified 2026-10-26) changed nothing.
+   App Review on that route now demands irreversible "Tech Provider"
+   status. Meta's own guide says an app "only for a business I own or
+   manage" on the **Instagram Login** route needs no App Review, so the
+   Instagram bot now uses that route: graph.instagram.com with the salon
+   account's own token, no Page in the path. Once, in the console:
+   1. Tlg-app2 > Use cases > Instagram API > Customize > **API setup with
+      Instagram login** (the console calls it legacy and pushes "Unified
+      login"; that one is the Facebook route under another name, see
+      `docs/decisions.md` 2026-10-27). Copy the *Instagram app ID*
+      (1959298412099447, app name Tlg-app2-IG) and the *Instagram app
+      secret* (Show, next to it; a second pair, not the ones from Settings
+      > Basic) into the GitHub prod secrets `TLG_IG_APP_ID` and
+      `TLG_IG_APP_SECRET`. Setting the pair is what switches the pipeline
+      and the bot to this route.
+   2. Same tab, "Generate access tokens" > Add account: add
+      @lookingglassbeautysalons as an Instagram tester, then accept the
+      invite from the salon's Instagram app (Settings > Website
+      permissions > Apps and websites > Tester invites). The account must
+      be a professional account.
+   3. "Generate token" next to the account: an Instagram sign-in as the
+      salon, so whoever holds that login does it. Store the token with the
+      AWS CLI; Terraform does not manage this secret, it only points at
+      the name, so create it before the first deploy with the pair set:
+      `aws secretsmanager create-secret --name tlg-prod/meta/instagram-token --description "Salon Instagram token, renewed weekly by tlg-prod-instagram-token" --secret-string '{"access_token":"<token>"}'`.
+      A later token (after the old one died) goes in with
+      `aws secretsmanager put-secret-value --secret-id tlg-prod/meta/instagram-token --secret-string '{"access_token":"<token>"}'`.
+      Then check it straight away rather than waiting for Monday:
+      `aws lambda invoke --function-name tlg-prod-instagram-token --cli-binary-format raw-in-base64-out --payload '{"source":"deploy"}' out.json && cat out.json`
+      should show the salon's username, an expiry about 60 days out and
+      an empty `problems` list. (In Git Bash on Windows prefix both with
+      `MSYS_NO_PATHCONV=1` and the usual `--profile default --region
+      eu-west-2`.) Terraform never touches that secret;
+      `tlg-prod-instagram-token` renews it every Monday and after every
+      deploy, re-subscribes the account to `messages`, and emails ops and
+      posts to the team group if a renewal fails or under ten days are
+      left. A token that has died needs step 3 again. If the Meta console's
+      "Generate token" popup says the page cannot be loaded, step 4 of
+      that console tab ("Set up Instagram business login") needs a
+      redirect URL first; the salon website is in there (2026-10-28).
+      Removing the app under Instagram > Apps and websites puts the
+      invite back to Pending on Meta's side; accept it again on the Tester
+      invitations tab and the token can be generated again.
+   4. Webhooks: the pipeline subscribes the app's `instagram` object on
+      graph.instagram.com with the Instagram pair and removes the old
+      Facebook Login subscription; if that step warns, set the callback
+      (`terraform output webhook_urls`, instagram) and verify token under
+      the same tab > Configure webhooks > `messages`. The callback and the
+      Lambda are unchanged; the signature is checked against the Instagram
+      app secret first and the Facebook one as a fallback.
+   5. Proof: a DM from someone with no role on the app or the business
+      portfolio (not the user, who is a tester) gets the bot's reply and
+      shows in the `tlg-prod-instagram-bot` log. Sender ids on this route
+      are new Instagram-scoped ids, so old Instagram threads in the
+      conversation table start again.
+   The original publish step: no App Review was needed to publish: Meta's Publish page asked for one thing, a privacy
    policy URL (App settings > Basic), set to the salon's
    https://tlg-beauty.co.uk/privacy-policy/ on both apps, and the Publish
    button then worked. Both apps were published 2026-10-25. Until an app is
@@ -78,13 +135,14 @@ Facebook Page. Done 2026-10-19: both apps exist.
 Secrets (set 2026-10-19): `TLG_APP1_ID`, `TLG_APP1_SECRET` (Messenger),
 `TLG_APP2_ID`, `TLG_APP2_SECRET` (Instagram). Then `TLG_PAGE_TOKEN` so the
 Messenger bot can reply (without it they store, log and email but cannot
-send), `TLG_IG_PAGE_TOKEN` (the Tlg-app2 token above) so the Instagram bot
-receives and answers Instagram DMs, and later `ANTHROPIC_AWS_WORKSPACE_ID`
-for shadow mode. Without `TLG_IG_PAGE_TOKEN` the Instagram webhook is
-registered but the Page is never subscribed to Tlg-app2, so Instagram DMs
-stay in the Business Suite inbox and the bot never sees them (found
-2026-10-25: two weeks of logs, Messenger 25 client messages, Instagram 0). The Page ID is in
-`salon.auto.tfvars`; it is not secret.
+send), and later `ANTHROPIC_AWS_WORKSPACE_ID` for shadow mode. Since plan
+job 18 (2026-10-27) the Instagram bot runs on the Instagram Login route:
+`TLG_IG_APP_ID` and `TLG_IG_APP_SECRET` (the Instagram app pair, section 1
+step 6) switch it on, and the account's token is seeded into Secrets
+Manager by hand, not into GitHub. `TLG_IG_PAGE_TOKEN` (the Page token
+issued by Tlg-app2, used on the old route) is ignored once the Instagram
+pair is set and can be deleted. The Page ID is in `salon.auto.tfvars`; it
+is not secret.
 
 Variable `TLG_STAFF` (set 2026-10-25): a comma-separated list of staff
 names as they appear on Facebook and Instagram. A sender whose profile

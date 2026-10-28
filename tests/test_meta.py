@@ -49,6 +49,23 @@ def test_verify_signature():
     assert not meta.verify_signature(body, "md5=abc", SECRET)
 
 
+def test_verify_signature_accepts_a_fallback_secret_but_never_an_empty_one():
+    """Instagram Login route: Meta may sign with the Instagram app secret or the Facebook one (plan job 18)."""
+    body = b'{"object":"instagram"}'
+    assert meta.verify_signature(body, sign(body), "ig-secret", SECRET)
+    assert meta.verify_signature(body, sign(body), SECRET, "")
+    assert not meta.verify_signature(body, sign(body), "ig-secret", "")
+    assert not meta.verify_signature(body, sign(body), "", "")
+
+
+def test_appsecret_proof_only_goes_to_graph_facebook_com(monkeypatch):
+    """graph.instagram.com is not documented to take appsecret_proof, so the Instagram bot sends none."""
+    assert set(meta.token_params("tok", "s", fields="x")) == {"access_token", "appsecret_proof", "fields"}
+    assert meta.token_params("tok", None) == {"access_token": "tok"}
+    monkeypatch.setattr(meta, "GRAPH_HOST", "graph.instagram.com")
+    assert meta.token_params("tok", "s") == {"access_token": "tok"}
+
+
 def messenger_body(text="hi", echo=False, mid="m1"):
     msg = {"mid": mid, "text": text}
     if echo:

@@ -88,6 +88,49 @@ variable "meta_instagram_page_token" {
   default     = ""
 }
 
+# Instagram on the Instagram Login route (plan job 18, 2026-10-27). The
+# Instagram product gives Tlg-app2 a second id and secret of its own
+# ("API setup with Instagram login" > Instagram app ID / secret). Setting
+# the pair switches the Instagram bot to graph.instagram.com with the
+# salon account's own token (secret <name>/meta/instagram-token, created by
+# hand, renewed weekly) and drops the Page from the path. The Facebook pair
+# above stays as the fallback for webhook signatures.
+
+variable "meta_instagram_login_app_id" {
+  description = "Instagram app ID of Tlg-app2 (Instagram > API setup with Instagram login). Setting it switches the Instagram bot to the Instagram Login route; empty keeps the Facebook Login route."
+  type        = string
+  default     = ""
+}
+
+variable "meta_instagram_login_app_secret" {
+  description = "Instagram app secret of Tlg-app2, the pair of meta_instagram_login_app_id. Required with it."
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  validation {
+    condition     = (var.meta_instagram_login_app_secret == "") == (var.meta_instagram_login_app_id == "")
+    error_message = "meta_instagram_login_app_id and meta_instagram_login_app_secret go together: set both or neither."
+  }
+}
+
+variable "instagram_token_schedule" {
+  description = "When the Instagram token is renewed (plan job 18). Weekly; a token lasts 60 days, so a missed week costs nothing. EventBridge cron, in instagram_token_timezone."
+  type        = string
+  default     = "cron(0 7 ? * MON *)"
+}
+
+variable "instagram_token_timezone" {
+  type    = string
+  default = "Europe/London"
+}
+
+variable "instagram_token_warn_days" {
+  description = "Ops and the team group hear about the Instagram token once it has fewer days than this left and could not be renewed."
+  type        = number
+  default     = 10
+}
+
 # ---------------------------------------------------------------------------
 # Bot behaviour
 # ---------------------------------------------------------------------------

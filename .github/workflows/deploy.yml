@@ -127,6 +127,8 @@ jobs:
           GH_PAT: ${{ secrets.GH_PAT }}
           TLG_APP1_SECRET: ${{ secrets.TLG_APP1_SECRET }}
           TLG_APP2_SECRET: ${{ secrets.TLG_APP2_SECRET }}
+          TLG_IG_APP_ID: ${{ secrets.TLG_IG_APP_ID }}
+          TLG_IG_APP_SECRET: ${{ secrets.TLG_IG_APP_SECRET }}
           TLG_PAGE_TOKEN: ${{ secrets.TLG_PAGE_TOKEN }}
         run: |
           if [ -z "$GH_PAT" ]; then
@@ -142,6 +144,13 @@ jobs:
             echo "::notice::Bot stack: plan only. Needs TLG_APP1_SECRET on the prod environment."
           fi
           [ -n "$TLG_APP2_SECRET" ] && echo "instagram=true" >> "$GITHUB_OUTPUT" || echo "instagram=false" >> "$GITHUB_OUTPUT"
+          # Instagram Login route (plan job 18): set once TLG_IG_APP_ID and TLG_IG_APP_SECRET exist.
+          if [ -n "$TLG_IG_APP_ID" ] && [ -n "$TLG_IG_APP_SECRET" ]; then
+            echo "instagram_login=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "instagram_login=false" >> "$GITHUB_OUTPUT"
+            [ -z "$TLG_IG_APP_ID$TLG_IG_APP_SECRET" ] || echo "::warning::TLG_IG_APP_ID and TLG_IG_APP_SECRET go together; the Instagram Login route stays off until both are set."
+          fi
           [ -n "$TLG_PAGE_TOKEN" ] || echo "::notice::No TLG_PAGE_TOKEN yet: the bots will store and email messages but cannot reply, and the Page must be subscribed to each app in the Meta console."
 
       # ---- menu sync ------------------------------------------------------
@@ -204,6 +213,8 @@ jobs:
           TF_VAR_meta_instagram_app_secret: ${{ secrets.TLG_APP2_SECRET || '' }}
           TF_VAR_meta_page_token: ${{ secrets.TLG_PAGE_TOKEN || '' }}
           TF_VAR_meta_instagram_page_token: ${{ secrets.TLG_IG_PAGE_TOKEN || '' }}
+          TF_VAR_meta_instagram_login_app_id: ${{ secrets.TLG_IG_APP_ID || '' }}
+          TF_VAR_meta_instagram_login_app_secret: ${{ secrets.TLG_IG_APP_SECRET || '' }}
           TF_VAR_anthropic_aws_workspace_id: ${{ secrets.ANTHROPIC_AWS_WORKSPACE_ID || '' }}
           TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN || '' }}
           TF_VAR_telegram_chat_id: ${{ vars.TELEGRAM_CHAT_ID || '' }}
@@ -233,8 +244,8 @@ jobs:
             --verify-token "$(terraform output -json webhook_verify_tokens | python -c 'import sys,json; print(json.load(sys.stdin)["messenger"])')" \
             ${PAGE_TOKEN:+--page-id "$PAGE_ID" --page-token "$PAGE_TOKEN"}
 
-      - name: Bots - register the Instagram webhook with Meta
-        if: steps.gate.outputs.apply_bot == 'true' && steps.gate.outputs.instagram == 'true'
+      - name: Bots - register the Instagram webhook with Meta (Facebook Login route)
+        if: steps.gate.outputs.apply_bot == 'true' && steps.gate.outputs.instagram == 'true' && steps.gate.outputs.instagram_login != 'true'
         working-directory: terraform
         env:
           APP_ID: ${{ secrets.TLG_APP2_ID }}
@@ -250,6 +261,31 @@ jobs:
             --callback-url "$(terraform output -json webhook_urls | python -c 'import sys,json; print(json.load(sys.stdin)["instagram"])')" \
             --verify-token "$(terraform output -json webhook_verify_tokens | python -c 'import sys,json; print(json.load(sys.stdin)["instagram"])')" \
             ${PAGE_TOKEN:+--page-id "$PAGE_ID" --page-token "$PAGE_TOKEN"}
+
+      # Instagram Login route (plan job 18): the app's "instagram" subscription
+      # is made on graph.instagram.com with the Instagram app pair, the old
+      # Facebook Login one is taken off so a DM is never delivered twice, and
+      # the token Lambda subscribes the account itself, checks the stored
+      # token and renews it. Its output says whether the token is seeded.
+      - name: Bots - register the Instagram webhook with Meta (Instagram Login route)
+        if: steps.gate.outputs.apply_bot == 'true' && steps.gate.outputs.instagram_login == 'true'
+        working-directory: terraform
+        env:
+          IG_APP_ID: ${{ secrets.TLG_IG_APP_ID }}
+          IG_APP_SECRET: ${{ secrets.TLG_IG_APP_SECRET }}
+          FB_APP_ID: ${{ secrets.TLG_APP2_ID }}
+          FB_APP_SECRET: ${{ secrets.TLG_APP2_SECRET }}
+        run: |
+          pip install --quiet requests
+          CALLBACK="$(terraform output -json webhook_urls | python -c 'import sys,json; print(json.load(sys.stdin)["instagram"])')"
+          VERIFY="$(terraform output -json webhook_verify_tokens | python -c 'import sys,json; print(json.load(sys.stdin)["instagram"])')"
+          python ../scripts/meta_setup.py --channel instagram --graph-host graph.instagram.com             --app-id "$IG_APP_ID" --app-secret "$IG_APP_SECRET"             --callback-url "$CALLBACK" --verify-token "$VERIFY"             || echo "::warning::Could not register the Instagram Login webhook over the API; set it in the console (Tlg-app2 > Instagram > API setup with Instagram login > Webhooks)."
+          if [ -n "$FB_APP_SECRET" ]; then
+            python ../scripts/meta_setup.py --channel instagram --remove               --app-id "$FB_APP_ID" --app-secret "$FB_APP_SECRET"               --callback-url "$CALLBACK" --verify-token "$VERIFY"               || echo "::warning::Could not remove the old Facebook Login subscription on Tlg-app2; remove it in the console (Webhooks > Instagram)."
+          fi
+          aws lambda invoke --function-name "$(terraform output -raw instagram_token_function_name)"             --cli-binary-format raw-in-base64-out --payload '{"source":"deploy"}' token.json > /dev/null
+          python -c 'import json; r=json.load(open("token.json")); print(json.dumps(r, indent=1)); import sys; sys.exit(1 if r.get("problems") else 0)'             || echo "::warning::The Instagram token needs attention (see above): seed or renew it per docs/setup.md step 6."
+          rm -f token.json
 
       - name: Bots - webhook URLs
         if: steps.gate.outputs.apply_bot == 'true'

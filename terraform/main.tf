@@ -66,14 +66,18 @@ resource "aws_secretsmanager_secret" "meta" {
   recovery_window_in_days = 7
 }
 
+# On the Instagram Login route (instagram_token.tf) the Instagram channel's
+# app pair is the Instagram one, the Facebook pair stays as the signature
+# fallback, and the token comes from its own secret rather than from here.
 resource "aws_secretsmanager_secret_version" "meta" {
   for_each  = local.channels
   secret_id = aws_secretsmanager_secret.meta[each.key].id
   secret_string = jsonencode({
-    app_id       = local.meta_app_ids[each.key]
-    app_secret   = each.key == "messenger" ? var.meta_messenger_app_secret : var.meta_instagram_app_secret
-    page_token   = each.key == "instagram" && var.meta_instagram_page_token != "" ? var.meta_instagram_page_token : var.meta_page_token
-    verify_token = random_password.verify_token[each.key].result
+    app_id              = each.key == "instagram" && local.instagram_login ? var.meta_instagram_login_app_id : local.meta_app_ids[each.key]
+    app_secret          = each.key == "messenger" ? var.meta_messenger_app_secret : (local.instagram_login ? var.meta_instagram_login_app_secret : var.meta_instagram_app_secret)
+    fallback_app_secret = each.key == "instagram" && local.instagram_login ? var.meta_instagram_app_secret : ""
+    page_token          = each.key == "instagram" ? (local.instagram_login ? "" : (var.meta_instagram_page_token != "" ? var.meta_instagram_page_token : var.meta_page_token)) : var.meta_page_token
+    verify_token        = random_password.verify_token[each.key].result
   })
 }
 
@@ -218,9 +222,13 @@ data "aws_iam_policy_document" "bot" {
   }
 
   statement {
-    sid       = "Secrets"
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = concat([aws_secretsmanager_secret.meta[each.key].arn], aws_secretsmanager_secret.telegram[*].arn)
+    sid     = "Secrets"
+    actions = ["secretsmanager:GetSecretValue"]
+    resources = concat(
+      [aws_secretsmanager_secret.meta[each.key].arn],
+      aws_secretsmanager_secret.telegram[*].arn,
+      each.key == "instagram" && local.instagram_login ? [local.instagram_token_secret_arn] : [],
+    )
   }
 
   dynamic "statement" {
@@ -319,6 +327,8 @@ resource "aws_lambda_function" "bot" {
       OPS_TOPIC_ARN              = local.ops_topic_arn
       META_SECRET_ARN            = aws_secretsmanager_secret.meta[each.key].arn
       META_PAGE_ID               = var.meta_page_id
+      META_GRAPH_HOST            = each.key == "instagram" && local.instagram_login ? "graph.instagram.com" : "graph.facebook.com"
+      META_TOKEN_SECRET_ARN      = each.key == "instagram" && local.instagram_login ? local.instagram_token_secret_name : ""
       CLAUDE_MODEL               = var.claude_model
       CLAUDE_EFFORT              = var.claude_effort
       ANTHROPIC_AWS_WORKSPACE_ID = var.anthropic_aws_workspace_id

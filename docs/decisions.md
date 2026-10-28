@@ -900,3 +900,50 @@ brand rules are written into the templates: provider logo on home, about
 and footer only, linked to the register; one empty badge slot per course;
 "CPD accreditation pending" forced by a variable; no certificates.
 
+## 2026-10-27: Instagram moves to the Instagram Login route rather than App Review
+
+Business Verification came through the same day it was submitted and
+changed nothing: a client's DM at 23:20 on 26 Oct never invoked the
+Instagram Lambda. Adding `instagram_manage_messages` to App Review opened
+Meta's "become a Tech Provider" dialog, an irreversible status meant for
+developers serving other businesses, followed by a screencast review of a
+few weeks. Not clicked. Meta's Instagram App Review guide lists "My app is
+only for a business I own or manage" with Instagram Login at Standard
+Access, App Review "Not required", and the messaging docs say Standard
+Access covers accounts the business owns and has added to the app. Our
+app was on the other route, through the Facebook Page, where public DMs
+need Advanced Access. The user chose the Instagram Login route (job 18):
+graph.instagram.com, the salon account's own 60-day token in its own
+secret, renewed weekly by `tlg-prod-instagram-token`, which also keeps the
+account subscribed to `messages`. The deploy pipeline ships code only;
+the token never passes through GitHub, and Terraform does not manage the
+secret it lives in (the user creates it with the CLI, 2026-10-28) so a
+deploy cannot put a stale token back. Why Facebook was easy:
+Messenger's `pages_messaging` reaches the public at Standard Access, an
+older rule; Instagram's messaging API came later with tighter rules, and
+the business-only route was only added in 2024.
+
+The console (seen the same day) now calls "API setup with Instagram login"
+legacy and recommends "API setup with Unified login". Unified login is a
+Facebook Login for Business configuration with a never-expiring System
+User token and the Facebook-route permission names
+(`instagram_manage_messages`), which is the route that just failed us, and
+Meta's exemption from App Review names Instagram Login alone. So the
+legacy route it is, knowingly: it still works, the exemption is explicit,
+and if Meta retires it the switch back is configuration
+(`TLG_IG_APP_ID` unset) plus whatever review Meta then asks for.
+
+## 2026-10-26: Instagram needs Advanced Access after all
+
+Test mode came off at 16:04 and the first client Instagram DM, at 18:21,
+never reached AWS: the webhook gateway saw no request from Meta, the app's
+Instagram webhook was active and pointed at the right URL, and the Page's
+subscription to Tlg-app2 was unchanged. The difference from the tester's
+DM on 25 Oct is the sender: `instagram_manage_messages` is at Standard
+Access ("Ready for testing"), which only delivers messages from people
+with a role on the app. Messenger's `pages_messaging` at Standard Access
+does reach the public, which is why the earlier assumption held there.
+The fix is Business Verification followed by App Review for the Instagram
+permissions, which only the user can submit. Recorded in `docs/setup.md`
+step 6; `scripts/meta_setup.py` is unchanged (it cannot subscribe the
+Page's `messages` field on Tlg-app2, Meta confirmed: pages_messaging).

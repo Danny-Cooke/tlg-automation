@@ -21,7 +21,22 @@ facts in `knowledge/`.
   WhatsApp numbers, hair three-door rule, Telegram hand-overs with the chat
   id cached, the tool cap answering from what it found, Meta Business
   Agent off on the Page.
-- **Next, in order:** 1) the user flips `MESSAGE_TEST_MODE`; 2) job 15,
+- **Instagram is not open to clients yet (found 2026-10-26).** Test mode is
+  off and Messenger answers the public, but Meta only delivers Instagram DMs
+  from app-role accounts until `instagram_manage_messages` has Advanced
+  Access: Business Verification, then App Review on Tlg-app2
+  (`docs/setup.md` step 6). A client's DM at 18:21 on 26 Oct was never sent
+  to the webhook; the team answers Instagram by hand until approval.
+  Checked 2026-10-27: Business Verification is **Verified** (TLG Beauty
+  Limited, 26 Oct); the App Review submission on Tlg-app2 is still empty
+  ("Not submitted") and every Instagram permission is "Ready for testing".
+  Adding a permission to App Review now demands irreversible "Tech
+  Provider" status; Meta's own guide says an app for a business you own
+  needs no App Review on the Instagram Login route. Decision open: Tech
+  Provider + App Review, or move Tlg-app2 to Instagram Login (see
+  `docs/meta-app-review.md`, "Found 2026-10-27").
+- **Next, in order:** 0) job 18, Instagram on the Instagram Login route
+  (agreed 2026-10-27, replaces the App Review); 1) `MESSAGE_TEST_MODE` is off since 2026-10-26 16:04; 2) job 15,
   reply time under Meta's 20 s on a cold start; 3) narrow the wide staff
   entries ("Looking Glass", "Savvy" silence any client whose name
   contains them); 4) job 9 hand-back; 5) the rest of the backlog below
@@ -29,6 +44,9 @@ facts in `knowledge/`.
   "TLG Bot Test" id 305395953 still to delete).
 
 ## Second strand: CPD course accreditation (started 2026-10-26)
+- **Acrylic course rebuilt as v1.1 (2026-10-27):** `cpd-tlg/acrylic-course/`, manual v1.1 and A02–A06 pack from the v1 file that is with the assessor; nothing to upload until #20893 comes back, then Jess's checklist applies.
+- **Gel Polish course rebuilt (2026-10-26):** `cpd-tlg/gel-polish-course/`, manual v2.0 and G02–G06 pack to the Builder Gel standard; waiting on Jess's checklist items (CV, forms, photographs, application text) before resubmitting #21252. Figures 14 to 22 redrawn realistically on 2026-10-27 after Jess's feedback, and the Builder Gel and Acrylic figures redrawn the same way the same day, so all three manuals share one drawing style.
+
 
 Separate from the bot. Jess's nail courses are being accredited by The CPD
 Group and keep being returned; everything they have published or sent us is
@@ -37,7 +55,7 @@ knowledge server is `knowledge/cpd-accreditation.md`. State on 2026-10-26:
 the Builder Gel course manual was critiqued and rebuilt as v1.1 with a full
 assessment pack; Jess has a checklist of what to check and what only she
 can supply (CV, photographs, the application form text). Gel Polish #21252
-needs the same treatment next; Acrylic #20893 is in review. Picking this
+got it on 2026-10-26 and Acrylic #20893 on 2026-10-27 (while in review). Picking this
 strand up: read `knowledge/cpd-accreditation.md`, then
 `cpd-tlg/builder-gel-course/working-files/B01-fix-log-2026-10-26.md`.
 
@@ -751,6 +769,74 @@ records, the second run with `TLG_ACADEMY_DOMAIN_READY=true`, the manual
 PDF into the files bucket, Jess registering, and testing on an Android
 phone and an iPhone (the layout was checked in Chrome only). No video
 ids yet: every lesson shows "video coming soon" until one is set.
+
+### 18. Instagram on the Instagram Login route, no App Review (AGREED and BUILT 2026-10-27, awaiting the console steps and a deploy; bot stack)
+
+Why: Tlg-app2 talks to Instagram through the Facebook Page ("Instagram API
+with Facebook Login"), and on that route Meta delivers DMs from the public
+only at Advanced Access, which now means becoming a "Tech Provider"
+(irreversible) and an App Review with a screencast. Meta's own App Review
+guide says an app "only for a business I own or manage" on the Instagram
+Login route needs no App Review: Standard Access covers accounts the
+business owns and has added to the app. Messenger never had this problem
+because `pages_messaging` at Standard Access already reaches the public.
+The user chose this route on 2026-10-27 (`docs/meta-app-review.md`).
+
+What changes, in order:
+
+1. **Console (user, with the clicks prepared):** Tlg-app2 > Instagram API >
+   "API setup with Instagram login". Note the Instagram app ID and
+   Instagram app secret (a second pair, not the Facebook ones). App roles >
+   Instagram testers > add @lookingglassbeautysalons, then accept the invite
+   in the Instagram app (Settings > Website permissions > Tester invites).
+   "Generate token" for that account: an Instagram sign-in, so the user or
+   Jess does it; the token is long-lived (60 days). Webhooks under the same
+   tab: callback `.../webhook/instagram`, our verify token, field
+   `messages`.
+2. **Terraform (`terraform/`):** two new GitHub secrets `TLG_IG_APP_ID`
+   and `TLG_IG_APP_SECRET` into the Instagram channel's secret in place of
+   the Facebook app pair; a separate secret `tlg-prod/meta/instagram-token`
+   that the user creates once with `aws secretsmanager create-secret`
+   (Terraform only points at the name, so a deploy never touches the
+   token); Lambda env `META_GRAPH_HOST=graph.instagram.com` for
+   the Instagram channel; a weekly EventBridge schedule (same pattern as the
+   chaser) that invokes the bot package's `refresh_instagram_token` handler.
+3. **Code (`src/bot/meta.py`, `handler.py`):** the Graph host per channel;
+   signature check with the Instagram app secret; no Page token exchange
+   on this channel; `/me/messages` and the profile read on
+   graph.instagram.com with the Instagram token; `appsecret_proof` only
+   where that host accepts it. The webhook body (`object: instagram`,
+   `entry[].messaging[]`) is the same shape, so `parse_events` and the
+   duplicate check by message id stay. The refresh handler calls
+   `GET /refresh_access_token?grant_type=ig_refresh_token`, writes the new
+   token and its expiry back to the token secret, and posts to the team's
+   Telegram group and the ops topic if the refresh fails or the token has
+   under ten days left. Weekly gives eight chances before a token dies.
+   Tests for the host switch, the signature source and the refresh maths.
+4. **Pipeline (`scripts/meta_setup.py`, `deploy.yml`):** the Instagram
+   step subscribes the account with
+   `POST graph.instagram.com/me/subscribed_apps?subscribed_fields=messages`
+   using the stored token, instead of subscribing the Page to the app.
+   The old Page subscription on Tlg-app2 is removed so a tester's DM is not
+   delivered twice.
+5. **Proof:** a DM from someone with no role on the app or the business
+   portfolio (not the user, who is a tester) gets the bot's reply in the
+   thread, and the Instagram Lambda log shows the invocation. Then the
+   notes in `docs/setup.md` step 6 and `docs/meta-app-review.md` are
+   rewritten for the new route.
+
+Not a git pipeline job: the token never goes through GitHub. The deploy
+pipeline ships code; the refresh runs in AWS on its own schedule and the
+secret it rewrites is the one Terraform ignores.
+
+Built 2026-10-27: `src/bot/ig_token.py` (the renewer, six tests),
+`meta.py` host switch and fallback secret, `handler.py` token loading,
+`terraform/instagram_token.tf` plus the variables, secret wiring and
+outputs, `scripts/meta_setup.py --graph-host/--remove`, and the pipeline
+step. Everything is gated on `TLG_IG_APP_SECRET`: until that GitHub secret
+exists a deploy changes nothing on the Instagram side. Left for the user:
+the console steps in `docs/setup.md` section 1 step 6 (the Instagram app
+pair into GitHub, the tester invite, the token), then the proof DM.
 
 ## Open questions for the user
 

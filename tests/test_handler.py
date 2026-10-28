@@ -428,7 +428,7 @@ def test_tools_are_off_without_a_venue_url(monkeypatch):
 
 def test_webhook_ignores_the_other_channel(wired, monkeypatch):
     monkeypatch.setattr(handler, "CHANNEL", "instagram")
-    monkeypatch.setattr(meta, "verify_signature", lambda body, header, secret: True)
+    monkeypatch.setattr(meta, "verify_signature", lambda body, header, *secrets: True)
     store = MemoryStore()
     body = {
         "object": "page",
@@ -438,6 +438,37 @@ def test_webhook_ignores_the_other_channel(wired, monkeypatch):
     event = {"requestContext": {"http": {"method": "POST"}}, "headers": {}, "body": json.dumps(body)}
     assert handler._handle_webhook(event, store=store)["statusCode"] == 200
     assert store.items == {} and wired["sent"] == []
+
+
+def test_secrets_use_the_instagram_token_as_it_is(monkeypatch):
+    """Instagram Login route (plan job 18): the account's own token comes from its own secret, no Page exchange."""
+    import sys
+
+    reads = []
+
+    class SM:
+        def get_secret_value(self, SecretId):
+            reads.append(SecretId)
+            if SecretId == "arn:token":
+                return {"SecretString": json.dumps({"access_token": "IGTOKEN", "username": "salon"})}
+            return {"SecretString": json.dumps({"app_secret": "ig-secret", "fallback_app_secret": "fb-secret", "verify_token": "v", "page_token": ""})}
+
+    class Boto:
+        @staticmethod
+        def client(name):
+            return SM()
+
+    monkeypatch.setitem(sys.modules, "boto3", Boto)
+    monkeypatch.setenv("META_SECRET_ARN", "arn:meta")
+    monkeypatch.setenv("META_TOKEN_SECRET_ARN", "arn:token")
+    monkeypatch.setattr(meta, "page_token_for", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no exchange on this route")))
+    handler.secrets.cache_clear()
+    try:
+        s = handler.secrets()
+    finally:
+        handler.secrets.cache_clear()
+    assert s["page_token"] == "IGTOKEN" and s["fallback_app_secret"] == "fb-secret"
+    assert reads == ["arn:meta", "arn:token"]
 
 
 def test_lambda_handler_refuses_an_unknown_mode(wired, monkeypatch):

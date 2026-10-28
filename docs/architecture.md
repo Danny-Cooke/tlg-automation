@@ -289,8 +289,11 @@ aws lambda invoke --region eu-west-2 --function-name $(terraform output -raw mon
 2. Lambda handler with Meta signature verification and the Graph API send.
 3. Terraform: HTTP API, Lambda, DynamoDB, SNS, Secrets Manager, IAM, and the
    scheduled monitor with its ops topic.
-4. Meta app setup (manual): app, webhook subscription, page token, app review
-   for `pages_messaging` and `instagram_manage_messages`.
+4. Meta app setup (manual): app, webhook subscription, page token. No app
+   review: Messenger's `pages_messaging` reaches the public at Standard
+   Access, and Instagram runs on the Instagram Login route with the salon
+   account's own token (plan job 18, 2026-10-27), which Meta exempts for an
+   app serving only the business's own account.
 5. Shadow mode: bot drafts replies and escalates everything to Jess for a week.
 6. Live mode for standard booking conversations only.
 

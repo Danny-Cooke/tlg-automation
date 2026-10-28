@@ -29,6 +29,14 @@ What it does:
 Prerequisites from the Meta developer console (no API for these): the App
 ID and App Secret (Settings > Basic); a Page access token (Messenger >
 API setup > Generate token, or a System User token).
+
+Instagram Login route (plan job 18, 2026-10-27): the app-level subscription
+is made on graph.instagram.com with the Instagram app's own id and secret
+(--graph-host graph.instagram.com), there is no Page step, and the account
+itself is subscribed by the tlg-prod-instagram-token Lambda with its token.
+--remove deletes the app's subscription to the object instead, which is how
+the old Facebook Login subscription is taken off so a DM is not delivered
+twice.
 """
 from __future__ import annotations
 
@@ -39,7 +47,8 @@ import sys
 
 import requests
 
-GRAPH = "https://graph.facebook.com/v21.0"
+GRAPH_VERSION = "v21.0"
+GRAPH = f"https://graph.facebook.com/{GRAPH_VERSION}"
 
 CHANNELS = {
     # fields: what the app subscribes to on the object. page_fields: what the
@@ -74,6 +83,12 @@ def subscribe_app(app_id: str, app_token: str, obj: str, fields: list[str], call
         timeout=30,
     )
     _check(r, f"subscribe app to {obj} webhooks at {callback}")
+
+
+def unsubscribe_app(app_id: str, app_token: str, obj: str) -> None:
+    """Take the app's subscription to `obj` off. Idempotent: Meta answers success when there was none."""
+    r = requests.delete(f"{GRAPH}/{app_id}/subscriptions", params={"object": obj, "access_token": app_token}, timeout=30)
+    _check(r, f"remove the {obj} subscription of app {app_id}")
 
 
 def page_token_for(token: str, page_id: str, app_secret: str) -> str:
@@ -159,11 +174,20 @@ def main() -> None:
     p.add_argument("--verify-token", required=True)
     p.add_argument("--page-id")
     p.add_argument("--page-token")
+    p.add_argument("--graph-host", default="graph.facebook.com", help="graph.instagram.com for the Instagram Login route")
+    p.add_argument("--remove", action="store_true", help="delete the app's subscription to the object instead of asserting it")
     a = p.parse_args()
+
+    global GRAPH
+    GRAPH = f"https://{a.graph_host}/{GRAPH_VERSION}"
 
     spec = CHANNELS[a.channel]
     if not a.callback_url.rstrip("/").endswith(f"/webhook/{a.channel}"):
         sys.exit(f"callback for {a.channel} should end with /webhook/{a.channel}: {a.callback_url}")
+
+    if a.remove:
+        unsubscribe_app(a.app_id, app_access_token(a.app_id, a.app_secret), spec["object"])
+        return
 
     subscribe_app(a.app_id, app_access_token(a.app_id, a.app_secret), spec["object"], spec["fields"], a.callback_url, a.verify_token)
 
