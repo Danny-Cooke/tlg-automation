@@ -109,13 +109,18 @@ Facebook Page. Done 2026-10-19: both apps exist.
       Removing the app under Instagram > Apps and websites puts the
       invite back to Pending on Meta's side; accept it again on the Tester
       invitations tab and the token can be generated again.
-   4. Webhooks: the pipeline subscribes the app's `instagram` object on
-      graph.instagram.com with the Instagram pair and removes the old
-      Facebook Login subscription; if that step warns, set the callback
-      (`terraform output webhook_urls`, instagram) and verify token under
-      the same tab > Configure webhooks > `messages`. The callback and the
-      Lambda are unchanged; the signature is checked against the Instagram
-      app secret first and the Facebook one as a fallback.
+   4. Webhooks: two subscriptions. The app-level one (callback, verify
+      token, the `messages` field) lives on the Meta app whatever the
+      login route, so the pipeline keeps making it on graph.facebook.com
+      with the Tlg-app2 pair, as before; graph.instagram.com refuses the
+      Instagram pair for it (found 2026-10-28: the first deploy on this
+      route removed the subscription and a test DM was lost). If that step
+      warns, set the callback (`terraform output webhook_urls`, instagram)
+      and verify token under the same console tab > 3. Configure webhooks.
+      The account-level one (`/me/subscribed_apps`) is made by
+      `tlg-prod-instagram-token` with the account's own token. The callback
+      and the Lambda are unchanged; the signature is checked against the
+      Instagram app secret first and the Facebook one as a fallback.
    5. Proof: a DM from someone with no role on the app or the business
       portfolio (not the user, who is a tester) gets the bot's reply and
       shows in the `tlg-prod-instagram-bot` log. Sender ids on this route

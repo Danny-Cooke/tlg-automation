@@ -918,7 +918,12 @@ secret, renewed weekly by `tlg-prod-instagram-token`, which also keeps the
 account subscribed to `messages`. The deploy pipeline ships code only;
 the token never passes through GitHub, and Terraform does not manage the
 secret it lives in (the user creates it with the CLI, 2026-10-28) so a
-deploy cannot put a stale token back. Why Facebook was easy:
+deploy cannot put a stale token back. Found on the first deploy
+(2026-10-28): the app-level webhook subscription is a property of the Meta
+app, not of the login route, so it stays on graph.facebook.com with the
+Tlg-app2 pair; only the account-level subscription uses the account token
+on graph.instagram.com. The pipeline step that removed the old
+subscription was wrong and is gone. Why Facebook was easy:
 Messenger's `pages_messaging` reaches the public at Standard Access, an
 older rule; Instagram's messaging API came later with tighter rules, and
 the business-only route was only added in 2024.
