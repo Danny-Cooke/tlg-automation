@@ -35,8 +35,8 @@ facts in `knowledge/`.
   needs no App Review on the Instagram Login route. Decision open: Tech
   Provider + App Review, or move Tlg-app2 to Instagram Login (see
   `docs/meta-app-review.md`, "Found 2026-10-27").
-- **Next, in order:** 0) job 18, Instagram on the Instagram Login route
-  (agreed 2026-10-27, replaces the App Review); 1) `MESSAGE_TEST_MODE` is off since 2026-10-26 16:04; 2) job 15,
+- **Next, in order:** 0) job 19, book first then confirm, plus jobs and
+  competitions handed to Jess (built 2026-10-28, awaiting a push); 1) `MESSAGE_TEST_MODE` is off since 2026-10-26 16:04; 2) job 15,
   reply time under Meta's 20 s on a cold start; 3) narrow the wide staff
   entries ("Looking Glass", "Savvy" silence any client whose name
   contains them); 4) job 9 hand-back; 5) the rest of the backlog below
@@ -770,7 +770,7 @@ PDF into the files bucket, Jess registering, and testing on an Android
 phone and an iPhone (the layout was checked in Chrome only). No video
 ids yet: every lesson shows "video coming soon" until one is set.
 
-### 18. Instagram on the Instagram Login route, no App Review (AGREED and BUILT 2026-10-27, awaiting the console steps and a deploy; bot stack)
+### 18. Instagram on the Instagram Login route, no App Review (BUILT 2026-10-27, LIVE 2026-10-28; bot stack)
 
 Why: Tlg-app2 talks to Instagram through the Facebook Page ("Instagram API
 with Facebook Login"), and on that route Meta delivers DMs from the public
@@ -837,6 +837,73 @@ step. Everything is gated on `TLG_IG_APP_SECRET`: until that GitHub secret
 exists a deploy changes nothing on the Instagram side. Left for the user:
 the console steps in `docs/setup.md` section 1 step 6 (the Instagram app
 pair into GitHub, the tester invite, the token), then the proof DM.
+
+Live 2026-10-28: deployed 09:45, token renewed to 27 December, account
+subscribed. The first deploy had removed the app-level webhook
+subscription (my pipeline step, wrong: that subscription belongs to the
+Meta app whatever the login route) and a test DM was lost; restored by
+hand 10:20 and the step fixed. Proof at 10:16 and 10:31: DMs from a
+sender with no role on the app reached `tlg-prod-instagram-bot`; the
+bot stayed quiet because the sender was on the staff list, and the
+`staff` flag on a conversation record is sticky, so taking a name out of
+`TLG_STAFF` does not free an existing thread (cleared by hand on that
+record). Worth a rule later: re-check the staff list on every message
+rather than trusting the saved flag.
+
+### 19. Book first, confirm after; jobs and competitions straight to Jess (BUILT 2026-10-28; bot stack)
+
+Two changes to how the bot talks, both from the user on 2026-10-28.
+
+**Book first, confirm after.** Today the bot reads the slot back as a
+question ("to confirm then, gel polish with Jess Thursday 29th at 10am,
+shall I pop you in? x"), waits for a yes, then books. The user finds that
+one confirmation too many. New flow: once the client has named the
+service, the person, the day and the time, or said yes to a specific slot
+the bot offered, the bot books it and then tells them, as a statement:
+"All booked for you lovely, to confirm, gel polish with Jess on Thursday
+29th at 10am, you'll get a message from Fresha to pop your card on x".
+The read-back is now after the fact. Rules that follow:
+
+1. No booking on a vague agreement ("yeah any time Thursday"): the bot
+   still offers concrete slots from `check_availability` and books only a
+   specific one the client picked or named.
+2. The add-on question (job 16) is still asked once before booking when
+   it applies, since it changes the appointment length.
+3. A correction straight after ("actually can we do 11?") means cancel and
+   rebook, then the same statement again; no question in between.
+4. Patch tests (job 12): both appointments are booked, then both read
+   back in one statement.
+5. When the tool cannot book, the wording is unchanged: "I'll get the
+   girls to pop that in for you" and a booking hand-over. Never "booked"
+   unless the tool said so (that rule stays).
+6. This supersedes the 2026-10-21 decision that put "to confirm then" at
+   the start as a question; the phrase stays, as a statement.
+
+Where: `src/bot/prompt.py` booking steps 3 to 5 and the patch-test
+paragraph; `persona/jess.md` and `persona/voice-guide.md` matching rules;
+`docs/decisions.md` entry; the prompt tests that assert the old wording.
+
+**Jobs and competitions to Jess.** Messages asking for a job, about a
+competition or giveaway, offering a collaboration, or selling something
+get one warm line and go to the team group: "Hi lovely, I'll get this over
+to Jess for you x", then a hand-over to jess with a new `escalation_kind`
+`enquiry` (the reason says which: job, competition, collaboration,
+selling), `area` general, and the thread locked so the bot stays quiet
+while Jess answers. Jobs and collaborations are already on the hand-over
+list in `persona/jess.md`; competitions are added. The Telegram post
+names the kind so the team can see at a glance what it is.
+
+Where: `src/bot/prompt.py` (hand-over kinds, a short rule), `persona/jess.md`,
+`src/bot/handler.py` `LOCKING_KINDS`, a test for the lock.
+
+Built 2026-10-28, prompt and persona only (no Terraform): booking steps 3,
+5 and 8, the move and patch-test paragraphs, a "Jobs, competitions and
+people selling things" section and the `enquiry` kind in `prompt.py`;
+`persona/jess.md` and `persona/voice-guide.md` to match; `enquiry` added
+to `LOCKING_KINDS`; the wording tests updated. Proof after the deploy: a
+test client agrees a slot and gets "All booked ... to confirm ..." with no
+question first; a "do you have any jobs going?" DM gets the one line and a
+Telegram post marked enquiry, and the bot stays quiet after.
 
 ## Open questions for the user
 

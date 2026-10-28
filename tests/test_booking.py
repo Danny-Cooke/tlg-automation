@@ -411,7 +411,12 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
     # User, 2026-10-25: no stylist named means ask which, never push them to Lori-Dee.
     assert "which of our hairdressers is it for, Sophie or Lori?" in prompt and "never pick one for them" in prompt
     assert "do not hand over again" in prompt
-    assert "shall I pop you in" in prompt and prompt.count("to confirm then") >= 3
+    # User, 2026-10-28: book first, confirm after. No "shall I pop you in?" anywhere.
+    assert "shall I pop you in?\" or read it back first" in prompt and "shall I pop you in? x" not in prompt
+    assert "All booked for you lovely, to confirm, gel polish with Jess on Thursday 29th at 10am" in prompt
+    assert "All moved for you lovely, to confirm" in prompt and "a quick patch test with Jess on Tuesday 28th at 11am, then lash lift" in prompt
+    assert "cancel it with `cancel_appointment`, book the new time" in prompt
+    assert "# Jobs, competitions and people selling things" in prompt and "I'll get this over to Jess for you x" in prompt and "enquiry)" in prompt
     assert "# Pictures and quotes" in prompt and "give me a little time to have a think" in prompt and "quote;" in prompt
     assert "# Tattoos" in prompt and "consultation" in prompt
     assert "Judged on the client's latest message only" in prompt
@@ -645,4 +650,4 @@ def test_prompt_carries_the_patch_test_flow(persona_text, salon_config_json):
     prompt = build_system_prompt(persona_text, SalonConfig.from_json(salon_config_json))
     assert "# Patch tests" in prompt and "`patch_test_status`" in prompt and "Have we patch tested you before lovely" in prompt
     assert "a quick patch test with Jess on Tuesday 28th at 11am, then lash lift and tint" in prompt
-    assert "[patch test needed]" in prompt and "patch test)" in prompt.split("# Output")[1]
+    assert "[patch test needed]" in prompt and "patch test; enquiry)" in prompt.split("# Output")[1]

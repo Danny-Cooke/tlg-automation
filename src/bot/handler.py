@@ -75,7 +75,9 @@ REPLY_DELAY_SECONDS = float(os.environ.get("REPLY_DELAY_SECONDS", "10"))
 # Hand-over kinds after which the bot stays quiet on the thread. The rest
 # (booking, cancellation or rebooking, spam) notify the team and carry on.
 # A cancellation-fee plea locks too: Jess decides about money (user, 2026-10-21).
-LOCKING_KINDS = frozenset({"complaint", "cancellation fee", "quote", "can't assist anymore", ""})
+# An enquiry (job, competition, collaboration, selling) locks: one warm line,
+# then Jess answers in the inbox (user, 2026-10-28).
+LOCKING_KINDS = frozenset({"complaint", "cancellation fee", "quote", "can't assist anymore", "enquiry", ""})
 # Areas that always lock, whatever the kind: a hair thread is Lori-Dee's to
 # deal with completely in the inbox, or has been sent to Sophie's WhatsApp
 # (user, 2026-10-24). Complaints about hair still go to Jess, and lock anyway.

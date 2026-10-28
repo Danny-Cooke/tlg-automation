@@ -952,3 +952,23 @@ The fix is Business Verification followed by App Review for the Instagram
 permissions, which only the user can submit. Recorded in `docs/setup.md`
 step 6; `scripts/meta_setup.py` is unchanged (it cannot subscribe the
 Page's `messages` field on Tlg-app2, Meta confirmed: pages_messaging).
+
+## 2026-10-28: book first, confirm after; jobs and competitions straight to Jess
+
+The user, after watching the bot book: asking "shall I pop you in?" once
+the slot is agreed is one confirmation too many. The bot now books as
+soon as the client has named the service, person, day and time or picked
+a time it offered, and then reads the booking back as a statement ("All
+booked for you lovely, to confirm, gel polish with Jess on Thursday 29th
+at 10am, you'll get a message from Fresha to pop your card on x"). A
+correction straight after is a cancel and rebook with the same statement,
+no question. Patch tests book both appointments then read both back; a
+move books the new slot, cancels the old and says so. The guard that
+survives: a vague agreement is not a slot, and "booked" is never said
+unless the tool said Booked. This supersedes the 2026-10-21 ruling that
+made "to confirm then" the opening of a question; the phrase stays as a
+statement. Same day: anyone asking for a job, about a competition or
+giveaway, offering a collaboration or selling something gets "Hi lovely,
+I'll get this over to Jess for you x" and a hand-over to Jess with the new
+kind `enquiry`, which locks the thread so Jess answers in the inbox. Plan
+job 19; prompt, persona, voice guide, `LOCKING_KINDS` and the tests.

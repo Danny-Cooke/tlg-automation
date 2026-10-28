@@ -287,7 +287,9 @@ def test_booking_handover_keeps_the_bot_talking(wired, monkeypatch):
     assert store.items["psid1"].handed_to_jess is False
     handler.process_message(inbound("actually can we do thursday", mid="m2"), store)
     assert calls["sent"][-1] == ("psid1", "Still here x")
-    assert handler.LOCKING_KINDS == {"complaint", "cancellation fee", "quote", "can't assist anymore", ""}
+    assert handler.LOCKING_KINDS == {"complaint", "cancellation fee", "quote", "can't assist anymore", "enquiry", ""}
+    # User, 2026-10-28: a job or competition enquiry gets one line and goes quiet for Jess.
+    assert handler.locks("enquiry", "general") and not handler.locks("booking", "general")
 
 
 def test_hair_handovers_lock_the_thread_whatever_the_kind(wired, monkeypatch):
