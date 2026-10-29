@@ -60,6 +60,11 @@ class Conversation:
             self.seen_message_ids = (self.seen_message_ids + [message_id])[-SEEN_IDS_KEPT:]
 
     def record_turn(self, message_id: str, user_text: str, bot_text: str) -> None:
+        """A reply sent. An empty one (an opening message left for Jess) is kept
+        as the client's turn only, so the model never sees a blank answer."""
+        if not bot_text.strip():
+            self.note_message(message_id, user_text)
+            return
         self.mark_seen(message_id)
         self.history += [
             {"role": "user", "content": user_text},

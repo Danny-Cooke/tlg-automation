@@ -260,14 +260,48 @@ def test_history_is_passed_on_next_turn(wired, monkeypatch):
 def test_escalation_locks_thread_in_live_mode(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "live")
     store = MemoryStore()
+    handler.process_message(inbound("Hi", mid="m0"), store)
     handler.process_message(inbound("I want a refund", mid="m1"), store)
     assert wired["escalated"] == [("psid1", "Refund request", "jess")]
-    assert wired["sent"] == [("psid1", "Let me check that.")]
+    assert wired["sent"] == [("psid1", "Here's the link."), ("psid1", "Let me check that.")]
     assert store.items["psid1"].handed_to_jess is True
 
     handler.process_message(inbound("Hello??", mid="m2"), store)
-    assert len(wired["sent"]) == 1  # bot stayed quiet
-    assert len(wired["ask"]) == 1
+    assert len(wired["sent"]) == 2  # bot stayed quiet
+    assert len(wired["ask"]) == 2
+
+
+def test_opening_message_the_bot_cannot_help_with_gets_no_reply(wired, monkeypatch):
+    """User, 2026-10-29: if the bot has not replied yet and the first message is one it
+    cannot help with, it sends nothing; the hand-over goes to Telegram marked
+    "no reply sent" and Jess answers first. Mid-thread it still says it will
+    speak to Jess (the test above)."""
+    monkeypatch.setattr(handler, "MODE", "live")
+    posted = []
+    monkeypatch.setattr(
+        escalation, "notify",
+        lambda convo, reason, text, to="", **kw: posted.append((convo.sender_id, reason, kw.get("kind"), kw.get("no_reply"))),
+    )
+    store = MemoryStore()
+    handler.process_message(inbound("I want a refund", mid="m1"), store)
+    assert wired["sent"] == []
+    assert posted == [("psid1", "Refund request", "", True)]
+    convo = store.items["psid1"]
+    assert convo.handed_to_jess is True
+    assert convo.history == [{"role": "user", "content": "I want a refund"}]  # no blank bot turn for the model to see
+    assert convo.has_seen("m1")
+
+    handler.process_message(inbound("Hello??", mid="m2"), store)
+    assert wired["sent"] == [] and len(wired["ask"]) == 1  # Jess's thread now
+
+    # A booking told to the team on an opening message is not "cannot help": the bot keeps talking.
+    monkeypatch.setattr(brain, "ask", lambda *a, **kw: brain.BotReply(
+        reply="I'll get the girls to pop you in x", escalate=True, escalation_reason="Sav Fri 2.15",
+        escalate_to="jess", area="nails", escalation_kind="booking"))
+    handler.process_message(inbound("book me sav friday 2.15", mid="m3", sender="psid2"), store)
+    assert wired["sent"] == [("psid2", "I'll get the girls to pop you in x")]
+    assert posted[-1] == ("psid2", "Sav Fri 2.15", "booking", False)
+    assert handler.has_replied(store.items["psid2"]) and not handler.has_replied(store.items["psid1"])
 
 
 def test_booking_handover_keeps_the_bot_talking(wired, monkeypatch):
@@ -299,6 +333,8 @@ def test_hair_handovers_lock_the_thread_whatever_the_kind(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "live")
 
     def ask(system, history, text, **kw):
+        if "hiya" in text.lower():
+            return brain.BotReply(reply="Hey lovely x", escalate=False)
         if "complain" in text.lower():
             return brain.BotReply(reply="So sorry lovely, let me get Jess x", escalate=True, escalation_reason="Unhappy with colour",
                                   escalate_to="jess", area="hair", escalation_kind="complaint")
@@ -310,12 +346,15 @@ def test_hair_handovers_lock_the_thread_whatever_the_kind(wired, monkeypatch):
     handler.process_message(inbound("can I book a cut with lori saturday", mid="m1"), store)
     assert wired["escalated"][-1] == ("psid1", "Hair with Lori-Dee: cut Saturday", "lori-dee")
     assert store.items["psid1"].handed_to_jess is True
+    assert wired["sent"] == []  # an opening hair message is Lori's from the start: nothing back (user, 2026-10-29)
     handler.process_message(inbound("hello?", mid="m2"), store)
-    assert len(wired["sent"]) == 1  # Lori's thread now
+    assert wired["sent"] == []  # Lori's thread now
 
     store = MemoryStore()
-    handler.process_message(inbound("I want to complain about my colour", mid="m3", sender="psid2"), store)
+    handler.process_message(inbound("hiya", mid="m3", sender="psid2"), store)
+    handler.process_message(inbound("I want to complain about my colour", mid="m4", sender="psid2"), store)
     assert wired["escalated"][-1] == ("psid2", "Unhappy with colour", "jess") and store.items["psid2"].handed_to_jess is True
+    assert wired["sent"][-1] == ("psid2", "So sorry lovely, let me get Jess x")  # mid-thread: say so, then hand over
     assert handler.locks("booking", "hair") and not handler.locks("booking", "nails") and handler.locks("complaint", "hair")
 
 
@@ -332,11 +371,17 @@ def test_shadow_mode_never_sends_to_client(wired, monkeypatch):
 def test_attachment_only_message_escalates_in_live_mode(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "live")
     store = MemoryStore()
+    handler.process_message(inbound("Hi", mid="m0"), store)
     handler.process_message(inbound(text=""), store)
     assert wired["escalated"] == [("psid1", "Non-text message (picture or attachment)", "jess")]
-    assert wired["ask"] == []
-    assert wired["sent"] == [("psid1", brain.SAFE_REPLY)] and brain.SAFE_REPLY == "Hi lovely, give me a little time to have a think and I'll get back to you x"
+    assert len(wired["ask"]) == 1
+    assert wired["sent"][-1] == ("psid1", brain.SAFE_REPLY) and brain.SAFE_REPLY == "Hi lovely, give me a little time to have a think and I'll get back to you x"
     assert store.items["psid1"].handed_to_jess is True  # a quote hand-over locks the thread
+
+    # A bare picture as the first message: nothing back, Jess answers first (user, 2026-10-29).
+    handler.process_message(inbound(text="", mid="m2", sender="psid2"), store)
+    assert wired["escalated"][-1] == ("psid2", "Non-text message (picture or attachment)", "jess")
+    assert all(rid != "psid2" for rid, _ in wired["sent"]) and store.items["psid2"].handed_to_jess is True
 
 
 def test_a_picture_with_text_is_flagged_to_the_model(wired, monkeypatch):
@@ -519,6 +564,8 @@ def test_a_thread_with_lori_dee_is_still_read_and_nails_get_the_bot_back(wired, 
     handler.process_message(inbound("can I book a cut with lori", mid="m1"), store)
     convo = store.items["psid1"]
     assert convo.handed_to_jess and convo.handed_to == "lori-dee" and convo.handed_area == "hair" and convo.watching()
+    assert wired["sent"] == []  # opened with hair: Lori answers first (user, 2026-10-29)
+    wired["sent"].append(("psid1", "(Lori's line, sent by hand)"))  # keep the counts below readable
 
     handler.process_message(inbound("yes 2pm is fine", mid="m2"), store)  # for Lori
     assert len(wired["sent"]) == 1 and "This thread is with Lori-Dee for hair" in contexts[-1]

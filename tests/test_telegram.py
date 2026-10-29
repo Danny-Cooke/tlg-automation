@@ -61,6 +61,9 @@ def test_format_is_the_teams_one_liner_then_the_link():
     assert text.splitlines()[0] == "Hair: cancellation or rebooking: ig9: Insta"
     assert text.splitlines()[2] == "Wants to move Friday's cut to next week"  # detail the team needs, on its own line
     assert escalation.format_telegram(Conversation(sender_id="x", channel="messenger"), "p").startswith("General: needs you: x: FB")
+    # An opening message the bot left alone (user, 2026-10-29): the team can see the client has had nothing back.
+    text = escalation.format_telegram(convo, "p", area="general", kind="can't assist anymore", no_reply=True)
+    assert text.splitlines()[0] == "General: can't assist anymore: ig9: Insta, no reply sent"
 
 
 def test_discovery_takes_the_latest_group_in_the_feed():

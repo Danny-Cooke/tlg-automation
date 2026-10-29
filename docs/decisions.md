@@ -972,3 +972,17 @@ giveaway, offering a collaboration or selling something gets "Hi lovely,
 I'll get this over to Jess for you x" and a hand-over to Jess with the new
 kind `enquiry`, which locks the thread so Jess answers in the inbox. Plan
 job 19; prompt, persona, voice guide, `LOCKING_KINDS` and the tests.
+
+## 2026-10-29: an opening message the bot cannot help with gets no reply
+
+The user: if the bot has been replying and then hits something it cannot
+handle, it says it will speak to Jess and hands over, as before. If it has
+not replied on the thread yet and the first message is something it
+cannot help with, it sends nothing at all and the hand-over goes to the
+Telegram group; Jess answers first, so a thread never opens with a holding
+line from the bot. Done in `handler.py`, not the prompt: when the model
+escalates with a locking kind or area and the thread has no bot turn yet,
+the reply is blanked before it is recorded or sent, the Telegram one-liner
+ends ", no reply sent" and the email says the client has had nothing back.
+Non-locking hand-overs (a nail booking told to the team while the bot
+keeps talking) are unchanged. Plan job 20.

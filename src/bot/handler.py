@@ -25,6 +25,7 @@ checks everything and writes nothing.
 from __future__ import annotations
 
 import base64
+import dataclasses
 import datetime as dt
 import json
 import logging
@@ -86,6 +87,12 @@ LOCKING_AREAS = frozenset({"hair"})
 
 def locks(kind: str, area: str) -> bool:
     return kind in LOCKING_KINDS or area in LOCKING_AREAS
+
+
+def has_replied(convo: Conversation) -> bool:
+    """Has the bot said anything on this thread yet? (Listen and shadow mode
+    leave only client turns in the history.)"""
+    return any(turn.get("role") == "assistant" and str(turn.get("content", "")).strip() for turn in convo.history)
 SALON_TZ = zoneinfo.ZoneInfo(os.environ.get("SALON_TIMEZONE", "Europe/London"))
 
 
@@ -297,6 +304,14 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         store.save(convo)
         return
 
+    if MODE == "live" and reply.escalate and locks(reply.escalation_kind, reply.area) and not has_replied(convo):
+        # The opening message is something the bot cannot help with at all: no
+        # holding line, nothing at all, just the Telegram post, and Jess answers
+        # first (user, 2026-10-29). Mid-thread the bot still says it will speak
+        # to Jess, since the client is already talking to it.
+        log.info("Opening message from %s is not ours (%s); no reply, straight to the team", msg.sender_id, reply.escalation_kind or "needs you")
+        reply = dataclasses.replace(reply, reply="")
+
     convo.record_turn(msg.message_id, user_text, reply.reply)
     store.save(convo)  # seen before the wait, so a Meta retry is a duplicate
 
@@ -313,6 +328,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         escalation.notify(
             convo, reply.escalation_reason, user_text,
             to=reply.escalate_to, area=reply.area, kind=reply.escalation_kind, bot_quiet=lock,
+            no_reply=not reply.reply.strip(),
         )
 
     if MODE == "shadow":

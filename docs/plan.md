@@ -36,7 +36,9 @@ facts in `knowledge/`.
   Provider + App Review, or move Tlg-app2 to Instagram Login (see
   `docs/meta-app-review.md`, "Found 2026-10-27").
 - **Next, in order:** 0) job 19, book first then confirm, plus jobs and
-  competitions handed to Jess (built 2026-10-28, awaiting a push); 1) `MESSAGE_TEST_MODE` is off since 2026-10-26 16:04; 2) job 15,
+  competitions handed to Jess (built 2026-10-28), and job 20, no reply on
+  an opening message the bot cannot help with (built 2026-10-29), both
+  awaiting a push; 1) `MESSAGE_TEST_MODE` is off since 2026-10-26 16:04; 2) job 15,
   reply time under Meta's 20 s on a cold start; 3) narrow the wide staff
   entries ("Looking Glass", "Savvy" silence any client whose name
   contains them); 4) job 9 hand-back; 5) the rest of the backlog below
@@ -904,6 +906,36 @@ to `LOCKING_KINDS`; the wording tests updated. Proof after the deploy: a
 test client agrees a slot and gets "All booked ... to confirm ..." with no
 question first; a "do you have any jobs going?" DM gets the one line and a
 Telegram post marked enquiry, and the bot stays quiet after.
+
+### 20. No reply on an opening message the bot cannot help with (BUILT 2026-10-29; bot stack)
+
+From the user, 2026-10-29. Two cases:
+
+1. The bot has been replying and then cannot go on (a complaint, a fee
+   dispute, a quote, a job enquiry, anything it is unsure of): it says it
+   will speak to Jess and hands over, exactly as before.
+2. The bot has not replied on the thread yet and the first message is one
+   it cannot help with: it sends nothing. No holding line, no "give me a
+   little time". The hand-over is posted to the Telegram group with "no
+   reply sent" on the end so the team knows the client is waiting, the
+   thread locks, and Jess answers in the inbox.
+
+"Cannot help with" is the hand-over that locks the thread: the kinds in
+`LOCKING_KINDS` (complaint, cancellation fee, quote, can't assist anymore,
+enquiry, the fallbacks) and any hair thread. A nail booking the tool could
+not make is not that: the bot is mid-conversation and keeps talking. A
+picture with no text as a first message counts as case 2.
+
+Built in `src/bot/handler.py` (`has_replied`, the blanking before the turn
+is recorded and sent), `src/bot/state.py` (an empty reply is kept as the
+client's turn only), `src/bot/escalation.py` (`no_reply` on the Telegram
+line and the email), `persona/jess.md` (the rule, with the note that the
+model still writes its line and the code drops it) and the tests. Proof
+after the deploy: a fresh test account opens with "do you do hair
+extensions?" or a bare picture and gets nothing back, while the Telegram
+group gets the one-liner ending ", no reply sent"; a thread that is
+already talking and then asks for a refund still gets the "let me check
+with Jess" line.
 
 ## Open questions for the user
 

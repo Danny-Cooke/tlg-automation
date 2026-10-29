@@ -18,7 +18,8 @@ def business_suite_link(channel: str, page_id: str) -> str:
 
 
 def format_alert(
-    convo: Conversation, reason: str, last_user_text: str, page_id: str, to: str = "", bot_quiet: bool = True
+    convo: Conversation, reason: str, last_user_text: str, page_id: str, to: str = "", bot_quiet: bool = True,
+    no_reply: bool = False,
 ) -> tuple[str, str]:
     """Return (subject, body) for the escalation message. `to` names who should pick it up."""
     who = convo.client_name or convo.sender_id
@@ -41,19 +42,27 @@ def format_alert(
         lines.append(f"  {speaker}: {turn['content']}")
     lines += ["", "The bot will stay quiet on this thread until you clear the hand-over." if bot_quiet
               else "The bot is still answering on this thread; it has told the client you will sort this."]
+    if no_reply:
+        lines.append("The client has had no reply at all: this was their first message and it is not the bot's to answer.")
     return subject, "\n".join(lines)
 
 
 CHANNEL_SHORT = {"messenger": "FB", "instagram": "Insta"}
 
 
-def format_telegram(convo: Conversation, page_id: str, *, area: str = "", kind: str = "", reason: str = "") -> str:
+def format_telegram(
+    convo: Conversation, page_id: str, *, area: str = "", kind: str = "", reason: str = "", no_reply: bool = False
+) -> str:
     """The team's one-liner (user, 2026-10-20): `Nails: complaint: Danny Cooke: FB`,
     then the link that opens the thread. The model's reason goes on a third line
-    when it adds something, for example the slot a client agreed to."""
+    when it adds something, for example the slot a client agreed to. `no_reply`
+    marks an opening message the bot left alone (user, 2026-10-29): the client
+    has had nothing back, so the line says so."""
     who = convo.client_name or convo.sender_id
     channel = CHANNEL_SHORT.get(convo.channel, convo.channel or "?")
     first = f"{(area or 'general').capitalize()}: {kind or 'needs you'}: {who}: {channel}"
+    if no_reply:
+        first += ", no reply sent"
     lines = [first, business_suite_link(convo.channel, page_id)]
     if reason and reason.lower() not in (kind.lower(), ""):
         lines.append(reason)
@@ -65,7 +74,7 @@ EMAIL_ONLY_KINDS = frozenset({"spam", "shadow draft"})
 
 def notify(
     convo: Conversation, reason: str, last_user_text: str, *,
-    to: str = "", area: str = "", kind: str = "", bot_quiet: bool = True, sns=None, telegram=None,
+    to: str = "", area: str = "", kind: str = "", bot_quiet: bool = True, no_reply: bool = False, sns=None, telegram=None,
 ) -> None:
     """Email the escalation topic and post the one-liner to the team's Telegram group.
     Telegram is the point where the bot cannot continue, not a running
@@ -74,11 +83,11 @@ def notify(
     if kind not in EMAIL_ONLY_KINDS:
         poster = telegram or _telegram().post_handover
         try:
-            poster(format_telegram(convo, page_id, area=area, kind=kind, reason=reason))
+            poster(format_telegram(convo, page_id, area=area, kind=kind, reason=reason, no_reply=no_reply))
         except Exception:  # noqa: BLE001 - Telegram must never break the hand-over
             log.exception("Telegram hand-over failed")
     topic_arn = os.environ.get("ESCALATION_TOPIC_ARN")
-    subject, body = format_alert(convo, reason, last_user_text, page_id, to, bot_quiet)
+    subject, body = format_alert(convo, reason, last_user_text, page_id, to, bot_quiet, no_reply)
     if not topic_arn:
         log.warning("ESCALATION_TOPIC_ARN not set; would have sent: %s", subject)
         return
