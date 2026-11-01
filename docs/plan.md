@@ -5,7 +5,27 @@ open: nothing below is built until the user says so, except where marked.
 Started 2026-10-19. Design reasoning lives in `docs/decisions.md`; Fresha
 facts in `knowledge/`.
 
-## Where things stand (2026-10-25, evening)
+## Where things stand (2026-11-01)
+
+- **Instagram is live for the public on the Instagram Login route (job 18,
+  2026-10-28)**, so the "not open to clients yet" bullet below is history:
+  the salon account's own token is renewed weekly by
+  `tlg-prod-instagram-token`, the app-level webhook subscription stays on
+  the Meta app, and client DMs reach `tlg-prod-instagram-bot`.
+- **Jobs 19 and 20 deployed 2026-10-29 10:07 UTC, not yet proven on a real
+  thread.** Proofs still owed: a slot agreed in chat gets "All booked for
+  you lovely, to confirm, ..." with no question first; "do you have any jobs
+  going?" gets one line and an enquiry post; a fresh account opening with
+  something the bot cannot help with gets nothing back and the Telegram line
+  ends ", no reply sent"; a mid-thread refund still gets the "let me check
+  with Jess" line.
+- **Academy:** `academy.tlg-beauty.co.uk` (one c) is up on CloudFront; the
+  double-c spelling exists only as the mailbox accademy@ that the WordPress
+  register-interest form notifies. `terraform/academy/main.tf` has an
+  uncommitted change (ACM validation timeout 20m to 60m) left from the
+  academy work, with the CPD and website files.
+
+## Where things stood (2026-10-25, evening)
 
 - **Both bots are live on both channels and both Meta apps are published.**
   Messenger and Instagram DMs reach `tlg-prod-messenger-bot` and
@@ -35,10 +55,8 @@ facts in `knowledge/`.
   needs no App Review on the Instagram Login route. Decision open: Tech
   Provider + App Review, or move Tlg-app2 to Instagram Login (see
   `docs/meta-app-review.md`, "Found 2026-10-27").
-- **Next, in order:** 0) job 19, book first then confirm, plus jobs and
-  competitions handed to Jess (built 2026-10-28), and job 20, no reply on
-  an opening message the bot cannot help with (built 2026-10-29), both
-  awaiting a push; 1) `MESSAGE_TEST_MODE` is off since 2026-10-26 16:04; 2) job 15,
+- **Next, in order:** 0) prove jobs 19 and 20 on real threads (deployed
+  2026-10-29, see the top of this file); 1) `MESSAGE_TEST_MODE` is off since 2026-10-26 16:04; 2) job 15,
   reply time under Meta's 20 s on a cold start; 3) narrow the wide staff
   entries ("Looking Glass", "Savvy" silence any client whose name
   contains them); 4) job 9 hand-back; 5) the rest of the backlog below
