@@ -116,7 +116,7 @@ resource "aws_acm_certificate_validation" "site" {
   validation_record_fqdns = [for o in aws_acm_certificate.site[0].domain_validation_options : o.resource_record_name]
 
   timeouts {
-    create = "20m"
+    create = "60m"
   }
 }
 

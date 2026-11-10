@@ -1,0 +1,90 @@
+<!-- TLG Academy: course list for the public website (Elementor HTML widget on /academy/).
+     Written to The CPD Group's pattern: exact course titles, what is covered, entry requirements,
+     hours, assessment. No accreditation claims. Nothing here links to the online academy. -->
+<style>
+  .tlg-academy { font-family: inherit; color: #1f2a28; margin: 0 auto; max-width: 1100px; }
+  .tlg-academy * { box-sizing: border-box; }
+  .tlg-academy .tlg-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0 1.5rem; }
+  .tlg-academy h2.tlg-h { font-size: 2rem; margin: 0; color: #123d3a; }
+  .tlg-academy .tlg-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: .6rem 1.4rem; border: 1px solid #123d3a; background: #123d3a; color: #fff; text-decoration: none; font-size: 1.05rem; letter-spacing: .03em; cursor: pointer; }
+  .tlg-academy .tlg-btn:hover { background: #0b2927; color: #fff; }
+  .tlg-academy .tlg-btn-gold { background: #c9a24b; border-color: #c9a24b; color: #1f2a28; }
+  .tlg-academy .tlg-btn-gold:hover { background: #b38d3b; color: #1f2a28; }
+  .tlg-academy .tlg-btn-outline { background: #fff; color: #123d3a; }
+  .tlg-academy .tlg-login-note { display: none; width: 100%; background: #fff8e6; border-left: 4px solid #c9a24b; padding: .8rem 1rem; font-size: 1.05rem; }
+  .tlg-academy .tlg-login-note.on { display: block; }
+  .tlg-academy .tlg-intro { font-size: 1.15rem; line-height: 1.6; margin: 0 0 1.5rem; }
+  .tlg-academy .tlg-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+  @media (min-width: 760px) { .tlg-academy .tlg-grid { grid-template-columns: 1fr 1fr 1fr; } }
+  .tlg-academy .tlg-card { position: relative; overflow: hidden; background: #fff; border: 1px solid #d9dedc; padding: 1.4rem 1.4rem 1.2rem; display: flex; flex-direction: column; gap: .6rem; }
+  .tlg-academy .tlg-ribbon { position: absolute; top: 22px; right: -42px; transform: rotate(45deg); background: #c9a24b; color: #1f2a28; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; padding: .35rem 3rem; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+  .tlg-academy .tlg-card h3 { font-size: 1.35rem; line-height: 1.25; margin: 0; padding-right: 2.5rem; color: #123d3a; }
+  .tlg-academy .tlg-card p { margin: 0; line-height: 1.55; }
+  .tlg-academy .tlg-meta { font-size: .95rem; color: #5d6b68; }
+  .tlg-academy .tlg-meta strong { color: #1f2a28; }
+  .tlg-academy .tlg-card .tlg-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: .6rem; padding-top: .6rem; }
+  .tlg-academy .tlg-card .tlg-btn { min-height: 42px; padding: .45rem 1.1rem; font-size: 1rem; }
+  .tlg-academy .tlg-foot { margin-top: 1.5rem; font-size: 1rem; color: #5d6b68; line-height: 1.55; }
+</style>
+<div class="tlg-academy" id="tlg-academy-courses">
+  <div class="tlg-top">
+    <h2 class="tlg-h">Our courses</h2>
+    <button type="button" class="tlg-btn tlg-btn-outline" id="tlg-academy-login" aria-controls="tlg-login-note" aria-expanded="false">Academy login</button>
+    <div class="tlg-login-note" id="tlg-login-note" role="status">Coming soon. The online academy opens with our first course launch; register your interest below and we will tell you the moment it does.</div>
+  </div>
+  <p class="tlg-intro">The Looking Glass Beauty School teaches small-group, classroom-based nail and beauty courses in our training room at 4a Roushill, Shrewsbury, written and taught by Jess Preston. Each course is a Continuing Professional Development (CPD) course for qualified professionals, not a regulated qualification. The courses below are being prepared for launch; click a course for the full outline, or register your interest to be told when enrolment opens.</p>
+
+  <div class="tlg-grid">
+    <article class="tlg-card">
+      <span class="tlg-ribbon">Coming soon</span>
+      <h3>Builder Gel Overlay and Short Extension CPD Course</h3>
+      <p>Add builder gel overlays and short extensions to your services: nail anatomy and the conditions that mean adapt, postpone or refuse; how gel cures and how to control the heat spike; preparation, a balanced overlay with a correctly placed apex, short extensions on a tip or form, infills and safe removal.</p>
+      <p class="tlg-meta"><strong>Delivery:</strong> one taught day in the salon training room, with pre-course study.<br><strong>Hours:</strong> 17.5 in total.<br><strong>Entry:</strong> Level 2 Beauty Therapy, Nail Services or equivalent; aged 18 or over.<br><strong>Assessment:</strong> theory paper, observed practical, three case studies.</p>
+      <div class="tlg-actions"><a class="tlg-btn" href="/academy/builder-gel-cpd-course/">Course outline</a><a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>
+    </article>
+
+    <article class="tlg-card">
+      <span class="tlg-ribbon">Coming soon</span>
+      <h3>Gel Polish Nails CPD Course</h3>
+      <p>Professional gel polish on the natural nail: anatomy of the nail and surrounding skin, consultation and contraindications, hygiene and health and safety, product chemistry and lamp use, preparation, application, cure, maintenance, removal and aftercare.</p>
+      <p class="tlg-meta"><strong>Delivery:</strong> one taught day in the salon training room, with pre-course reading.<br><strong>Hours:</strong> 15 in total.<br><strong>Entry:</strong> Level 2 Beauty Therapy, Nail Services or equivalent; aged 18 or over.<br><strong>Assessment:</strong> theory paper, observed practical, three case studies.</p>
+      <div class="tlg-actions"><a class="tlg-btn" href="/academy/gel-polish-nails-cpd-course/">Course outline</a><a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>
+    </article>
+
+    <article class="tlg-card">
+      <span class="tlg-ribbon">Coming soon</span>
+      <h3>Liquid and Powder Acrylic Enhancement CPD Course</h3>
+      <p>Liquid-and-powder acrylic overlays and extensions: the chemistry of monomer and polymer, mix ratio and the bead, vapour and dust control, preparation, tips and forms, the three-zone method and a correctly placed apex, infills, rebalance and safe removal.</p>
+      <p class="tlg-meta"><strong>Delivery:</strong> classroom course in the salon training room, with pre-course reading.<br><strong>Hours:</strong> to be confirmed at launch.<br><strong>Entry:</strong> Level 2 Beauty Therapy, Nail Services or equivalent; aged 18 or over; gel experience recommended.<br><strong>Assessment:</strong> theory paper, observed practical, case studies.</p>
+      <div class="tlg-actions"><a class="tlg-btn" href="/academy/acrylic-enhancement-cpd-course/">Course outline</a><a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>
+    </article>
+    <article class="tlg-card">
+      <span class="tlg-ribbon">Coming soon</span>
+      <h3>Electric File (E-File) Nail Technique CPD Course</h3>
+      <p>Safe, controlled use of an electric file on the natural nail and on the coatings and enhancements you already provide: the machine, the bits and grits, friction heat and how to prevent it, natural-nail preparation with a safety bit, reducing and removing gel polish, builder gel, hard gel and acrylic without reaching the plate, shaping and finishing, dust and vibration control.</p>
+      <p class="tlg-meta"><strong>Delivery:</strong> one taught day in the salon training room, with pre-course reading.<br><strong>Hours:</strong> 15 in total.<br><strong>Entry:</strong> Level 2 Beauty Therapy, Nail Services or equivalent plus a qualification in at least one coating or enhancement system; aged 18 or over.<br><strong>Assessment:</strong> theory paper, observed practical, three case studies.</p>
+      <div class="tlg-actions"><a class="tlg-btn" href="/academy/electric-file-cpd-course/">Course outline</a><a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>
+    </article>
+    <article class="tlg-card">
+      <span class="tlg-ribbon">Coming soon</span>
+      <h3>Lash and Brow Tint and Wax CPD Course</h3>
+      <p>Eyelash and eyebrow tinting and eyebrow shaping by waxing, tweezing and trimming: the anatomy of the eye area, how tint works and why it sensitises, the patch-test system, mapping the brow, tinting with the eyes protected and closed, hot and strip wax, aftercare and what to do when something goes wrong.</p>
+      <p class="tlg-meta"><strong>Entry:</strong> Level 2 Beauty Therapy or equivalent &middot; <strong>Hours:</strong> 15 (one taught day) &middot; <strong>Assessment:</strong> theory paper, observed practical on a patch-tested model, three case studies</p>
+      <div class="tlg-actions"><a class="tlg-btn" href="/academy/lash-and-brow-tint-and-wax-cpd-course/">Course outline</a><a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>
+    </article>
+  </div>
+
+  <p class="tlg-foot">The Looking Glass Beauty School (TLG Beauty Limited) is an approved provider with The CPD Group, provider number 789824. Approved provider status means the school meets The CPD Group's provider criteria; it does not mean a course is accredited. Each course is assessed individually, and its accreditation status will be shown on its own page once confirmed.</p>
+</div>
+<script>
+  (function () {
+    var b = document.getElementById('tlg-academy-login'), n = document.getElementById('tlg-login-note');
+    if (!b || !n) return;
+    b.addEventListener('click', function () {
+      var on = !n.classList.contains('on');
+      n.classList.toggle('on', on);
+      b.setAttribute('aria-expanded', on ? 'true' : 'false');
+      if (on) n.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+  })();
+</script>
