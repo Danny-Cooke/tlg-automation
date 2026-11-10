@@ -8,38 +8,40 @@ For Jess. Prepared 26 October 2026. Folder: `cpd-tlg/builder-gel-course`.
 - Work through this list in order. Each heading is one file. Do the ticks in Word, save as .docx (not PDF) and keep the file name.
 - If you change a theory question in B02, change the same question in B03. If you change a safety-critical criterion in B04, change the list on page 4 of B01 to match.
 
-## 1. B01 Builder Gel Learner Manual v1.1.docx (submit-to-cpd)
+## 1. B01 Builder Gel Learner Manual v1.4.docx (submit-to-cpd)
 
 *Page numbers are from the PDF copy in working-files; Word will be within a page of these.*
 
-- Page 1: check 'Version 1.1, October 2026' and the author paragraph are right.
+- Page 1: check 'Version 1.4, November 2026' and the author paragraph are right.
 - Page 3: the line 'The lesson plan for the taught day (document B05)...' says 17.5 hours in total (2.5 pre-course + 7.5 on the day + 7.5 case studies). If you want different hours, change them here, in B05, and on the application.
 - Page 4, 'Models:' paragraph. It says learners bring their own adult model and must tell you seven days ahead if they cannot. Change if you supply models.
 - Page 4, the seven safety-critical criteria. These are the things a learner fails for regardless of score. Read them as the person who marks the practical: add or remove, and keep B04 the same.
 - Pages 6 to 7, 'Where builder gel came from' and 'Service time, pricing and promotion'. New text. Check the timings (new set 60 to 90 minutes, infill 60 to 75, removal 20 to 30) and the pricing framework against what you actually do. There are no £ figures on purpose; leave it that way.
 - Page 26: new step 'Agree a stop signal before the first cure'. Fine to keep.
-- Pages 22, 27, 29, 31, 41, 43, 44, 45: one new or redrawn figure on each. Look at each one once. Are they right? If you have real photographs from the training room (bead placed, finger tilted, side view of the apex, a tip blended, a form fitted), add them beside Figures 19 and 20 with 'Photograph © The Looking Glass Beauty School, 2026.' under each. Photos of technique are the one thing the assessor will like more than drawings.
-- Pages 51 to 52, Chapter 18 (conclusion). Check the names of the other courses you offer (it says Gel Polish CPD Course, Liquid and Powder Acrylic Enhancement CPD Course, nail art) and the certificate sentence.
+- Figures 1, 14, 15, 19, 20 and 21 are now the pictures you sent on 8 November, under the same numbers (pages 9, 28, 30, 46, 48, 49), and Figure 18 is the one from 7 November (page 44). Figures 13, 16 and 17 are still drawings (pages 23, 31, 33); send pictures for those if you have them. Four of the new pictures had text along the bottom that the manual already prints (the Figure 1 caption, the 'Check from every angle' line, and the hairline-gap and length-and-leverage boxes), so that strip was cropped off; the 'Short means short', 'Hairline gap, always' and 'Never build over a lifted edge' strips were kept. The Figure 19 caption now says six stages, matching the picture. Each credit line reads 'Original photographs and artwork © The Looking Glass Beauty School, 2026', as in Gel Polish.
+- Page 6: the finished red set sits under 'What builder gel is', and page 34: the EL Nail Systems product shot closes Chapter 8 (you asked for it 'under brands used'; the manual has no section of that name, and the kit table at the start of Chapter 8 is where the products are listed, so it sits at the end of that chapter like the kit list in Gel Polish). Neither has a figure number, so the numbering of the drawings is unchanged. Both credit lines say the pictures are the school's own, as you confirmed for Gel Polish; if the product shot is EL Nail Systems' own photograph, say so and the credit changes to name them, with their permission on file. Check the captions say what you teach (apex behind the centre of the nail, hairline gap at every fold; the file is called 'the system's own file' because the grit is not visible).
+
+- Pages 53 to 54, Chapter 18 (conclusion). Check the names of the other courses you offer (it says Gel Polish CPD Course, Liquid and Powder Acrylic Enhancement CPD Course, nail art) and the certificate sentence.
 - Then read the whole manual once, start to finish, as a learner would. The document was edited by a script; if a heading, table or picture looks out of place, say so and it gets fixed.
 
-## 2. B02 Theory Assessment Paper v1.1.docx (submit-to-cpd)
+## 2. B02 Theory Assessment Paper v1.4.docx (submit-to-cpd)
 
 - Read all 32 questions. For each one ask: is this what I teach, and is the answer in B03 the answer I would give?
 - Check the time allowed (60 minutes) and the pass mark (40 out of 50).
 - Check the safety-critical paragraph in the instructions: a learner who writes that you cure product on skin, under-cure, ignore a client reporting heat, use an electric file on the natural nail, or cover an infection must have it corrected before they pass. Keep or reword.
 
-## 3. B03 Theory Mark Scheme v1.1.docx (submit-to-cpd)
+## 3. B03 Theory Mark Scheme v1.4.docx (submit-to-cpd)
 
 - Must match B02 question for question.
 - The marking rules say a learner who fails 'may re-sit once after further study; the re-sit uses the alternative paper held by the school'. You do not have an alternative paper. Either write one (swap ten questions) or replace that sentence with: 'A learner who scores below 40 may re-sit the paper once, after a minimum of seven days' further study.'
 
-## 4. B04 Practical Observation Marking Sheet v1.1.docx (submit-to-cpd)
+## 4. B04 Practical Observation Marking Sheet v1.4.docx (submit-to-cpd)
 
 - Twenty criteria in six sections; seven are marked SC (safety-critical). Each scored 0, 1 or 2. Pass is 32 out of 40 and every SC met.
 - Are these the things you watch for? Add, remove or reword. If you change which ones are SC, change page 4 of B01 so the manual lists the same seven.
 - On the day: one sheet per learner, signed by both of you, kept in the learner's portfolio.
 
-## 5. B05 Lesson Plan v1.1.docx (submit-to-cpd)
+## 5. B05 Lesson Plan v1.4.docx (submit-to-cpd)
 
 - Course details table: venue address, 'maximum four learners per tutor', 'delivered on demand'. Correct?
 - Health and safety row and equal opportunity row: everything listed must actually be available in the room (extraction, gloves, eye protection, blood-spill kit, large-print manual, coloured overlays).
@@ -47,7 +49,7 @@ For Jess. Prepared 26 October 2026. Folder: `cpd-tlg/builder-gel-course`.
 - Resources column: rows 1 to 3 mention 'slides'. If you do not use a presentation, delete the word 'slides' from those rows.
 - Post-course section: case studies 'submitted within eight weeks'. Your deadline?
 
-## 6. B06 Cover Note to Assessor v1.1.docx (submit-to-cpd, optional)
+## 6. B06 Cover Note to Assessor v1.4.docx (submit-to-cpd, optional)
 
 - Check your name and provider number 789824 at the bottom.
 - The framework list says 'a presentation accompanies the taught day'. Delete that clause if there is no presentation.
@@ -79,10 +81,11 @@ For Jess. Prepared 26 October 2026. Folder: `cpd-tlg/builder-gel-course`.
 - Prerequisites & Assessment Methods (paste): Prerequisites: learners must be aged 18 or over and hold a Level 2 Beauty Therapy, Nail Services or equivalent qualification that includes manicure knowledge, nail structure and safe salon practice; prior gel polish experience is strongly recommended; learners with a known acrylate or methacrylate sensitivity cannot enrol. How the objectives are achieved: 2.5 hours of pre-course reading and workbook prompts, a 7.5-hour tutor-led day of theory, demonstration, questioning and supervised practice on a model, and three post-course case studies (approximately 7.5 hours). Theory assessment: a written paper of 50 marks (20 multiple-choice, 10 short-answer and 2 scenario questions) with an 80% pass mark. Practical assessment, separate from theory: direct observation of a full service on a suitable adult model against 20 written criteria, requiring at least 80% overall and a pass in all seven safety-critical criteria. A CPD certificate is issued only when the theory paper, the practical observation and all three case studies are satisfactory; attendance alone is not sufficient.
 - Do delegates receive a certificate: Yes.   Are you the author: Yes.   Do you deliver the training: Yes.
 - Upload Activity Resources: B01, B02, B03, B04, B05, B06 (optional), B07, B08.
+- Do not mention academy.tlg-beauty.co.uk anywhere on the application. The public advert the assessor checks is the course page on tlg-beauty.co.uk.
 - Upload CV & Certifications: your CV PDF and the certificate scans.
 - Accessibility & Support Information (paste; this wording passed on Gel Polish): All learners are invited to inform The Looking Glass Beauty School of any additional learning, accessibility or support requirements at the time of booking or before the course begins, and may speak privately with the tutor at any point. Reasonable adjustments include larger-print or digitally accessible course materials for screen readers, coloured overlays, additional reading or assessment time, rest breaks, one-to-one tutor support, verbal explanation of written information, questions read aloud, and oral answers recorded where appropriate; support can be adapted for learners with dyslexia, ADHD, autism, visual or hearing impairments or other individual needs. The training room is within the salon at ground level and is wheelchair accessible. Adjustments change how evidence is given, never the competence, hygiene or safety standards required. The course is delivered by the author, a qualified nail professional and educator (VTCT Level 2 NVQ Diploma in Nail Services, Award in Education and Training, fourteen years in the industry, teaching since 2021).
-- Website URL: https://tlg-beauty.co.uk/
-- Tick the three boxes (Terms, Data Handling, Authenticity Declaration) and press Submit. Then leave a short comment in the Assessor Comments box on page 1 of the report: 'Resubmitted with revised manual v1.1, theory paper and mark scheme, practical marking sheet, lesson plan, CV and evaluation/reflection forms. All feedback from the Gel Polish application has been applied.'
+- Website URL: https://tlg-beauty.co.uk/academy/builder-gel-cpd-course/ (the course page on the main website; never the online academy address, which stays private until accreditation)
+- Tick the three boxes (Terms, Data Handling, Authenticity Declaration) and press Submit. Then leave a short comment in the Assessor Comments box on page 1 of the report: 'Resubmitted with revised manual v1.4, theory paper and mark scheme, practical marking sheet, lesson plan, CV and evaluation/reflection forms. All feedback from the Gel Polish application has been applied.'
 
 ## 10. If they come back with more feedback
 
