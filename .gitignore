@@ -7,6 +7,7 @@
 !salon.auto.tfvars
 .terraform.lock.hcl
 crash.log
+bank/
 
 # Python
 __pycache__/

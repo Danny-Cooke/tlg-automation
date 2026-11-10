@@ -323,6 +323,15 @@ the workspace's appointment-protection setting.
   answer checked, then the read query run again: none left DISABLED in
   those categories. 96 DISABLED overrides remain, all under Sophie,
   Bernadette and Lori-Dee, untouched on the user's instruction.
+- Re-read 2026-11-03 (user asked for Sophie's services checked): all 29
+  services in the "Sophie cooper" category have the no-show fee on (28
+  inherit the defaults, 1 explicit DEFAULT), confirmed in the dashboard on
+  one service's Settings tab. Nothing written. 90 DISABLED overrides remain:
+  54 under "Bernadettes ReFresh aethetics", 36 under "Hair by Lori-dee".
+  Service ids and category names come from `pricingCatalogList` (the
+  partner-side query in `src/bot/fresha_ops.py` works from the dashboard
+  tab with `locationId` 1530970, 172 items over two pages); the protection
+  query joins on `serviceId`.
 - The patch-test tick is on the service itself (`patchTestRequired` in
   `services_getServiceById`, saved by `services_updateServiceMutation`),
   which is what the catalog's `isPatchTestRequired` reflects.

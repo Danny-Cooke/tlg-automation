@@ -90,7 +90,9 @@ Facebook Page. Done 2026-10-19: both apps exist.
       salon, so whoever holds that login does it. Store the token with the
       AWS CLI; Terraform does not manage this secret, it only points at
       the name, so create it before the first deploy with the pair set:
-      `aws secretsmanager create-secret --name tlg-prod/meta/instagram-token --description "Salon Instagram token, renewed weekly by tlg-prod-instagram-token" --secret-string '{"access_token":"<token>"}'`.
+      `aws secretsmanager create-secret --name tlg-prod/meta/instagram-token --description "Salon Instagram token, renewed weekly by tlg-prod-instagram-token" --tags Key=Project,Value=tlg Key=Repository,Value=tlg-automation Key=Environment,Value=prod Key=ManagedBy,Value=manual --secret-string '{"access_token":"<token>"}'`
+      (the tags are the ones Terraform puts on everything else; without
+      `Project` the secret's cost shows as untagged, found 2026-11-10).
       A later token (after the old one died) goes in with
       `aws secretsmanager put-secret-value --secret-id tlg-prod/meta/instagram-token --secret-string '{"access_token":"<token>"}'`.
       Then check it straight away rather than waiting for Monday:
