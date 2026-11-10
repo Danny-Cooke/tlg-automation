@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 from functools import lru_cache
 
@@ -48,6 +49,27 @@ def format_alert(
 
 
 CHANNEL_SHORT = {"messenger": "FB", "instagram": "Insta"}
+SNIPPET_CHARS = 50
+_PICTURES = re.compile(r"\s*\[\d+ picture\(s\) attached\]$")
+
+
+def who_for_team(convo: Conversation) -> str:
+    """The client's name, or, when Meta will not give one, the start of the
+    last thing they wrote, in quotes (user, 2026-11-10): Messenger's profile
+    lookup is refused for the public, and a bare sender id told the team
+    nothing. The sender id only when the thread has no client message at all."""
+    if convo.client_name:
+        return convo.client_name
+    theirs = [t["content"] for t in convo.history if t.get("role") == "user"]
+    if not theirs:
+        return convo.sender_id
+    for content in reversed(theirs):
+        text = " ".join(_PICTURES.sub("", content).split())
+        if text and not text.startswith("[attachment"):
+            if len(text) > SNIPPET_CHARS:
+                text = text[:SNIPPET_CHARS].rstrip() + "…"
+            return f'"{text}"'
+    return "picture, no text"
 
 
 def format_telegram(
@@ -57,8 +79,9 @@ def format_telegram(
     then the link that opens the thread. The model's reason goes on a third line
     when it adds something, for example the slot a client agreed to. `no_reply`
     marks an opening message the bot left alone (user, 2026-10-29): the client
-    has had nothing back, so the line says so."""
-    who = convo.client_name or convo.sender_id
+    has had nothing back, so the line says so. With no name from Meta the
+    name slot carries a snippet of their message instead (`who_for_team`)."""
+    who = who_for_team(convo)
     channel = CHANNEL_SHORT.get(convo.channel, convo.channel or "?")
     first = f"{(area or 'general').capitalize()}: {kind or 'needs you'}: {who}: {channel}"
     if no_reply:

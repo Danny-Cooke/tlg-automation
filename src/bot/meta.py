@@ -170,8 +170,11 @@ PROFILE_FIELDS = {
 def user_profile(sender_id: str, page_token: str, *, channel: str = "messenger", app_secret: str | None = None, session=None) -> dict:
     """The sender's name from Meta's User Profile API, best effort.
 
-    Messenger returns first_name and last_name for anyone who has messaged
-    the Page, with the Page token (checked 2026-10-20). Instagram needs
+    Messenger returns first_name and last_name with the Page token only for
+    people with a role on the Meta app (it worked for us on 2026-10-20); for
+    the public it has answered 400 (error 100, subcode 33) on every lookup
+    since 2026-10-26, so the hand-over shows a snippet of their message
+    instead (`escalation.who_for_team`). Instagram needs
     instagram_manage_messages and returns name and username. Anything that
     goes wrong gives {} so a missing name never blocks a reply.
     """

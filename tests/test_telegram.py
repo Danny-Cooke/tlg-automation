@@ -66,6 +66,25 @@ def test_format_is_the_teams_one_liner_then_the_link():
     assert text.splitlines()[0] == "General: can't assist anymore: ig9: Insta, no reply sent"
 
 
+def test_no_name_from_meta_shows_a_snippet_of_their_message_instead_of_the_sender_id():
+    # Messenger refuses the profile lookup for the public (found 2026-11-10): a bare id told the team nothing.
+    convo = Conversation(sender_id="30267451199512076", channel="messenger")
+    convo.history = [
+        {"role": "user", "content": "Hey do you have any availability this afternoon for this acrylics nails offer x"},
+        {"role": "assistant", "content": "Hey lovely, nothing free this afternoon x"},
+        {"role": "user", "content": "[attachment without text]"},
+        {"role": "assistant", "content": "Hi lovely, give me a little time to have a think and I'll get back to you x"},
+    ]
+    first = escalation.format_telegram(convo, "p", area="general", kind="quote").splitlines()[0]
+    assert first == 'General: quote: "Hey do you have any availability this afternoon fo…": FB'  # the last thing they wrote in words
+    convo.history.append({"role": "user", "content": "2.15 please\nthanks [1 picture(s) attached]"})
+    assert escalation.format_telegram(convo, "p").splitlines()[0] == 'General: needs you: "2.15 please thanks": FB'
+    convo.history = [{"role": "user", "content": "[attachment without text]"}]
+    assert escalation.format_telegram(convo, "p", no_reply=True).splitlines()[0] == "General: needs you: picture, no text: FB, no reply sent"
+    convo.client_name = "Katherine Morris"  # a name always wins
+    assert escalation.format_telegram(convo, "p").splitlines()[0] == "General: needs you: Katherine Morris: FB"
+
+
 def test_discovery_takes_the_latest_group_in_the_feed():
     http = Http(updates=[
         {"update_id": 1, "message": {"chat": {"id": 42, "type": "private"}}},  # a DM to the bot, not the group
