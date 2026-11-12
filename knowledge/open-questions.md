@@ -33,4 +33,12 @@ Remove an item once it is settled and update the source file.
    the nine beauty and four lash services need one, and how far ahead, so
    the bot can say so when booking and the mirror's patch-test records can
    be matched to services.
+9. **Classic lashes are on Fresha twice, at two prices.** "Beauty - TLG" has
+   Classic lashes at £48 (2 hours) and Classic lash infill at £45;
+   "Lashes by Amber" has both at £52 (2 hours 45). Both are Amber. Jess
+   quoted a client £52 on 12 Nov 2026; the bot's unsent draft for the same
+   client on 10 Nov said "classic from £48, infills from £45". Which is
+   right, and should the other pair come off Fresha? Until settled the bot
+   can quote either. Also to confirm: "infilled every 4-5 weeks" as the
+   bot's answer to "how long do they last" (said by Jess, 10 Nov 2026).
 

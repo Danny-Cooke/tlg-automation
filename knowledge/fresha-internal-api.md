@@ -422,6 +422,33 @@ All under the same cookies and query-string ids:
 - `unleash-proxy.fresha.com`: feature flags; the only host that gets an
   authorization header, and it is a public client key, not the session.
 
+## Scheduled shifts and blocked time (worked out 2026-11-12)
+
+`POST https://staff-working-hours-api.fresha.com/graphql` with a JSON body
+(`{"query": ..., "variables": {}}`), the dashboard's cookies and the usual
+query-string ids (take the full URL from the page's own resource entry on
+`partners.fresha.com/team/scheduled-shifts`). Introspection is refused, but
+field errors carry "Did you mean" hints. The page's own calls were not seen
+by a `window.fetch` or XHR hook installed after load.
+
+- `employeeScheduleDays(fromDate, toDate, locationId: "1530970") { date
+  employeeId locationId shifts { startTime endTime } }`: one row per person
+  per day they have a shift, split shifts as several entries. A month a
+  call worked; history goes back to before opening (first shifts for Jess
+  and Carmen: 2026-02-10).
+- `blockedTimeOccurrences(fromDate, toDate, locationId, employeeIds: [...])
+  { id employeeId date startTime endTime title }`: blocked time, repeats
+  expanded per date. `blockedTimeOccurrencesV2` exists too.
+- Also on the root, not used: `employeeWorkingHoursV2(fromDate, toDate,
+  employeeId)`, `locationWorkingHoursV2`, `timeOff(id: UUID)`,
+  `timeOffDurationV2(fromDate, employeeId, ...)`, `timeOffTypesV2`. No
+  query that lists time off was found, so whether a day's holiday shows as
+  a missing shift or only as time off on top of it is not known.
+- Used for the weekly bookable-hours table for Jess and Carmen
+  (`.local/jess-carmen-bookable-hours.csv`): shift hours a week (Monday to
+  Sunday, week 1 from 2026-02-09) less blocked time that falls inside a
+  shift. Read only, nothing written.
+
 ## Ids confirmed in this test
 
 | Thing | Id |

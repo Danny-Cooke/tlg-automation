@@ -113,6 +113,17 @@ during the year. Jess confirms, then the keepers move to `salon.auto.tfvars`
   have nails; bespoke per-head prices (£18 to £25 per treatment, plus £10 a
   head for cakes and tea, April). Always a human.
 
+## Lashes (Amber)
+
+- Lash extensions, as Jess answered a new client on Messenger (10 and 12 Nov
+  2026): "Our Lash tech does classic lashes 1:1 lashes. These give lasting
+  fuller lashes with added length but with a natural tone. These are
+  typically infilled every 4-5 weeks as your lashes grow." Asked the price,
+  she said £52, which is the "Lashes by Amber" price on Fresha, not the £48
+  under "Beauty - TLG" (see `open-questions.md` item 9). She did not mention
+  the patch test. How long they last was answered as the infill interval,
+  not as a number of days.
+
 ## Other
 
 - Jess's WhatsApp for business enquiries (rent, jobs) is the number already
