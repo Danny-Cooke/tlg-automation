@@ -58,8 +58,21 @@ def wired(monkeypatch):
         return brain.BotReply(reply="Here's the link.", escalate=False)
 
     monkeypatch.setattr(brain, "ask", fake_ask)
+    calls["pictures"], calls["areas"] = [], []
+    monkeypatch.setattr(meta, "fetch_images", lambda urls, **kw: [("image/jpeg", "QUJD")] * len(tuple(urls)))
+
+    def fake_picture_area(history, images, **kw):
+        calls["pictures"].append((list(history), images))
+        return "nails" if any("acrylic" in t["content"] for t in history) else ""
+
+    monkeypatch.setattr(brain, "picture_area", fake_picture_area)
     monkeypatch.setattr(meta, "send_text", lambda rid, text, token, **kw: calls["sent"].append((rid, text)))
-    monkeypatch.setattr(escalation, "notify", lambda convo, reason, text, to="", **kw: calls["escalated"].append((convo.sender_id, reason, to)))
+
+    def fake_notify(convo, reason, text, to="", **kw):
+        calls["escalated"].append((convo.sender_id, reason, to))
+        calls["areas"].append(kw.get("area", ""))
+
+    monkeypatch.setattr(escalation, "notify", fake_notify)
     monkeypatch.setattr(
         escalation, "notify_new_message",
         lambda convo, text, ts=0, reply=None: calls["noticed"].append((convo.sender_id, text, reply)),
@@ -382,6 +395,26 @@ def test_attachment_only_message_escalates_in_live_mode(wired, monkeypatch):
     handler.process_message(inbound(text="", mid="m2", sender="psid2"), store)
     assert wired["escalated"][-1] == ("psid2", "Non-text message (picture or attachment)", "jess")
     assert all(rid != "psid2" for rid, _ in wired["sent"]) and store.items["psid2"].handed_to_jess is True
+
+
+def test_a_bare_picture_is_handed_over_with_the_area_it_is_for(wired, monkeypatch):
+    # 2026-11-10: a picture sent while booking acrylics reached the team as "General". Now the thread and the picture say.
+    monkeypatch.setattr(handler, "MODE", "live")
+    store = MemoryStore()
+    handler.process_message(inbound("any acrylic slots tomorrow?", mid="m0"), store)
+    pic = meta.InboundMessage(channel="messenger", sender_id="psid1", recipient_id="page1", message_id="m1", text="",
+                              timestamp_ms=0, attachments=1, image_urls=("https://cdn.example/p.jpg",))
+    handler.process_message(pic, store)
+    assert wired["areas"] == ["nails"] and wired["escalated"][-1][2] == "jess"  # the label changes, who gets it does not
+    history, images = wired["pictures"][0]
+    assert history[0]["content"] == "any acrylic slots tomorrow?" and images == [("image/jpeg", "QUJD")]
+    assert wired["sent"][-1] == ("psid1", brain.SAFE_REPLY) and store.items["psid1"].handed_area == "nails"
+    # Cannot tell, or the lookup blows up: general, and the hand-over still goes out.
+    handler.process_message(inbound(text="", mid="m2", sender="psid2"), store)
+    assert wired["areas"][-1] == "general"
+    monkeypatch.setattr(brain, "picture_area", lambda *a, **k: 1 / 0)
+    handler.process_message(inbound(text="", mid="m3", sender="psid3"), store)
+    assert wired["areas"][-1] == "general" and wired["escalated"][-1][0] == "psid3"
 
 
 def test_a_picture_with_text_is_flagged_to_the_model(wired, monkeypatch):

@@ -35,6 +35,7 @@ class InboundMessage:
     text: str
     timestamp_ms: int
     attachments: int = 0  # pictures, videos, files that came with it; the bot cannot see them
+    image_urls: tuple[str, ...] = ()  # Meta's links to the pictures among them, read only to name the area for the team
 
 
 def verify_challenge(query: dict, verify_token: str) -> str | None:
@@ -90,8 +91,42 @@ def parse_events(body: dict) -> list[InboundMessage]:
                     text=(msg.get("text") or "").strip(),
                     timestamp_ms=int(event.get("timestamp", 0)),
                     attachments=len(msg.get("attachments") or []),
+                    image_urls=tuple(
+                        str(a["payload"]["url"]) for a in (msg.get("attachments") or [])
+                        if isinstance(a, dict) and a.get("type") == "image" and (a.get("payload") or {}).get("url")
+                    ),
                 )
             )
+    return out
+
+
+IMAGE_TYPES = frozenset({"image/jpeg", "image/png", "image/gif", "image/webp"})
+MAX_IMAGE_BYTES = 3_500_000  # the Claude API takes 5 MB an image, measured after base64 (a third bigger)
+MAX_IMAGES = 2
+
+
+def fetch_images(urls: Iterable[str], *, session=None) -> list[tuple[str, str]]:
+    """The pictures a client sent, as (media type, base64) pairs for Claude.
+
+    Meta's attachment links are signed and open without a token. Best
+    effort: a picture that will not download, is too big or is not a picture
+    type Claude reads is left out, and the caller carries on without it."""
+    import base64
+
+    import requests
+
+    http = session or requests
+    out: list[tuple[str, str]] = []
+    for url in list(urls)[:MAX_IMAGES]:
+        try:
+            resp = http.get(url, timeout=5)
+            kind = (resp.headers.get("content-type") or "").split(";")[0].strip().lower()
+            if resp.status_code >= 400 or kind not in IMAGE_TYPES or len(resp.content) > MAX_IMAGE_BYTES:
+                log.info("Picture not read (%s, %s, %d bytes)", resp.status_code, kind or "no type", len(resp.content))
+                continue
+            out.append((kind, base64.standard_b64encode(resp.content).decode()))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Picture download failed: %s", exc)
     return out
 
 
@@ -173,8 +208,10 @@ def user_profile(sender_id: str, page_token: str, *, channel: str = "messenger",
     Messenger returns first_name and last_name with the Page token only for
     people with a role on the Meta app (it worked for us on 2026-10-20); for
     the public it has answered 400 (error 100, subcode 33) on every lookup
-    since 2026-10-26, so the hand-over shows a snippet of their message
-    instead (`escalation.who_for_team`). Instagram needs
+    since 2026-10-26. So on Messenger a refused or empty lookup falls back
+    to the Page's own conversation with them (`conversation_name`), which
+    does carry the name; the hand-over shows a snippet of their message
+    only when that fails too (`escalation.who_for_team`). Instagram needs
     instagram_manage_messages and returns name and username. Anything that
     goes wrong gives {} so a missing name never blocks a reply.
     """
@@ -182,16 +219,46 @@ def user_profile(sender_id: str, page_token: str, *, channel: str = "messenger",
 
     http = session or requests
     params = token_params(page_token, app_secret, fields=PROFILE_FIELDS.get(channel, PROFILE_FIELDS["messenger"]))
+    data: dict = {}
     try:
         resp = http.get(f"{GRAPH_BASE}/{sender_id}", params=params, timeout=10)
         if resp.status_code >= 400:
-            log.warning("User profile for %s failed %s: %s", sender_id, resp.status_code, resp.text[:120])
-            return {}
-        data = resp.json()
+            log.info("User profile for %s refused %s: %s", sender_id, resp.status_code, resp.text[:120])
+        else:
+            data = resp.json()
     except Exception as exc:  # noqa: BLE001
         log.warning("User profile for %s failed: %s", sender_id, exc)
-        return {}
-    return {k: v for k, v in data.items() if k in ("first_name", "last_name", "name", "username") and v}
+    profile = {k: v for k, v in data.items() if k in ("first_name", "last_name", "name", "username") and v}
+    if not profile and channel == "messenger":
+        name = conversation_name(sender_id, page_token, app_secret=app_secret, session=http)
+        if name:
+            profile = {"name": name}
+    return profile
+
+
+def conversation_name(sender_id: str, page_token: str, *, app_secret: str | None = None, session=None) -> str:
+    """The client's name as the Page's inbox shows it, or "".
+
+    GET /me/conversations?user_id={PSID}&fields=participants lists the two
+    sides of the Page's thread with that person, each with a name. It
+    answers for the public with the Page token at Standard Access (checked
+    live 2026-11-11), where the User Profile API does not. Never raises."""
+    import requests
+
+    http = session or requests
+    params = token_params(page_token, app_secret, platform="messenger", user_id=sender_id, fields="participants")
+    try:
+        resp = http.get(f"{GRAPH_BASE}/me/conversations", params=params, timeout=10)
+        if resp.status_code >= 400:
+            log.warning("Conversation name for %s failed %s: %s", sender_id, resp.status_code, resp.text[:120])
+            return ""
+        for thread in resp.json().get("data") or []:
+            for person in (thread.get("participants") or {}).get("data") or []:
+                if str(person.get("id")) == str(sender_id) and person.get("name"):
+                    return str(person["name"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Conversation name for %s failed: %s", sender_id, exc)
+    return ""
 
 
 def display_name(profile: dict) -> str:

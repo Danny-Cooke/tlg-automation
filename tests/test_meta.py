@@ -27,6 +27,41 @@ def test_user_profile_asks_each_channel_only_for_fields_it_allows():
     assert meta.display_name({"first_name": "Danny", "last_name": "Cooke"}) == "Danny Cooke"
     assert meta.display_name({"username": "tlg"}) == "tlg" and meta.display_name({}) == ""
 
+
+def test_messenger_name_comes_from_the_conversation_when_the_profile_is_refused():
+    """Meta refuses the public's profile (400, subcode 33); the Page's own thread with them has the name."""
+    calls = []
+
+    class R:
+        def __init__(self, status, body):
+            self.status_code, self.text, self._body = status, str(body), body
+
+        def json(self):
+            return self._body
+
+    class Http:
+        def __init__(self, threads):
+            self.threads = threads
+
+        def get(self, url, params, timeout):
+            calls.append((url.rsplit("/", 1)[-1], params.get("user_id")))
+            if url.endswith("/conversations"):
+                return R(200, {"data": self.threads})
+            return R(400, {"error": {"code": 100, "error_subcode": 33}})
+
+    thread = {"participants": {"data": [{"name": "Dominique Morrall", "id": "29"}, {"name": "The Looking Glass Shrewsbury", "id": "625"}]}}
+    profile = meta.user_profile("29", "tok", channel="messenger", session=Http([thread]))
+    assert meta.display_name(profile) == "Dominique Morrall"
+    assert calls == [("29", None), ("conversations", "29")]
+    # No thread, or only the Page in it: no name, and never the Page's own.
+    assert meta.user_profile("29", "tok", channel="messenger", session=Http([])) == {}
+    assert meta.user_profile("30", "tok", channel="messenger", session=Http([thread])) == {}
+    # Instagram has its own lookup and is not sent to the Page's conversations.
+    calls.clear()
+    assert meta.user_profile("29", "tok", channel="instagram", session=Http([thread])) == {}
+    assert calls == [("29", None)]
+
+
 SECRET = "app-secret"
 
 
@@ -103,6 +138,31 @@ def test_parse_counts_attachments():
     body["entry"][0]["messaging"][0]["message"]["attachments"] = [{"type": "image", "payload": {"url": "x"}}]
     [m] = meta.parse_events(body)
     assert m.text == "how much for these?" and m.attachments == 1
+    assert m.image_urls == ("x",)
+    body["entry"][0]["messaging"][0]["message"]["attachments"].append({"type": "audio", "payload": {"url": "y"}})
+    [m] = meta.parse_events(body)
+    assert m.attachments == 2 and m.image_urls == ("x",)  # only pictures are read
+
+
+def test_fetch_images_keeps_only_pictures_claude_can_read():
+    from types import SimpleNamespace
+
+    pages = {
+        "ok": SimpleNamespace(status_code=200, headers={"content-type": "image/jpeg; charset=binary"}, content=b"ABC"),
+        "gone": SimpleNamespace(status_code=403, headers={"content-type": "text/html"}, content=b""),
+        "video": SimpleNamespace(status_code=200, headers={"content-type": "video/mp4"}, content=b"x"),
+        "huge": SimpleNamespace(status_code=200, headers={"content-type": "image/png"}, content=b"x" * (meta.MAX_IMAGE_BYTES + 1)),
+    }
+
+    class Http:
+        def get(self, url, timeout):
+            if url == "dead":
+                raise OSError("no route")
+            return pages[url]
+
+    assert meta.fetch_images(["gone", "ok"], session=Http()) == [("image/jpeg", "QUJD")]
+    assert meta.fetch_images(["video", "dead"], session=Http()) == []
+    assert meta.fetch_images(["huge", "ok", "ok"], session=Http()) == [("image/jpeg", "QUJD")]  # only the first two are tried
 
 
 def test_parse_skips_echo_and_non_message_events():

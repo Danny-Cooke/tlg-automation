@@ -289,10 +289,13 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     fresha_session_check()
 
     if not text:
-        # Attachment-only message: let a person see it rather than guess.
+        # Attachment-only message: let a person see it rather than guess. The
+        # post to the team says what it is for (nails, hair, tattoos...), read
+        # from the thread and the picture (user, 2026-11-10); it still goes to
+        # Jess with the same holding line.
         reply = brain.BotReply(
             reply=brain.SAFE_REPLY, escalate=True, escalation_reason="Non-text message (picture or attachment)",
-            escalate_to="jess", area="general", escalation_kind="quote",
+            escalate_to="jess", area=_picture_area(convo, msg) or "general", escalation_kind="quote",
         )
     else:
         reply = brain.ask(system_prompt(), convo.history, user_text, context=context_block(convo), tools=tools(convo, store))
@@ -414,6 +417,18 @@ def run_availability(args: dict, cfg: SalonConfig, http=None) -> str:
         )
         lines.append(availability.format_for_model(results))
     return "\n".join(lines) or "nobody to check"
+
+
+def _picture_area(convo: Conversation, msg: meta.InboundMessage) -> str:
+    """The area a picture-only message is for, or "" when it cannot be told. Never raises."""
+    try:
+        images = meta.fetch_images(msg.image_urls)
+        area = brain.picture_area(convo.history, images)
+        log.info("PICTURE from %s: %d of %d read, area %s", msg.sender_id, len(images), msg.attachments, area or "not known")
+        return area
+    except Exception:  # noqa: BLE001 - the hand-over matters, the label does not
+        log.exception("Picture area failed")
+        return ""
 
 
 def _ensure_name(convo: Conversation) -> None:

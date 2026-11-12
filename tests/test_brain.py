@@ -179,3 +179,24 @@ def test_patch_test_tool_and_kind_exist():
     assert brain.TOOL_DEFINITIONS["patch_test_status"]["input_schema"]["required"] == ["client_name"]
     assert list(brain.TOOL_DEFINITIONS) == ["check_availability", "patch_test_status", "book_appointment", "cancel_appointment", "create_client"]
     assert brain.TOOL_DEFINITIONS["create_client"]["input_schema"]["required"] == ["first_name", "last_name", "mobile", "email"]
+
+
+def test_picture_area_sends_the_thread_and_the_picture_and_never_raises():
+    client = FakeClient([fake_response('{"area": "nails"}')])
+    history = [{"role": "user", "content": "any acrylic slots tomorrow?"}, {"role": "assistant", "content": "Carmen has 2pm x"}]
+    assert brain.picture_area(history, [("image/jpeg", "QUJD")], client=client) == "nails"
+    req = client.requests[0]
+    image, text = req["messages"][0]["content"]
+    assert image == {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": "QUJD"}}
+    assert "Client: any acrylic slots tomorrow?" in text["text"] and "Salon: Carmen has 2pm x" in text["text"]
+    assert req["output_config"]["format"]["schema"]["properties"]["area"]["enum"] == ["nails", "hair", "tattoos", "aesthetics", "beauty", "general"]
+    # No picture could be read: the thread alone, and the model is told so.
+    client = FakeClient([fake_response('{"area": "tattoos"}')])
+    assert brain.picture_area([], [], client=client) == "tattoos"
+    [only] = client.requests[0]["messages"][0]["content"]
+    assert "cannot be shown" in only["text"] and "first message" in only["text"]
+    # Refusal, rubbish or a dead API: "", the caller says general.
+    assert brain.picture_area([], [], client=FakeClient([fake_response(stop_reason="refusal", category="x")])) == ""
+    assert brain.picture_area([], [], client=FakeClient([fake_response("nope")])) == ""
+    assert brain.picture_area([], [], client=FakeClient([fake_response('{"area": "plumbing"}')])) == ""
+    assert brain.picture_area([], [], client=FakeClient([])) == ""

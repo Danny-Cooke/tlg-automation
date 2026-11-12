@@ -298,6 +298,52 @@ def ask(
     return _safe_escalation("Too many availability lookups in one turn")
 
 
+AREA_SCHEMA = {
+    "type": "object",
+    "properties": {"area": {"type": "string", "enum": [a for a in AREAS if a]}},
+    "required": ["area"],
+    "additionalProperties": False,
+}
+PICTURE_AREA_PROMPT = (
+    "You sort messages for a salon that does nails, hair, tattoos, aesthetics and beauty treatments. A client has "
+    "sent a picture with no words. From the picture, if you are shown it, and the thread before it, say which part "
+    "of the salon it is for, so the right person in the team picks it up. The thread wins when it is clearly about "
+    "one thing (a picture sent while booking nails is nails). Answer general when you cannot tell."
+)
+
+
+def picture_area(history: list[dict], images: list[tuple[str, str]], *, client=None) -> str:
+    """Which area a picture-only message is for (user, 2026-11-10): the team's
+    post said "General" for every picture. One small call with the thread and
+    the pictures (`images` is (media type, base64) pairs, may be empty). The
+    reply to the client and the hand-over do not depend on it: anything that
+    goes wrong gives "" and the caller says general."""
+    thread = "\n".join(
+        f"{'Client' if t.get('role') == 'user' else 'Salon'}: {t.get('content', '')}" for t in history[-10:]
+    ) or "(nothing, the picture is their first message)"
+    content: list[dict] = [{"type": "image", "source": {"type": "base64", "media_type": kind, "data": data}} for kind, data in images]
+    shown = "the picture above" if images else "a picture, which you cannot be shown"
+    content.append({"type": "text", "text": f"Thread so far:\n{thread}\n\nThe client has now sent {shown}, with no words. Which area is it for?"})
+    try:
+        response = (client or _client()).beta.messages.create(
+            model=MODEL,
+            max_tokens=MAX_TOKENS,
+            system=PICTURE_AREA_PROMPT,
+            messages=[{"role": "user", "content": content}],
+            output_config={"effort": "low", "format": {"type": "json_schema", "schema": AREA_SCHEMA}},
+            betas=["server-side-fallback-2026-07-01"],
+            fallbacks="default",
+        )
+        if response.stop_reason != "end_turn":
+            log.warning("Picture area: stopped with %s", response.stop_reason)
+            return ""
+        text = "".join(b.text for b in response.content if b.type == "text")
+        return _one_of(json.loads(text).get("area"), AREAS)
+    except Exception:  # noqa: BLE001 - the hand-over goes out as general
+        log.exception("Picture area call failed")
+        return ""
+
+
 def _run_tool(tools: dict[str, ToolRunner], name: str, args: dict) -> str:
     fn = tools.get(name)
     if fn is None:
