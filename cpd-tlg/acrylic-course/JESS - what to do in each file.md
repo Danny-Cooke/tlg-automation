@@ -1,6 +1,6 @@
 # Liquid and Powder Acrylic Enhancement CPD Course: what to do in each file before the course comes back
 
-For Jess. Prepared 27 October 2026, updated 9 November 2026 with your pictures (pack v1.2). Folder: `cpd-tlg/acrylic-course`. Application #20893 (Reviewing since you resubmitted the v1 manual on 26 October 2026).
+For Jess. Prepared 27 October 2026, updated 11 November 2026 with your feedback and nine pictures (pack v1.3). Folder: `cpd-tlg/acrylic-course`. Application #20893 (Reviewing since you resubmitted the v1 manual on 26 October 2026).
 
 ## Before you start
 
@@ -11,10 +11,11 @@ For Jess. Prepared 27 October 2026, updated 9 November 2026 with your pictures (
 - If you change a theory question in A02, change the same question in A03. If you change a safety-critical criterion in A04, change the list on page 4 of A01 to match.
 - When the assessor's report arrives, read it against this list first: most of what they ask for on the other courses is already here. Anything new, tell me and it gets fixed.
 
-## 1. A01 Acrylic Learner Manual v1.2.docx (submit-to-cpd)
+## 1. A01 Acrylic Learner Manual v1.3.docx (submit-to-cpd)
 
 *Page numbers are from the PDF copy in working-files; Word will be within a page of these.*
 
+- **11 November, your feedback is in (v1.3, 77 pages).** New Kolinsky brush section in Chapter 8 (page 32). Soak-off kit photograph and what each item is for under Removal (page 59). Figures 16 and 22 are your new versions with larger type, each followed by a paragraph on what the picture shows (pages 29 and 53). Figure 21 is now 21a tip sizing and 21b form fitting (pages 50 and 51). Your side-view picture follows Figure 23 (page 56). The workstation photograph is Figure 19 (page 42) and the controls-in-COSHH-order sheet is on page 37, with its 'For BIAB, builder gel' strip removed. Please check: (1) the 'too wide' photograph in Figure 21a had a Google Lens button on it, so is it yours or licensed? (2) the brush wording, especially storage with the hair pointing downwards; (3) your own Chapter 15 edit left Figure 24's picture on page 58 without a caption.
 - **9 November, your pictures are in (v1.2).** Fourteen arrived by WhatsApp. The finished dark set sits under 'What liquid-and-powder acrylic is' on page 6, the red almond set in the infill and rebalance section on page 53, and the EL Nail Systems powder pot closes Chapter 8 on page 33; none of the three has a figure number, so the numbering is unchanged. The other eleven replaced Figures 1, 14, 15, 16, 19, 20, 21, 22, 23, 24 and 25 under the same numbers (pages 9, 25, 27, 29, 39, 46, 48, 49, 51, 52, 54). Where a picture carried text the manual already prints, that strip was cropped off: the caption bands under Figures 1, 20 and 21, the 'Check from every angle' line under Figure 16, the 'four things a balanced nail needs' table under Figure 15 (the manual's own table follows the figure), the 'Set time and what changes it' panel under Figure 14 (the manual's section of that name follows it; the bead-size examples went with it, so say if you want them back as a separate picture), and the caption, credit and blank top margin of Figure 19; the slogans ('A desk fan is not a control', 'Never prise, nip, pick or drill') were kept. Figures 13, 17 and 18 are still drawings (pages 24, 30, 32); send pictures for those if you have them. Every photograph figure is credited 'Original photographs and artwork © The Looking Glass Beauty School, 2026'. Check the three new captions say what you teach, and confirm the powder-pot picture is the school's own photograph: if it is EL Nail Systems' picture, say so and the credit changes to name them with their permission on file.
 
 - Page 1: check 'Version 1.2, November 2026' and the author paragraph ('more than fourteen years', 'more than 400 learners'); correct the numbers if they are wrong. The title is now 'Liquid and Powder Acrylic Enhancement CPD Course' without hyphens, to match the application; if the application has hyphens, make them match one way or the other.
@@ -34,32 +35,32 @@ For Jess. Prepared 27 October 2026, updated 9 November 2026 with your pictures (
 - Figures 13, 17 and 18 are still drawn illustrations (pages 24, 30, 32). If you have real pictures of how acrylic sets, the nail shapes, and files and buffers, send them and they go in under the same numbers.
 - Then read the whole manual once, start to finish, as a learner would. It was edited by a script; if a heading, table or picture looks out of place, say so and it gets fixed.
 
-## 2. A02 Theory Assessment Paper v1.2.docx (submit-to-cpd)
+## 2. A02 Theory Assessment Paper v1.3.docx (submit-to-cpd)
 
 - 38 questions, 50 marks, pass 40, 60 minutes. The manual (page 4) says the same; if you change the count, change page 4 too.
 - Read all 38. For each one ask: is this what I teach, and is the answer in A03 the answer I would give? Question 6 (the legal position of MMA), 11 (nothing coarser than 240 on the plate), 21 (20 to 30 minute soak) and 28 (no electric file on this course) depend on how you teach; change them if you differ.
 - Check the safety-critical paragraph in the instructions. Keep or reword.
 
-## 3. A03 Theory Mark Scheme v1.2.docx (submit-to-cpd)
+## 3. A03 Theory Mark Scheme v1.3.docx (submit-to-cpd)
 
 - Must match A02 question for question.
 - The re-sit rule says: once, after at least seven days' further study, same paper with oral questioning on repeated answers. Change the rule if you want a different one.
 
-## 4. A04 Practical Observation Marking Sheet v1.2.docx (submit-to-cpd)
+## 4. A04 Practical Observation Marking Sheet v1.3.docx (submit-to-cpd)
 
 - Twenty criteria in six sections; seven are marked SC (safety-critical). Each scored 0, 1 or 2. Pass is 32 out of 40 and every SC criterion at least 1 with the fault corrected.
 - The practical is a full set or overlay, an infill and rebalance on at least one nail, and a removal on at least one nail. Decide how the infill and removal are arranged on the day: a nail coated in the morning and reworked in the afternoon, or the model's existing coating if you can identify the product. The sheet allows either; say which in your briefing.
 - Are these the things you watch for? Add, remove or reword. If you change which ones are SC, change page 4 of A01 so the manual lists the same seven.
 - On the day: one sheet per learner, signed by both of you, kept in the learner's portfolio.
 
-## 5. A05 Lesson Plan v1.2.docx (submit-to-cpd)
+## 5. A05 Lesson Plan v1.3.docx (submit-to-cpd)
 
 - Course details table: venue address, 'maximum four learners per tutor', 'delivered on demand', models confirmed at booking, the kit list. Correct?
 - Health and safety row: extraction at every station, lidded dappen dishes, lidded bin, nitrile gloves, eye protection, blood-spill kit, first aider. Everything listed must actually be in the room.
 - Timed table: 09:00 start, 17:30 finish, 30-minute lunch, two 15-minute breaks, two hours' supervised practice for the full set, theory paper at 16:15. Is two hours enough for a full set with four learners? Change the times if your day runs differently, but keep 7.5 guided learning hours on the day or the application hours stop matching.
 - Post-course section: three case studies, at least one full set and at least one infill, 'submitted within eight weeks'. Your deadline?
 
-## 6. A06 Cover Note to Assessor v1.2.docx (submit-to-cpd, optional but recommended)
+## 6. A06 Cover Note to Assessor v1.3.docx (submit-to-cpd, optional but recommended)
 
 - Check your name and provider number 789824 at the bottom.
 - The enclosures table lists 'Author CV and certificates'. Only true once item 7 is done.
