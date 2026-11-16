@@ -123,6 +123,34 @@ during the year. Jess confirms, then the keepers move to `salon.auto.tfvars`
   under "Beauty - TLG" (see `open-questions.md` item 9). She did not mention
   the patch test. How long they last was answered as the infill interval,
   not as a number of days.
+- Lash lift (same client, 16 Nov 2026): "it's 40", and asked "Is it with
+  tint already?" Jess said "It is yes". Matches Fresha's "Lash lift and
+  tint", £40. The client then asked how long it lasts and whether swimming
+  undoes it; no answer on record (`open-questions.md` items 10 and 11).
+- Earlier price, for the record only: "45 for classics, 40 for lash lifts"
+  (27 March 2026). Classics have gone up since; the lift has not.
+- Both of the above from Jess are now in the bot's notes
+  (`terraform/salon.auto.tfvars`, 16 Nov 2026).
+
+## Said in November 2026 (to confirm)
+
+- Tattoos: "we don't do a second skin" (Jess, 10 Nov), asked by a client
+  with a spa weekend booked. Flash tattoos were "on sale this week" (week
+  of 10 Nov) and booked straight in by the team, no consultation
+  (`open-questions.md` item 12).
+- Lori-Dee to clients: "I do all curly hair" (asked about Afro-Caribbean
+  curls, 4 Nov); late nights Thursdays, and Saturdays, with "Wednesday and
+  Fridays and Sundays are my days off" (12 Nov); Saturdays "fully booked
+  till Christmas" (10 Nov). Curly hair "ideally needs a deep conditioning
+  treatment once a month" (6 Nov). Her booking fee was £10 on three
+  bookings and £15 on one that week. The bot still does not quote her days.
+- Curly cuts are quoted from £70 by the bot (Fresha); the team's last
+  figure in chat was £65 in September and "It will be £70" on 10 Nov.
+- A nails complaint (tips lifting three days after a set, 14 Nov): Jess
+  offered a full soak off and new set free of charge, earliest 10am on the
+  next open day. Same line Carmen took in August.
+- The postcode Jess typed to a client on 16 Nov was "Sy1 qpq"; the address
+  on record is SY1 1PQ.
 
 ## Other
 

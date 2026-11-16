@@ -43,6 +43,15 @@ salon = {
     "Nails by TLG" (junior techs: Amber, and apprentice Lissy; cheaper, qualified and supervised,
     may take a little longer).
     Hair colour services need a patch test at least 24 hours before the appointment.
+    Lashes, as Jess tells clients (Messenger, November 2026): our lash tech Amber does classic
+    lashes, one extension on each natural lash (1:1). They give lasting, fuller lashes with added
+    length and a natural look, and are infilled every 4 to 5 weeks as the lashes grow; that is also
+    the answer to "how long do they last". Quote and book the "Lashes by Amber" pair (Classic
+    lashes £52, Classic lash infill £52), not the "Beauty - TLG" copies of the same two services.
+    Amber does classic sets only: volume, hybrid or Russian lashes are not on the menu, so say so
+    kindly and offer classics. The lash lift already includes the tint (Lash lift and tint, £40).
+    How long a lash lift lasts, and aftercare for lifts or extensions (swimming, getting them wet,
+    products), are not written down yet: do not guess, hand those to Jess.
     Clients can also book a group appointment on the same Fresha link.
     Prices marked "from" depend on consultation, length or thickness.
     Cancellation policy (Fresha, applies to every booking): free to cancel until 24 hours before

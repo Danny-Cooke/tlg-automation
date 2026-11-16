@@ -51,8 +51,9 @@ quoted as "from". "Quote" means the holding line and a quiet hand-over.
 | Tattoos by Skin deep canvas | 3 | tattoos | Tiny Tattoo prices are listed; everything else is a quote | the free consultation only | Carmen's WhatsApp line, then Carmen | `booking.ONLY_THESE`, prompt |
 
 Once a thread is with Lori-Dee or Carmen the bot still reads it and answers
-anything that is its own (nails, beauty, lashes, aesthetics); with Jess it
-is silent (decision 2026-10-24).
+anything that is its own (nails, beauty, lashes, aesthetics); since
+2026-11-16 the same holds with Jess (plan job 9), and the bot says nothing
+for half an hour after one of the team replies on a thread.
 
 Everything in the table is "dealt with" in the sense the user means, with
 the exceptions below.

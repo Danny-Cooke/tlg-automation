@@ -107,11 +107,20 @@ are rendered into the system prompt at deploy time.
 ### Conversation state
 
 DynamoDB table keyed by `sender_id` (Meta PSID or IGSID). Stores the last N turns,
-a `handed_to_jess` flag, and the last seen message id for dedupe. TTL of 30 days.
+each with the time it was said, who a thread has been handed to and why
+(`handed_to_jess`, `handed_to`, `handed_area`, `handed_kind`), and the seen message
+ids for dedupe. TTL of 30 days.
 
-When `handed_to_jess` is set the bot stays silent on that thread until Jess
-clears it (a small admin endpoint, or a TTL). This stops the bot talking over
-her.
+A second row per client, `team#<sender id>`, holds what the team themselves sent
+from the inbox (Meta's echoes) and when they last did. It is written with an atomic
+append and never by the conversation's own save, so a reply typed by Jess while the
+bot is mid-answer is not lost. On load the two are merged by time.
+
+A handed-over thread is still read (since 2026-11-16, plan job 9): the bot answers
+what it can answer itself and sends nothing for the part that was handed over. It
+says nothing at all for 30 minutes after one of the team replies on a thread, and
+drops its own reply if a person answers while it is writing. That is what stops the
+bot talking over the team; nothing has to be cleared by hand.
 
 ### Client list (plan job 10)
 

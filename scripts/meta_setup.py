@@ -56,7 +56,14 @@ CHANNELS = {
     # Meta needs (the messages field sits on the app's "instagram"
     # subscription) and "messages" there would demand pages_messaging, which
     # Tlg-app2 cannot have; any Page field the token may use will do.
-    "messenger": {"object": "page", "fields": ["messages", "messaging_postbacks"], "page_fields": ["messages", "messaging_postbacks"]},
+    # message_echoes (2026-11-16): Meta copies us on what the team send from
+    # the inbox, so the bot reads their replies and keeps out of a thread a
+    # person is in. Instagram sends its echoes on "messages" already.
+    "messenger": {
+        "object": "page",
+        "fields": ["messages", "messaging_postbacks", "message_echoes"],
+        "page_fields": ["messages", "messaging_postbacks", "message_echoes"],
+    },
     "instagram": {"object": "instagram", "fields": ["messages"], "page_fields": ["name"]},
 }
 

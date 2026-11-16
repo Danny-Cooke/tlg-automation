@@ -986,3 +986,28 @@ the reply is blanked before it is recorded or sent, the Telegram one-liner
 ends ", no reply sent" and the email says the client has had nothing back.
 Non-locking hand-overs (a nail booking told to the team while the bot
 keeps talking) are unchanged. Plan job 20.
+
+## 2026-11-16: no thread is closed to the bot; it reads the team's replies and steps aside for them
+
+The team complained that the bot was not replying. It was doing what it
+was built to do: 23 of 41 threads were handed over, 16 of them to Jess,
+and a thread with Jess was never read again because the hand-back (plan
+job 9) had not been built. The user set the rule that replaces the lock:
+"can the bot answer the question? if yes then answer it. if it can't be
+answered then don't answer. If the bot is answering and you notice someone
+else is actually looking at the message and actively typing then you stop."
+
+Meta tells an app nothing about who has a thread open or is typing in the
+inbox. It does send a copy of every message the team send (an echo), so
+"a person has replied" stands in for "a person is typing": the bot keeps
+the team's replies as part of the thread, says nothing for 30 minutes
+after one, and checks once more just before sending so that a reply a
+person got in first replaces the bot's. Agreed defaults (user, same
+evening): the 30-minute window, and one Telegram post per thread rather
+than one per unanswered message (a second post after 12 hours of
+silence). On a handed-over thread the bot sends no holding line: the team
+already has it. A hand-over nobody has touched for 7 days lapses. Rejected:
+a fixed expiry on the lock (my first proposal, 48 hours), because it
+answers by the clock and not by whether the question is the bot's; Meta's
+handover protocol and Telegram buttons (the 22 Oct design), because they
+depend on the team pressing something. Plan job 9.

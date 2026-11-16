@@ -37,7 +37,7 @@ from functools import lru_cache
 from . import availability, booking, brain, escalation, fresha_session, meta, patch_tests, telegram
 from .config import SalonConfig, load_persona
 from .prompt import build_system_prompt
-from .state import Conversation, ConversationStore, claim_daily
+from .state import TEAM_MARK, Conversation, ConversationStore, claim_daily
 
 log = logging.getLogger()
 log.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -91,8 +91,15 @@ def locks(kind: str, area: str) -> bool:
 
 def has_replied(convo: Conversation) -> bool:
     """Has the bot said anything on this thread yet? (Listen and shadow mode
-    leave only client turns in the history.)"""
+    leave only client turns in the history; what the team sent is kept apart.)"""
     return any(turn.get("role") == "assistant" and str(turn.get("content", "")).strip() for turn in convo.history)
+
+
+# On a thread that is with the team, a client message the bot leaves alone
+# tells the team again only when they have not been told for this long: one
+# post for a run of messages, not one each (user, 2026-11-16).
+NUDGE_GAP_SECONDS = int(float(os.environ.get("HANDOVER_NUDGE_HOURS", "12")) * 3600)
+WAITING_KIND = "waiting on you"
 SALON_TZ = zoneinfo.ZoneInfo(os.environ.get("SALON_TIMEZONE", "Europe/London"))
 
 
@@ -215,6 +222,13 @@ def _handle_webhook(event: dict, *, store: ConversationStore | None = None) -> d
         return _resp(400, "bad json")
 
     store = store or ConversationStore()
+    for echo in meta.parse_echoes(payload):
+        if CHANNEL and echo.channel != CHANNEL:
+            continue
+        try:
+            process_echo(echo, store)
+        except Exception:  # noqa: BLE001 - losing one of the team's replies as context must not fail the batch
+            log.exception("Failed processing echo %s", echo.message_id)
     for msg in meta.parse_events(payload):
         if CHANNEL and msg.channel != CHANNEL:
             log.warning("Ignoring %s message on the %s bot", msg.channel, CHANNEL)
@@ -237,8 +251,41 @@ def test_gate(text: str) -> tuple[bool, str]:
     return False, text
 
 
+def _same_text(a: str, b: str) -> bool:
+    return " ".join(a.split()) == " ".join(b.split())
+
+
+def is_own_echo(echo: meta.Echo, convo: Conversation, own_app_id: str = "") -> bool:
+    """Did the bot send this? Meta echoes the bot's replies as well as the
+    team's. Messenger names the sending app; failing that, the text is one the
+    bot has on record for this thread (the reply is saved before it is sent)."""
+    if own_app_id and echo.app_id and echo.app_id == str(own_app_id):
+        return True
+    if not echo.text:
+        return False  # the bot only ever sends text
+    for turn in convo.history[-6:]:
+        if turn.get("role") == "assistant" and any(_same_text(echo.text, chunk) for chunk in meta.chunk_text(str(turn.get("content", "")))):
+            return True
+    return False
+
+
+def process_echo(echo: meta.Echo, store: ConversationStore) -> None:
+    """One of the team answered a client from the inbox: keep what they said,
+    so the bot reads it as part of the thread, and note when, so the bot keeps
+    out of a conversation a person is in (plan job 9, 2026-11-16)."""
+    convo = store.load(echo.client_id)
+    if echo.message_id and any(t.get("mid") == echo.message_id for t in convo.team_turns):
+        return  # Meta delivered it twice
+    if convo.staff or is_own_echo(echo, convo, str(secrets().get("app_id") or "")):
+        return
+    content = echo.text or "[picture or attachment]"
+    store.note_team(echo.client_id, content, int(echo.timestamp_ms / 1000) or int(time.time()), echo.message_id)
+    log.info("TEAM replied to %s on %s: %r", echo.client_id, echo.channel, content[:120])
+
+
 def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     started = time.monotonic()
+    arrived = msg.timestamp_ms / 1000 or time.time()
     convo = store.load(msg.sender_id)
     convo.channel = msg.channel
     if convo.has_seen(msg.message_id):
@@ -247,7 +294,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
 
     allowed, text = test_gate(msg.text)
     if not allowed:
-        convo.note_message(msg.message_id, msg.text or "[attachment without text]")
+        convo.note_message(msg.message_id, msg.text or "[attachment without text]", arrived)
         store.save(convo)
         log.info("TEST MODE: not answering %s on %s (no trigger word)", msg.sender_id, msg.channel)
         return
@@ -259,7 +306,7 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
     _ensure_name(convo)
     if convo.staff or is_staff(convo.client_name):
         convo.staff = True
-        convo.note_message(msg.message_id, user_text)
+        convo.note_message(msg.message_id, user_text, arrived)
         store.save(convo)
         log.info("STAFF: %s (%s) on %s, staying quiet", convo.client_name or "?", msg.sender_id, msg.channel)
         return
@@ -274,12 +321,19 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         log.info("SIMPLE %s from %s: %r -> %r (sent=%s)", msg.channel, msg.sender_id, user_text[:200], reply_text, sent)
         return
 
-    if convo.handed_to_jess and not convo.watching():
-        log.info("Thread %s is with %s, staying quiet", msg.sender_id, convo.handed_to or "the team")
-        convo.note_message(msg.message_id, user_text)
+    if MODE == "live" and convo.team_active():
+        # A person is in this conversation right now: it is theirs (user, 2026-11-16).
+        log.info("Thread %s: the team replied %d min ago, staying quiet", msg.sender_id, (time.time() - convo.team_last_at) // 60)
+        convo.note_message(msg.message_id, user_text, arrived)
         store.save(convo)
         return
-    watching = convo.watching()  # with Lori-Dee or Carmen: read it, answer only if it is ours
+    if convo.handover_lapsed():
+        log.info("Thread %s: hand-over to %s lapsed after a quiet spell, starting fresh", msg.sender_id, convo.handed_to or "the team")
+        convo.clear_handover()
+    # With the team (Jess, Lori-Dee or Carmen): every message is still read, and
+    # answered when it is something the bot can answer (user, 2026-11-16; before
+    # that a thread with Jess was never read again and nothing gave it back).
+    handed = convo.handed_to_jess
 
     _ensure_name(convo)
     convo.mark_seen(msg.message_id)
@@ -298,12 +352,24 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
             escalate_to="jess", area=_picture_area(convo, msg) or "general", escalation_kind="quote",
         )
     else:
-        reply = brain.ask(system_prompt(), convo.history, user_text, context=context_block(convo), tools=tools(convo, store))
+        reply = brain.ask(system_prompt(), convo.thread(), user_text, context=context_block(convo), tools=tools(convo, store))
 
-    if watching and (not reply.reply.strip() or (reply.escalate and reply.area == convo.handed_area)):
-        # Theirs, or a reply to them: Lori-Dee or Carmen is answering in the inbox.
+    if handed and (not reply.reply.strip() or (reply.escalate and (locks(reply.escalation_kind, reply.area) or reply.area == convo.handed_area))):
+        # Not the bot's to answer, and the team already has the thread: nothing
+        # is sent, not even a holding line. They are told again when it has
+        # moved to someone else, or when they have not heard about it for a while.
         log.info("Thread %s is with %s for %s; this message is theirs", msg.sender_id, convo.handed_to, convo.handed_area)
-        convo.note_message(msg.message_id, user_text)
+        convo.note_message(msg.message_id, user_text, arrived)
+        to, area = reply.escalate_to or convo.handed_to, reply.area or convo.handed_area
+        moved = reply.escalate and (to != convo.handed_to or area != convo.handed_area)
+        if moved:
+            convo.hand_over(to, area, reply.escalation_kind)
+        if moved or time.time() - convo.alerted_at > NUDGE_GAP_SECONDS:
+            convo.alerted_at = int(time.time())
+            escalation.notify(
+                convo, reply.escalation_reason or "The client has written again and is waiting on a reply", user_text,
+                to=to, area=area, kind=reply.escalation_kind or WAITING_KIND, bot_quiet=True, no_reply=False,
+            )
         store.save(convo)
         return
 
@@ -315,19 +381,22 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         log.info("Opening message from %s is not ours (%s); no reply, straight to the team", msg.sender_id, reply.escalation_kind or "needs you")
         reply = dataclasses.replace(reply, reply="")
 
-    convo.record_turn(msg.message_id, user_text, reply.reply)
+    convo.record_turn(msg.message_id, user_text, reply.reply, arrived)
+    lock = False
+    if reply.escalate:
+        # A complaint, or something the bot cannot handle, is handed to a
+        # person. A booking or a move just tells the team and the bot keeps
+        # talking: the client is mid-conversation (user, 2026-10-20). Shadow
+        # mode never hands over, nothing reaches the client.
+        lock = MODE == "live" and locks(reply.escalation_kind, reply.area)
+        if lock:
+            convo.hand_over(reply.escalate_to, reply.area, reply.escalation_kind)
+        elif not handed:
+            convo.clear_handover()
+        convo.alerted_at = int(time.time())
     store.save(convo)  # seen before the wait, so a Meta retry is a duplicate
 
     if reply.escalate:
-        # A complaint, or something the bot cannot handle, goes quiet so a
-        # person takes the thread. A booking or a move just tells the team and
-        # the bot keeps talking: the client is mid-conversation (user,
-        # 2026-10-20). Shadow mode never locks, nothing reaches the client.
-        lock = MODE == "live" and locks(reply.escalation_kind, reply.area)
-        if lock:
-            convo.hand_over(reply.escalate_to, reply.area)
-        elif not watching:
-            convo.handed_to_jess = False
         escalation.notify(
             convo, reply.escalation_reason, user_text,
             to=reply.escalate_to, area=reply.area, kind=reply.escalation_kind, bot_quiet=lock,
@@ -338,10 +407,17 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         log.info("SHADOW reply to %s: %s", msg.sender_id, reply.reply)
         if not reply.escalate:
             escalation.notify(convo, f"Shadow mode draft: {reply.reply}", user_text, kind="shadow draft")
+    elif not reply.reply.strip():
+        log.info("Nothing to send to %s", msg.sender_id)
     else:
-        _send(msg.sender_id, reply.reply, started)
-
-    store.save(convo)
+        _pause(msg.sender_id, started)
+        if MODE == "live" and store.team_last_at(msg.sender_id) > convo.team_last_at:
+            # One of the team answered while the bot was writing: theirs stands, ours is dropped.
+            log.info("Thread %s: the team replied first, reply not sent: %r", msg.sender_id, reply.reply[:200])
+            convo.drop_reply(reply.reply)
+            store.save(convo)
+            return
+        _send(msg.sender_id, reply.reply, pause=False)
 
 
 def simple_reply(channel: str, text: str) -> str:
@@ -359,19 +435,22 @@ def context_block(convo: Conversation, now: dt.datetime | None = None) -> str:
     else:
         lines.append("The client's name is not known.")
     lines.append(f"Channel: {convo.channel or 'unknown'}.")
-    if convo.watching():
-        who = WATCHED_NAMES.get(convo.handed_to, convo.handed_to)
+    if convo.handed_to_jess:
+        who = TEAM_NAMES.get(convo.handed_to, convo.handed_to or "the team")
+        why = f" ({convo.handed_kind})" if convo.handed_kind else ""
         lines.append(
-            f"This thread is with {who} for {convo.handed_area}: {who} is answering the client here in the inbox, "
-            f"and those messages are not shown to you. Answer only if the new message is clearly about something "
-            f"else that is yours (nails, beauty, lashes, aesthetics, hours, the salon). If it is about {convo.handed_area}, "
-            f"could be a reply to {who}, or you are not sure, set `reply` to an empty string and `escalate` to false: "
-            f"nothing is sent."
+            f"This thread is with {who} for {convo.handed_area or 'general'}{why}: {who} is dealing with that part in the "
+            f"inbox, and anything the team sent is in the thread marked {TEAM_MARK}. Follow \"When the thread is "
+            f"already with one of the team\" for the new message: answer it if it is a question you can answer "
+            f"yourself; if it belongs to what {who} is dealing with, is a reply to them, or you are not sure, set "
+            f"`reply` to an empty string and `escalate` to false, and nothing is sent."
         )
+    elif convo.team_turns:
+        lines.append(f"One of the team has written on this thread from the inbox; their messages are marked {TEAM_MARK}.")
     return " ".join(lines)
 
 
-WATCHED_NAMES = {"lori-dee": "Lori-Dee", "carmen": "Carmen"}
+TEAM_NAMES = {"jess": "Jess", "lori-dee": "Lori-Dee", "carmen": "Carmen"}
 
 
 def tools(convo: Conversation | None = None, store: ConversationStore | None = None) -> dict[str, brain.ToolRunner]:
@@ -423,7 +502,7 @@ def _picture_area(convo: Conversation, msg: meta.InboundMessage) -> str:
     """The area a picture-only message is for, or "" when it cannot be told. Never raises."""
     try:
         images = meta.fetch_images(msg.image_urls)
-        area = brain.picture_area(convo.history, images)
+        area = brain.picture_area(convo.thread(), images)
         log.info("PICTURE from %s: %d of %d read, area %s", msg.sender_id, len(images), msg.attachments, area or "not known")
         return area
     except Exception:  # noqa: BLE001 - the hand-over matters, the label does not
@@ -450,12 +529,24 @@ def _typing(recipient_id: str) -> None:
         meta.send_action(recipient_id, "typing_on", s["page_token"], app_secret=s.get("app_secret"))
 
 
-def _send(recipient_id: str, text: str, started: float | None = None) -> bool:
-    """Reply through the Graph API after a human-length pause with the typing
-    indicator showing. The pause counts from `started` (time.monotonic), so a
-    slow Claude or Fresha call eats into it rather than adding to it. Without
-    a page token nothing can be sent; say so in the log rather than fail, so
-    the rest of the path still works."""
+def _pause(recipient_id: str, started: float | None = None) -> None:
+    """The human-length pause before a reply, typing indicator showing. It
+    counts from `started` (time.monotonic), so a slow Claude or Fresha call
+    eats into it rather than adding to it."""
+    s = secrets()
+    if not s.get("page_token") or REPLY_DELAY_SECONDS <= 0:
+        return
+    meta.send_action(recipient_id, "typing_on", s["page_token"], app_secret=s.get("app_secret"))
+    elapsed = time.monotonic() - started if started is not None else 0.0
+    remaining = REPLY_DELAY_SECONDS - elapsed
+    if remaining > 0:
+        time.sleep(remaining)
+
+
+def _send(recipient_id: str, text: str, started: float | None = None, *, pause: bool = True) -> bool:
+    """Reply through the Graph API, after the pause unless the caller has
+    already waited (`pause=False`). Without a page token nothing can be sent;
+    say so in the log rather than fail, so the rest of the path still works."""
     s = secrets()
     if not s.get("page_token"):
         log.warning("No page token configured; cannot reply to %s", recipient_id)
@@ -463,12 +554,8 @@ def _send(recipient_id: str, text: str, started: float | None = None) -> bool:
     if not text.strip():
         log.info("Nothing to send to %s", recipient_id)
         return False
-    if REPLY_DELAY_SECONDS > 0:
-        meta.send_action(recipient_id, "typing_on", s["page_token"], app_secret=s.get("app_secret"))
-        elapsed = time.monotonic() - started if started is not None else 0.0
-        remaining = REPLY_DELAY_SECONDS - elapsed
-        if remaining > 0:
-            time.sleep(remaining)
+    if pause:
+        _pause(recipient_id, started)
     chunks = list(meta.chunk_text(text))
     for chunk in chunks:
         meta.send_text(recipient_id, chunk, s["page_token"], app_secret=s.get("app_secret"))

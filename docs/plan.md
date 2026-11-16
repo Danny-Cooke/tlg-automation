@@ -5,6 +5,13 @@ open: nothing below is built until the user says so, except where marked.
 Started 2026-10-19. Design reasoning lives in `docs/decisions.md`; Fresha
 facts in `knowledge/`.
 
+## Where things stand (2026-11-16)
+
+- **The bot "not replying" (team complaint, 16 Nov) was the hand-over lock, not a fault.** Both Lambdas had zero errors; 23 of 41 threads were handed over and never given back (job 9 unbuilt). Job 9 was redesigned by the user and rebuilt the same evening, see job 9 below: the bot reads every thread, answers what it can, reads the team's inbox replies and stays out for 30 minutes after one. Tests pass; **not committed, not deployed.** The existing locked threads need no clean-up: under the new code they are read again from the next message.
+- **Lashes in the bot's notes** (`terraform/salon.auto.tfvars`): Jess's own description of classic lashes, the £52 she quotes, the lash lift including its tint. Two lash questions a client asked on 16 Nov have no salon answer yet (how long a lash lift lasts; swimming): `knowledge/open-questions.md` items 10 and 11.
+- **Fresha login for the bot ran out of days on about 18 Nov** (2 days left on 16 Nov, nag posted to Telegram): `scripts/fresha_session.py` on the laptop.
+- Messenger history re-pulled 16 Nov into `.local/messages/` (308 threads, 3,286 messages).
+
 ## Where things stand (2026-11-09)
 
 - CPD, Acrylic course (`cpd-tlg/acrylic-course/`): Jess's fourteen pictures went in on 9 Nov. A01 v1.2 (71 pages): finished set under "What liquid-and-powder acrylic is", a set after infill in Chapter 15, the EL Nail Systems powder pot closing Chapter 8 (all unnumbered); Figures 1, 14, 15, 16 and 19 to 25 replaced under their numbers with text strips the manual already prints cropped off; Figures 13, 17 and 18 still drawings. Pack A02–A06 at v1.2, PDFs and Jess's checklist regenerated; scripts `working-files/build/apply_photos_2026-11-09.py` then `bump_pack_2026-11-09.py`. Jess to confirm the product shot is the school's own and check the three new captions. Course still in review (#20893).
@@ -389,70 +396,78 @@ completed: the group is where the bot stops, not a running commentary. Token in 
 SSM (`TELEGRAM_CHAT_ID` variable overrides). Steps in `docs/setup.md` 4c.
 Next: job 9 gives the thread back.
 
-### 9. Hand-back: Meta's handover protocol plus Telegram buttons (AGREED 2026-10-22, not built)
+### 9. Hand-back: the bot reads the team's replies and steps aside for them (REBUILT 2026-11-16, not yet deployed)
 
 The problem (user, 2026-10-22): the bot hands a thread to Jess, Carmen or
 Lori-Dee and goes quiet, but nothing ever gives it back except the owner
-running a DynamoDB command. Two mechanisms, built together, either one
-hands back:
+running a DynamoDB command. The design agreed that day (Meta's handover
+protocol plus Telegram buttons) was never built, and on 2026-11-16 the team
+complained that the bot was not replying: 23 of 41 threads were locked, 16
+of them to Jess, where the bot did not read another word. The user replaced
+the design the same evening ("can the bot answer the question? if yes then
+answer it. if it can't be answered then don't answer. If ... someone else
+is actually looking at the message and actively typing then you stop").
 
-**A. Meta's handover protocol.** The bot app is the Page's *primary
-receiver*; Meta's own inbox (Business Suite) is the secondary. On a locking
-hand-over (complaint, cancellation fee, quote, can't assist) the bot locks
-the thread as now and also calls `POST /{page-id}/pass_thread_control` with
-the inbox as `target_app_id` (Page Inbox `263902037430900`, Instagram Inbox
-`1217981644879628`) and `metadata` naming the kind and who it is for. From
-then on the client's messages reach the bot on Meta's `standby` channel,
-which it ignores, so Meta itself keeps the bot quiet. The team reply from
-the inbox as they do today. Moving the conversation to **Done** in the inbox
-passes control back: Meta sends `pass_thread_control` on the
-`messaging_handovers` webhook with our app as `new_owner_app_id`, and the
-bot clears the lock. Verified from Meta's reference for the endpoint, app
-ids and webhook payload; "Done gives it back" is documented by two vendors
-built on the protocol, not on a Meta page I could reach, so the first live
-test confirms it. Needs: `messaging_handovers` (and `standby`) added to the
-fields `scripts/meta_setup.py` subscribes; a one-off operator step per
-channel (Page settings: Advanced Messaging, set the app as primary
-receiver; for Instagram, Page Setup > Instagram Conversation Routing, set
-the app as default) in `docs/setup.md`; the inbound parser to read
-`messaging_handovers` events; `meta.pass_thread_control` and
-`meta.take_thread_control`.
+How it works now (`src/bot/handler.py`, `state.py`, `meta.py`):
 
-**B. Buttons on the Telegram post.** Each locking hand-over's post carries
-two inline buttons: "I've got it" and "Done, bot can take over".
-"I've got it" edits the post to "<first name> has it, 18:42" (the tapper's
-Telegram name) and stores `handled_by` on the conversation item; the Done
-button stays. "Done" clears the lock, calls `take_thread_control` so the
-inbox no longer owns the thread, and edits the post to "Back with the bot".
-The Done-in-inbox route (A) edits the post the same way, so the group sees
-the hand-back whichever way it happened. Button taps are callback queries,
-delivered to the bot that owns the message regardless of privacy mode, so
-privacy mode stays on. Needs: a `POST /telegram` route on the existing API
-Gateway to the messenger bot Lambda (one route serves both channels; the
-64-byte `callback_data` carries action, channel and sender id); the request
-checked against `X-Telegram-Bot-Api-Secret-Token`, a Terraform-generated
-secret stored next to the bot token; `setWebhook` asserted by the deploy
-pipeline like the Meta registration, with `allowed_updates` of
-`callback_query`, `message` and `my_chat_member`; `answerCallbackQuery` on
-every tap so the spinner stops. Once a webhook is set `getUpdates` stops
-working, so chat-id discovery moves from polling to the incoming update:
-any update from a group caches the id in SSM, replacing
-`discover_group_chat_id`. The cached id already covers the live group.
+1. **No thread is ever closed to the bot.** A hand-over still records who
+   has the thread, for what and why (`handed_to`, `handed_area`,
+   `handed_kind`), but every later message goes to the model, for Jess as
+   it already did for Lori-Dee and Carmen. The context block says what was
+   handed over; the prompt section "When the thread is already with one of
+   the team" says: answer what you can answer fully yourself, send nothing
+   for the handed-over part, a reply to the team, or anything unsure. On a
+   handed-over thread the bot never sends a holding line.
+2. **The bot reads what the team send.** Meta copies the app on every
+   message sent on a thread (`is_echo`). `meta.parse_echoes` reads them,
+   `handler.process_echo` drops the bot's own (the sending app id on
+   Messenger, or the text matches a reply the bot has on record) and keeps
+   the rest on a second DynamoDB row, `team#<sender id>`, appended
+   atomically so a whole-row `save` from an invocation in flight cannot
+   wipe it. `Conversation.thread()` slots them into the history by time,
+   each marked "[sent by the team from the inbox]", for the model and for
+   the hand-over email.
+3. **A person in the conversation silences the bot.** If one of the team
+   sent a message on the thread in the last 30 minutes
+   (`TEAM_QUIET_MINUTES`), the client's message is stored and not even put
+   to the model. Meta gives an app no "typing" or "viewing" signal for the
+   inbox, so a sent message is the nearest thing there is.
+4. **Last-second check.** After the reply pause and before sending, the
+   team row is read again; if a person answered while the bot was writing,
+   the bot's reply is dropped and taken off the record.
+5. **One post, not one per message.** A message the bot leaves alone on a
+   handed-over thread posts to Telegram again only when it moves the thread
+   to a different person or area, or when the team have not been told about
+   that thread for 12 hours (`HANDOVER_NUDGE_HOURS`); the kind then reads
+   "waiting on you".
+6. **Backstop.** A hand-over on a thread where nobody (client, bot or
+   team) has written for 7 days (`HANDOVER_IDLE_DAYS`) is over; the next
+   message starts fresh.
 
-**Backstop.** A lock older than `HANDOVER_TTL_DAYS` (default 7) is treated as
-cleared, and the bot takes control back on the next client message; Meta's
-own control expires after 24 hours idle anyway. Logged when it happens.
+Rules kept: complaints are never answered by the bot; hair is never booked
+in chat; an opening message the bot cannot help with still gets no reply
+(job 20); the first hand-over mid-thread still says "let me check with
+Jess"; non-locking hand-overs (a booking told to the team) keep the bot
+talking; staff threads are never touched; shadow mode never hands over.
 
-**Rules kept.** Only live mode passes control or locks (shadow never has).
-Non-locking hand-overs (booking, cancellation, spam) get no buttons and no
-thread-control call. Email is unchanged. Telegram not configured: route A
-alone. Assigning to a named person in Business Suite has no API, so the
-Telegram post plus "I've got it" is the assignment; Page labels could add a
-filter in the inbox later if wanted.
+To deploy: commit, push, run the Deploy workflow. `scripts/meta_setup.py`
+now subscribes the Messenger app and the Page to `message_echoes` (the
+workflow runs it), which Meta must accept before point 2 and 3 work on
+Messenger; Instagram already delivers echoes with `messages` (seen in the
+logs as 2 ms invocations after each bot reply). No Terraform change: the
+three settings above are code defaults read from the environment.
 
-**Not in this job, worth doing after:** recording the team's own replies
-(`message_echoes`) while the thread is with them, so the bot resumes
-knowing what Lori or Carmen told the client.
+Proofs owed after the deploy: `TEAM replied to ...` in the Messenger log
+when Jess answers from the inbox; a client message inside the half hour
+logged "the team replied N min ago, staying quiet"; a price question on a
+thread that is with Jess answered; "this message is theirs" with nothing
+sent for a follow-up on the handed-over matter.
+
+Known gap: if Jess is still typing when the bot's reply lands, the client
+gets both; the bot's usually lands first and shows in her inbox. Not built
+from the old design: Meta's handover protocol, the Telegram "I've got it"
+and "Done" buttons (the `/telegram` webhook is still wanted by job 10
+step 5).
 
 ### 10. SMS offers to the client list (AGREED 2026-10-23; steps 1 and 2 BUILT; steps 3 to 5 BACKLOG since 2026-10-24)
 

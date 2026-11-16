@@ -8,16 +8,32 @@ from bot.state import Conversation, ConversationStore
 
 
 class MemoryStore(ConversationStore):
+    """The conversation rows and, apart from them as in the table, what the team sent."""
+
     def __init__(self):
         super().__init__(table=object())
         self.items: dict[str, Conversation] = {}
+        self.team: dict[str, list[dict]] = {}
 
     def load(self, sender_id):
-        c = self.items.get(sender_id)
-        return c if c else Conversation(sender_id=sender_id)
+        c = self.items.get(sender_id) or Conversation(sender_id=sender_id)
+        c.team_turns = list(self.team.get(sender_id, []))
+        c.team_last_at = self.team_last_at(sender_id)
+        return c
 
     def save(self, convo):
         self.items[convo.sender_id] = convo
+
+    def note_team(self, sender_id, content, at, message_id=""):
+        self.team.setdefault(sender_id, []).append({"at": at, "content": content, "mid": message_id})
+
+    def team_last_at(self, sender_id):
+        return max((t["at"] for t in self.team.get(sender_id, [])), default=0)
+
+
+def turns(convo):
+    """The stored turns without the time each carries."""
+    return [{"role": t["role"], "content": t["content"]} for t in convo.history]
 
 
 def inbound(text="Can I book nails?", mid="m1", sender="psid1", channel="messenger", attachments=0):
@@ -142,7 +158,7 @@ def test_simple_mode_acknowledges_and_records(wired):
     assert wired["ask"] == [] and wired["escalated"] == []
     assert wired["noticed"] == [("psid1", "Hello there", 'Hi, this is the TLG messenger test bot. I received "Hello there".')]
     convo = store.items["psid1"]
-    assert convo.history[0] == {"role": "user", "content": "Hello there"}
+    assert turns(convo)[0] == {"role": "user", "content": "Hello there"} and convo.history[0]["at"] > 0
     assert convo.history[1]["role"] == "assistant"
     assert convo.has_seen("m1") and convo.handed_to_jess is False
 
@@ -217,7 +233,7 @@ def test_test_mode_answers_only_the_trigger_word(wired, monkeypatch):
     ]
     convo = store.items["psid1"]
     assert all(convo.has_seen(m) for m in ("m1", "m2", "m3", "m4"))  # ignored ones are still stored
-    assert convo.history[0] == {"role": "user", "content": "Hi, do you do lashes?"}
+    assert turns(convo)[0] == {"role": "user", "content": "Hi, do you do lashes?"}
     assert wired["noticed"][0][1] == "do you do lashes?"  # the word never reaches anyone downstream
 
 
@@ -252,7 +268,7 @@ def test_live_mode_sends_reply_and_records_history(wired, monkeypatch):
     assert wired["sent"] == [("psid1", "Here's the link.")]
     assert wired["escalated"] == []
     convo = store.items["psid1"]
-    assert convo.history == [
+    assert turns(convo) == [
         {"role": "user", "content": "Can I book nails?"},
         {"role": "assistant", "content": "Here's the link."},
     ]
@@ -277,11 +293,29 @@ def test_escalation_locks_thread_in_live_mode(wired, monkeypatch):
     handler.process_message(inbound("I want a refund", mid="m1"), store)
     assert wired["escalated"] == [("psid1", "Refund request", "jess")]
     assert wired["sent"] == [("psid1", "Here's the link."), ("psid1", "Let me check that.")]
-    assert store.items["psid1"].handed_to_jess is True
+    convo = store.items["psid1"]
+    assert convo.handed_to_jess is True and convo.handed_to == "jess" and convo.alerted_at > 0
 
-    handler.process_message(inbound("Hello??", mid="m2"), store)
-    assert len(wired["sent"]) == 2  # bot stayed quiet
-    assert len(wired["ask"]) == 2
+    # User, 2026-11-16: with Jess the thread is still read. What the bot cannot
+    # answer gets nothing at all, not a second holding line, and no second post.
+    handler.process_message(inbound("any news on my refund?", mid="m2"), store)
+    assert len(wired["sent"]) == 2 and len(wired["ask"]) == 3 and len(wired["escalated"]) == 1
+    assert "This thread is with Jess for general" in wired["context"][-1]
+    assert turns(convo)[-1] == {"role": "user", "content": "any news on my refund?"}
+
+    # What it can answer, it answers; the refund stays with Jess.
+    handler.process_message(inbound("what time do you close today?", mid="m3"), store)
+    assert wired["sent"][-1] == ("psid1", "Here's the link.") and convo.handed_to_jess is True
+
+    # Still unanswered half a day on: the team are told once more, as "waiting on you".
+    posted = []
+    monkeypatch.setattr(escalation, "notify", lambda convo, reason, text, **kw: posted.append((reason, kw.get("kind"), kw.get("to"))))
+    convo.alerted_at -= handler.NUDGE_GAP_SECONDS + 60
+    monkeypatch.setattr(brain, "ask", lambda *a, **kw: brain.BotReply(reply="", escalate=False))
+    handler.process_message(inbound("hello??", mid="m4"), store)
+    handler.process_message(inbound("anyone there", mid="m5"), store)
+    assert posted == [("The client has written again and is waiting on a reply", "waiting on you", "jess")]
+    assert len(wired["sent"]) == 3
 
 
 def test_opening_message_the_bot_cannot_help_with_gets_no_reply(wired, monkeypatch):
@@ -301,11 +335,11 @@ def test_opening_message_the_bot_cannot_help_with_gets_no_reply(wired, monkeypat
     assert posted == [("psid1", "Refund request", "", True)]
     convo = store.items["psid1"]
     assert convo.handed_to_jess is True
-    assert convo.history == [{"role": "user", "content": "I want a refund"}]  # no blank bot turn for the model to see
+    assert turns(convo) == [{"role": "user", "content": "I want a refund"}]  # no blank bot turn for the model to see
     assert convo.has_seen("m1")
 
-    handler.process_message(inbound("Hello??", mid="m2"), store)
-    assert wired["sent"] == [] and len(wired["ask"]) == 1  # Jess's thread now
+    handler.process_message(inbound("I want that refund today", mid="m2"), store)
+    assert wired["sent"] == [] and len(posted) == 1  # Jess's thread: read, not answered, not posted twice
 
     # A booking told to the team on an opening message is not "cannot help": the bot keeps talking.
     monkeypatch.setattr(brain, "ask", lambda *a, **kw: brain.BotReply(
@@ -596,13 +630,13 @@ def test_a_thread_with_lori_dee_is_still_read_and_nails_get_the_bot_back(wired, 
     store = MemoryStore()
     handler.process_message(inbound("can I book a cut with lori", mid="m1"), store)
     convo = store.items["psid1"]
-    assert convo.handed_to_jess and convo.handed_to == "lori-dee" and convo.handed_area == "hair" and convo.watching()
+    assert convo.handed_to_jess and convo.handed_to == "lori-dee" and convo.handed_area == "hair" and convo.handed_kind == "booking"
     assert wired["sent"] == []  # opened with hair: Lori answers first (user, 2026-10-29)
     wired["sent"].append(("psid1", "(Lori's line, sent by hand)"))  # keep the counts below readable
 
     handler.process_message(inbound("yes 2pm is fine", mid="m2"), store)  # for Lori
     assert len(wired["sent"]) == 1 and "This thread is with Lori-Dee for hair" in contexts[-1]
-    assert convo.history[-1] == {"role": "user", "content": "yes 2pm is fine"}  # kept as context, no bot turn
+    assert turns(convo)[-1] == {"role": "user", "content": "yes 2pm is fine"}  # kept as context, no bot turn
 
     handler.process_message(inbound("also could I get my nails done while I'm in?", mid="m3"), store)
     assert wired["sent"][-1] == ("psid1", "Absolutely lovely, gel polish is from £34 xx")
@@ -611,12 +645,15 @@ def test_a_thread_with_lori_dee_is_still_read_and_nails_get_the_bot_back(wired, 
     handler.process_message(inbound("and a trim on the fringe", mid="m4"), store)  # hair again: theirs, no second hand-over
     assert len(wired["sent"]) == 2 and len(wired["escalated"]) == 1
 
-    # With Jess (a complaint) nothing is read or answered.
-    convo.hand_over("jess", "nails")
-    assert not convo.watching()
-    before = len(contexts)
-    handler.process_message(inbound("nails please", mid="m5"), store)
-    assert len(contexts) == before and len(wired["sent"]) == 2
+    # With Jess (a complaint) it is the same since 2026-11-16: read, and answered only when it is the bot's.
+    convo.hand_over("jess", "nails", "complaint")
+    handler.process_message(inbound("they have all lifted again", mid="m5"), store)
+    assert "This thread is with Jess for nails (complaint)" in contexts[-1] and len(wired["sent"]) == 2
+
+    # A new matter for someone else moves the thread to them and tells them, with nothing sent.
+    handler.process_message(inbound("could lori cut my hair too", mid="m6"), store)
+    assert len(wired["sent"]) == 2 and wired["escalated"][-1] == ("psid1", "Hair with Lori-Dee: cut", "lori-dee")
+    assert convo.handed_to == "lori-dee" and convo.handed_area == "hair"
 
 
 def test_handover_fields_round_trip_through_the_table():
@@ -632,16 +669,16 @@ def test_handover_fields_round_trip_through_the_table():
 
         def update_item(self, Key, UpdateExpression, ExpressionAttributeValues):
             assert "handed_to = :e" in UpdateExpression
-            self.item.update(handed_to_jess=False, handed_to="", handed_area="")
+            self.item.update(handed_to_jess=False, handed_to="", handed_area="", handed_kind="")
 
     table = Table()
     store = ConversationStore(table=table)
     c = Conversation(sender_id="p")
-    c.hand_over("carmen", "tattoos")
+    c.hand_over("carmen", "tattoos", "quote")
     c.fresha_client_id, c.fresha_client_name = "305", "Amy Pond"
     store.save(c)
     back = store.load("p")
-    assert back.handed_to == "carmen" and back.handed_area == "tattoos" and back.watching()
+    assert back.handed_to == "carmen" and back.handed_area == "tattoos" and back.handed_kind == "quote"
     assert back.fresha_client_id == "305" and back.fresha_client_name == "Amy Pond"
     store.clear_handover("p")
     assert store.load("p").handed_to_jess is False and store.load("p").handed_to == ""
@@ -671,3 +708,148 @@ def test_staff_threads_are_stored_and_never_answered(wired, monkeypatch):
     handler.process_message(inbound("hello", mid="m3", sender="client1"), store)
     assert len(calls["sent"]) == 1
 
+
+
+# ---------------------------------------------------------------------------
+# The team's own replies (Meta's echoes): plan job 9 as rebuilt 2026-11-16
+# ---------------------------------------------------------------------------
+
+
+def echo(text="Hi lovely, Jess here x", mid="e1", client="psid1", at=None, app_id="", channel="messenger"):
+    import time
+
+    return meta.Echo(channel=channel, client_id=client, message_id=mid, text=text,
+                     timestamp_ms=int((time.time() if at is None else at) * 1000), app_id=app_id)
+
+
+def test_the_teams_reply_is_kept_and_the_bots_own_echo_is_not(wired, monkeypatch):
+    monkeypatch.setattr(handler, "MODE", "live")
+    monkeypatch.setattr(handler, "secrets", lambda: {"page_token": "tok", "app_secret": "s", "verify_token": "v", "app_id": "111"})
+    store = MemoryStore()
+    handler.process_message(inbound("Can I book nails?"), store)
+
+    handler.process_echo(echo("Here's the  link.", mid="e0"), store)  # Meta's copy of the bot's own reply
+    handler.process_echo(echo("anything at all", mid="e00", app_id="111"), store)  # sent by our app, says Messenger
+    assert store.team == {}
+
+    handler.process_echo(echo("Hi lovely, Jess here, I can do 2pm x", mid="e1", app_id="263902037430900"), store)
+    handler.process_echo(echo("Hi lovely, Jess here, I can do 2pm x", mid="e1"), store)  # delivered twice
+    handler.process_echo(echo("", mid="e2"), store)  # a picture from the team
+    assert [t["content"] for t in store.team["psid1"]] == ["Hi lovely, Jess here, I can do 2pm x", "[picture or attachment]"]
+
+    # A staff member's own thread is never the bot's business either way.
+    store.items["staff1"] = Conversation(sender_id="staff1", staff=True)
+    handler.process_echo(echo("see you tomorrow", mid="e3", client="staff1"), store)
+    assert "staff1" not in store.team
+
+
+def test_the_bot_keeps_out_while_one_of_the_team_is_in_the_conversation(wired, monkeypatch):
+    """User, 2026-11-16: once a person replies the thread is theirs for half an
+    hour; after that the bot is back, and it reads what they said."""
+    import time
+
+    monkeypatch.setattr(handler, "MODE", "live")
+    store = MemoryStore()
+    handler.process_message(inbound("Hi", mid="m1"), store)
+    handler.process_echo(echo("Hi lovely, Jess here, I can do 2pm Friday x", at=time.time() - 60), store)
+
+    handler.process_message(inbound("ok and how much is it?", mid="m2"), store)
+    assert len(wired["sent"]) == 1 and len(wired["ask"]) == 1  # not even asked
+    assert turns(store.items["psid1"])[-1] == {"role": "user", "content": "ok and how much is it?"}
+
+    store.team["psid1"][0]["at"] = int(time.time()) - 31 * 60  # half an hour on
+    handler.process_message(inbound("how much is gel polish?", mid="m3"), store)
+    assert len(wired["sent"]) == 2
+    history, _ = wired["ask"][-1]
+    said = [t["content"] for t in history]
+    assert f"{handler.TEAM_MARK} Hi lovely, Jess here, I can do 2pm Friday x" in said
+    assert "One of the team has written on this thread" in wired["context"][-1]
+
+
+def test_a_reply_is_dropped_when_the_team_answer_first(wired, monkeypatch):
+    """The bot takes fifteen seconds or more; if a person answers in that time theirs stands."""
+    monkeypatch.setattr(handler, "MODE", "live")
+    monkeypatch.setattr(handler, "REPLY_DELAY_SECONDS", 10)
+    store = MemoryStore()
+    monkeypatch.setattr(handler.time, "sleep", lambda s: handler.process_echo(echo("Hiya, it's £34 lovely x"), store))
+    handler.process_message(inbound("how much is gel polish?"), store)
+    assert wired["sent"] == []
+    assert turns(store.items["psid1"]) == [{"role": "user", "content": "how much is gel polish?"}]  # the unsent reply is not on record
+
+
+def test_a_handover_nobody_has_touched_for_a_week_is_over(wired, monkeypatch):
+    monkeypatch.setattr(handler, "MODE", "live")
+    import time
+
+    store = MemoryStore()
+    old = Conversation(sender_id="psid1", history=[{"role": "user", "content": "refund please"}, {"role": "assistant", "content": "Let me check x"}])
+    old.hand_over("jess", "nails", "complaint")
+    old.updated_at = int(time.time()) - 8 * 86400
+    store.items["psid1"] = old
+    handler.process_message(inbound("Hi, can I book gel polish?", mid="m9"), store)
+    assert wired["sent"] == [("psid1", "Here's the link.")] and old.handed_to_jess is False
+    assert "This thread is with" not in wired["context"][-1]
+
+    recent = Conversation(sender_id="psid2", updated_at=int(time.time()) - 2 * 86400)
+    recent.hand_over("jess", "nails", "complaint")
+    assert not recent.handover_lapsed() and old.thread()[0] == {"role": "user", "content": "refund please"}
+
+
+def test_webhook_takes_echoes_and_messages_from_one_delivery(wired, monkeypatch):
+    monkeypatch.setattr(handler, "MODE", "live")
+    monkeypatch.setattr(meta, "verify_signature", lambda *a, **kw: True)
+    store = MemoryStore()
+    body = {"object": "page", "entry": [{"messaging": [
+        {"sender": {"id": "page1"}, "recipient": {"id": "psid7"}, "timestamp": 1763320000000,
+         "message": {"mid": "e9", "text": "Morning lovely, Jess here x", "is_echo": True, "app_id": 263902037430900}},
+    ]}]}
+    resp = handler._handle_webhook({"body": json.dumps(body), "headers": {}}, store=store)
+    assert resp["statusCode"] == 200
+    assert store.team["psid7"] == [{"at": 1763320000, "content": "Morning lovely, Jess here x", "mid": "e9"}]
+    assert wired["sent"] == [] and wired["ask"] == []  # an echo is never answered
+
+
+def test_team_replies_live_on_their_own_row_and_come_back_in_order():
+    """`save` puts the whole conversation row, so the team's replies are kept
+    on a second row with an atomic append and merged in by time on load."""
+
+    class Table:
+        def __init__(self):
+            self.rows = {}
+
+        def put_item(self, Item):
+            self.rows[Item["sender_id"]] = Item
+
+        def get_item(self, Key):
+            row = self.rows.get(Key["sender_id"])
+            return {"Item": row} if row else {}
+
+        def update_item(self, Key, UpdateExpression, ExpressionAttributeValues, ReturnValues=None):
+            row = self.rows.setdefault(Key["sender_id"], {"sender_id": Key["sender_id"]})
+            v = ExpressionAttributeValues
+            if ":kept" in v:
+                row["turns"] = v[":kept"]
+            else:
+                assert "list_append(if_not_exists(turns, :none), :turn)" in UpdateExpression
+                row.update(last_at=v[":at"], turns=row.get("turns", []) + v[":turn"], expires_at=v[":exp"])
+            return {"Attributes": row}
+
+    table = Table()
+    store = ConversationStore(table=table)
+    c = Conversation(sender_id="p")
+    c.note_message("m1", "have you got anything Friday?", at=100)
+    store.save(c)
+    stale = store.load("p")  # another invocation, mid-reply, holding the row as it was
+    store.note_team("p", "Yes lovely, 2pm with Sav x", 150, "e1")
+    stale.record_turn("m2", "and how much is it", "Gel polish is £34 x", at=200)
+    store.save(stale)  # a whole-row put: the team's reply survives it
+
+    back = store.load("p")
+    assert back.team_last_at == 150 and store.team_last_at("p") == 150 and set(table.rows) == {"p", "team#p"}
+    assert [t["content"] for t in back.thread()] == [
+        "have you got anything Friday?", f"{handler.TEAM_MARK} Yes lovely, 2pm with Sav x", "and how much is it", "Gel polish is £34 x",
+    ]
+    assert back.team_active(now=150 + 29 * 60) and not back.team_active(now=150 + 31 * 60)
+    for i in range(45):
+        store.note_team("p", f"line {i}", 300 + i, f"x{i}")
+    assert len(table.rows["team#p"]["turns"]) <= 41 and len(store.load("p").team_turns) == 20

@@ -9,6 +9,7 @@ import os
 
 from . import patch_tests
 from .config import SalonConfig
+from .state import TEAM_MARK
 
 DAY_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
@@ -300,19 +301,36 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "collaboration, selling) and what they said. You will not be answering again on "
         "this thread; Jess picks it up in the inbox.",
         "",
-        "# When the thread is already with Lori-Dee or Carmen",
+        "# When the thread is already with one of the team",
         "",
-        "After you hand a hair thread to Lori-Dee or a tattoo thread to Carmen, they "
-        "answer the client in the inbox themselves and you still read every message "
-        "(user, 2026-10-24). The context block tells you when this is so. Their "
-        "messages are not shown to you, so a short reply (\"yes\", \"2pm is fine\", "
-        "\"thanks\") is almost certainly for them: send nothing. Answer only when the "
-        "client clearly turns to something that is yours (\"while I'm in, can I get "
-        "my nails done?\", \"how much is a lash lift?\"), in your own voice, as if the "
-        "hair or tattoo part did not exist: book nails and beauty as usual, and do not "
-        "mention the other thread. Anything about their area is theirs: send nothing "
-        "and do not hand over again. To send nothing, set `reply` to an empty string "
-        "and `escalate` to false; that is the only time an empty reply is allowed.",
+        "After a thread is handed to Jess, Lori-Dee or Carmen, they answer the client "
+        "in the inbox themselves and you still read every message (user, 2026-10-24, "
+        "widened to Jess 2026-11-16). The context block tells you when this is so and "
+        "what was handed over. For each new message ask one thing: is this a question "
+        "you can answer yourself, fully, under your usual rules? If yes, answer it in "
+        "your own voice (\"while I'm in, can I get my nails done?\", \"how much is a "
+        "lash lift?\", \"what time do you close?\"), book nails and beauty as usual, "
+        "and leave the handed-over part alone: do not comment on it or promise "
+        "anything about it. If no, send nothing: the part that was handed over (the "
+        "complaint, the quote, the hair, the tattoo), a reply to something one of the "
+        "team said, a short answer that has no question in it (\"yes\", \"2pm is "
+        "fine\", \"thanks\"), a follow-up asking where their answer is, or anything "
+        "you are not sure about is theirs. No holding line and no \"I'll check with "
+        "Jess\": they already have it. A complaint is never yours, however simple the "
+        "new message looks. To send nothing, set `reply` to an empty string and "
+        "`escalate` to false; that is the only time an empty reply is allowed. Only "
+        "when the client raises a new matter for a different person (a hair question "
+        "on a thread that is with Jess about nails) do you escalate again, to that "
+        "person, still with an empty `reply`.",
+        "",
+        "# Messages the team sent",
+        "",
+        "A turn that starts \"" + TEAM_MARK + "\" was typed by a person on the team "
+        "in the inbox, not by you. Read it as part of the conversation: what they "
+        "told the client stands, so never contradict it, repeat it or ask the client "
+        "for something they already gave. If a later question is answered by what the "
+        "team said, you can rely on it. Never start a reply of your own with that "
+        "marker or mention it.",
         "",
         "# Output",
         "",

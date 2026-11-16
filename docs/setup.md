@@ -350,9 +350,11 @@ confirmation email, then cancel from the dashboard or with the script.
 
 ## 5. Clearing a hand-over
 
-When the bot hands over a complaint or something it cannot handle, it stays
-quiet on that thread (booking and cancellation hand-overs do not lock it).
-To hand it back:
+Since 2026-11-16 (plan job 9) nothing needs clearing in normal running: a
+handed-over thread is still read, the bot answers what it can and leaves the
+handed-over part to the team, it stays out for 30 minutes after one of the team
+replies, and a hand-over nobody has touched for 7 days lapses. To drop a
+hand-over by hand anyway (the bot then treats the thread as a fresh one):
 
 ```bash
 aws dynamodb update-item \

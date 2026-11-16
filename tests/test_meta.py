@@ -250,3 +250,22 @@ def test_page_token_for_swaps_a_system_user_token_and_keeps_a_page_token():
     quiet = Http(200, {})
     assert meta.page_token_for("TOK", "", session=quiet) == "TOK" and meta.page_token_for("", "1", session=quiet) == "" and quiet.calls == []
 
+
+
+def test_parse_echoes_keeps_what_was_sent_to_a_client_and_parse_events_still_skips_it():
+    """Plan job 9, 2026-11-16: Meta's copy of a message sent on the thread, by the bot or by the team in the inbox."""
+    body = {"object": "instagram", "entry": [{"messaging": [
+        {"sender": {"id": "ig-account"}, "recipient": {"id": "igsid1"}, "timestamp": 1763320000000,
+         "message": {"mid": "e1", "text": " See you Friday x ", "is_echo": True}},
+        {"sender": {"id": "ig-account"}, "recipient": {"id": "igsid1"}, "timestamp": 1763320005000,
+         "message": {"mid": "e2", "is_echo": True, "app_id": 123, "attachments": [{"type": "image", "payload": {"url": "https://x/y.jpg"}}]}},
+        {"sender": {"id": "igsid1"}, "recipient": {"id": "ig-account"}, "timestamp": 1763320009000, "message": {"mid": "m1", "text": "thanks"}},
+        {"sender": {"id": "igsid1"}, "recipient": {"id": "ig-account"}, "timestamp": 1763320010000, "read": {"mid": "e1"}},
+    ]}]}
+    echoes = meta.parse_echoes(body)
+    assert [(e.channel, e.client_id, e.message_id, e.text, e.app_id, e.attachments) for e in echoes] == [
+        ("instagram", "igsid1", "e1", "See you Friday x", "", 0), ("instagram", "igsid1", "e2", "", "123", 1),
+    ]
+    assert echoes[0].timestamp_ms == 1763320000000
+    assert [m.message_id for m in meta.parse_events(body)] == ["m1"]
+    assert meta.parse_echoes({"object": "whatsapp"}) == []

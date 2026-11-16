@@ -41,4 +41,21 @@ Remove an item once it is settled and update the source file.
    right, and should the other pair come off Fresha? Until settled the bot
    can quote either. Also to confirm: "infilled every 4-5 weeks" as the
    bot's answer to "how long do they last" (said by Jess, 10 Nov 2026).
-
+10. **How long does a lash lift last?** A client asked on Messenger on
+    16 Nov 2026 ("How long it will last?") straight after Jess gave the
+    price (£40, tint included). Nobody has answered it in the message
+    history and Fresha's description only says "a look that lasts". The bot
+    hands this to Jess until she gives the salon's answer. The usual trade
+    answer is six to eight weeks; not quoted until Jess says so.
+11. **Lash lift and lash extension aftercare, swimming in particular.** Same
+    client, 16 Nov 2026: "If I go swimming, will things go back to how they
+    were before?" No salon answer on record. Wanted from Jess or Amber, for
+    the lift and for classic extensions: how long to keep them dry, whether
+    swimming, steam or oil-based products are a problem, and what to say
+    about lifespan. The bot hands these over until then.
+12. **Flash-sheet tattoos: booked straight in, or consultation first?** On
+    10 Nov 2026 the team booked two flash tattoos ("the moon") directly for
+    Friday 10am from Messenger, taking name, email and phone. The same
+    evening the bot told another client that a small tattoo "gets booked in
+    with Carmen at a free consultation" and booked the consultation. Should
+    the bot hand flash-sheet requests to Carmen for a direct booking?

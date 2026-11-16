@@ -100,6 +100,48 @@ def parse_events(body: dict) -> list[InboundMessage]:
     return out
 
 
+@dataclass(frozen=True)
+class Echo:
+    """A message that went out on a client's thread: Meta's copy of it."""
+
+    channel: str
+    client_id: str  # who it was sent to: the PSID or IGSID the conversation is keyed by
+    message_id: str
+    text: str
+    timestamp_ms: int
+    app_id: str = ""  # the app that sent it, when Meta says (Messenger does; the Page inbox has its own id)
+    attachments: int = 0
+
+
+def parse_echoes(body: dict) -> list[Echo]:
+    """What was sent to clients, by anyone: the bot's own replies and what the
+    team typed in the inbox (plan job 9, 2026-11-16). Meta marks each
+    `is_echo`, with the Page or Instagram account as sender and the client as
+    recipient. Messenger sends them on the `message_echoes` field; Instagram
+    sends them with `messages`. The caller tells the bot's own from the team's."""
+    channel = {"page": "messenger", "instagram": "instagram"}.get(body.get("object"))
+    if channel is None:
+        return []
+    out: list[Echo] = []
+    for entry in body.get("entry", []):
+        for event in entry.get("messaging", []):
+            msg = event.get("message")
+            if not msg or not msg.get("is_echo") or not (event.get("recipient") or {}).get("id"):
+                continue
+            out.append(
+                Echo(
+                    channel=channel,
+                    client_id=str(event["recipient"]["id"]),
+                    message_id=str(msg.get("mid", "")),
+                    text=(msg.get("text") or "").strip(),
+                    timestamp_ms=int(event.get("timestamp", 0)),
+                    app_id=str(msg.get("app_id") or ""),
+                    attachments=len(msg.get("attachments") or []),
+                )
+            )
+    return out
+
+
 IMAGE_TYPES = frozenset({"image/jpeg", "image/png", "image/gif", "image/webp"})
 MAX_IMAGE_BYTES = 3_500_000  # the Claude API takes 5 MB an image, measured after base64 (a third bigger)
 MAX_IMAGES = 2

@@ -8,7 +8,7 @@ import re
 import time
 from functools import lru_cache
 
-from .state import Conversation
+from .state import TEAM_MARK, Conversation
 
 log = logging.getLogger(__name__)
 
@@ -38,10 +38,14 @@ def format_alert(
         "",
         "Recent thread:",
     ]
-    for turn in convo.history[-10:]:
+    for turn in convo.thread()[-10:]:
+        content = turn["content"]
         speaker = "Client" if turn["role"] == "user" else "Bot"
-        lines.append(f"  {speaker}: {turn['content']}")
-    lines += ["", "The bot will stay quiet on this thread until you clear the hand-over." if bot_quiet
+        if turn["role"] != "user" and content.startswith(TEAM_MARK):
+            speaker, content = "Team", content[len(TEAM_MARK):].strip()
+        lines.append(f"  {speaker}: {content}")
+    lines += ["", ("This part is yours: the bot will not answer it. It still reads the thread and answers anything "
+                   "else it can (a price, a booking), and it says nothing for half an hour after one of you replies.") if bot_quiet
               else "The bot is still answering on this thread; it has told the client you will sort this."]
     if no_reply:
         lines.append("The client has had no reply at all: this was their first message and it is not the bot's to answer.")
