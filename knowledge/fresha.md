@@ -10,6 +10,10 @@ member's booking page. Prices and the per-service staff lists are in
 - Fresha venue slug: `the-looking-glass-beauty-shrewsbury-roushill-xa3bpl74`.
   Venue page: https://www.fresha.com/en-GB/a/the-looking-glass-beauty-shrewsbury-roushill-xa3bpl74
 - Fresha location id 1530970, owner id (pId) 1453889.
+- The owner account's login email is danny@tlg-beauty.co.uk (user,
+  2026-11-16). It is the account the bot books with, so it is the address
+  to type in `scripts/fresha_session.py`'s Chrome window, and the one-time
+  code is emailed there.
 - General "all offers" share link (the one Jess hands out):
   https://www.fresha.com/book-now/tlg-beauty-limited-xexbl23r/all-offer?share=true&pId=1453889
 - Per-person booking link: the venue URL + `/booking?employeeId=<id>`. Opens
