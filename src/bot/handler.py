@@ -311,6 +311,15 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         log.info("STAFF: %s (%s) on %s, staying quiet", convo.client_name or "?", msg.sender_id, msg.channel)
         return
 
+    if msg.story_mention_only:
+        # A client tagged the salon in their story. It is not a question, the
+        # team see it in Instagram and heart it; two of the four posts to the
+        # group on 2026-11-18 were these, as "picture, no text" (user, 2026-11-19).
+        convo.note_message(msg.message_id, "[mentioned the salon in their story]", arrived)
+        store.save(convo)
+        log.info("STORY MENTION from %s (%s): noted, nobody told", convo.client_name or "?", msg.sender_id)
+        return
+
     if MODE == "simple":
         reply_text = simple_reply(msg.channel, text)
         convo.record_turn(msg.message_id, user_text, reply_text)
@@ -346,10 +355,16 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         # Attachment-only message: let a person see it rather than guess. The
         # post to the team says what it is for (nails, hair, tattoos...), read
         # from the thread and the picture (user, 2026-11-10); it still goes to
-        # Jess with the same holding line.
+        # Jess with the same holding line. On a thread one of the team already
+        # has, the picture is part of what they were handed unless it is plainly
+        # for another area: a tattoo picture sent five seconds after the tattoo
+        # question posted twice and moved the thread from Carmen to Jess (2026-11-18).
+        to, area = "jess", _picture_area(convo, msg) or "general"
+        if handed and area in ("general", convo.handed_area):
+            to, area = convo.handed_to, convo.handed_area
         reply = brain.BotReply(
             reply=brain.SAFE_REPLY, escalate=True, escalation_reason="Non-text message (picture or attachment)",
-            escalate_to="jess", area=_picture_area(convo, msg) or "general", escalation_kind="quote",
+            escalate_to=to, area=area, escalation_kind="quote",
         )
     else:
         reply = brain.ask(system_prompt(), convo.thread(), user_text, context=context_block(convo), tools=tools(convo, store))

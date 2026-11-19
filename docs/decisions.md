@@ -1011,3 +1011,26 @@ a fixed expiry on the lock (my first proposal, 48 hours), because it
 answers by the clock and not by whether the question is the bot's; Meta's
 handover protocol and Telegram buttons (the 22 Oct design), because they
 depend on the team pressing something. Plan job 9.
+
+## 2026-11-19: story mentions tell nobody; a picture on a handed-over thread does not post again
+
+The user felt the Telegram group had become a running commentary again
+("report problems or ... that someone has been referred to Lori or Carmen").
+The logs for 18 Nov showed four posts on three threads, and only one was a
+hand-over anyone needed:
+
+- Two were clients tagging the salon in their Instagram stories. Instagram
+  delivers a story mention as a message with one attachment of type
+  `story_mention` and no text, so each was treated as a bare picture and
+  posted as "General: quote: <name>: Insta, no reply sent". Nobody is asking
+  anything and the team see the mention in Instagram (they hearted one).
+  Now `meta.InboundMessage.story_mention_only` is checked first: the message
+  is noted on the thread and nothing is posted, emailed, sent or handed over.
+- One was a duplicate. "Price for a tattoo please" went to Carmen; the
+  picture that followed five seconds later was hard-wired to Jess, which
+  counted as the thread moving and posted again. A bare picture on a thread
+  the team already has now stays with whoever has it, unless the picture is
+  plainly for a different area.
+
+Unchanged: one post per hand-over, the "waiting on you" nudge after 12 hours
+of silence, the once-a-day Fresha login warning.

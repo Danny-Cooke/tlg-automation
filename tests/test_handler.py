@@ -431,6 +431,37 @@ def test_attachment_only_message_escalates_in_live_mode(wired, monkeypatch):
     assert all(rid != "psid2" for rid, _ in wired["sent"]) and store.items["psid2"].handed_to_jess is True
 
 
+def test_a_story_mention_tells_nobody(wired, monkeypatch):
+    # 2026-11-18: two clients tagged the salon in their stories and each reached the group as "picture, no text".
+    monkeypatch.setattr(handler, "MODE", "live")
+    store = MemoryStore()
+    mention = meta.InboundMessage(channel="instagram", sender_id="ig1", recipient_id="page1", message_id="m1", text="",
+                                  timestamp_ms=0, attachments=1, kinds=("story_mention",))
+    handler.process_message(mention, store)
+    assert wired["escalated"] == [] and wired["sent"] == [] and wired["ask"] == []
+    assert store.items["ig1"].handed_to_jess is False
+    # A question after it is answered as an ordinary first message.
+    handler.process_message(inbound("how much is a gel manicure?", mid="m2", sender="ig1", channel="instagram"), store)
+    assert wired["sent"][-1] == ("ig1", "Here's the link.") and wired["escalated"] == []
+
+
+def test_a_picture_on_a_thread_the_team_has_does_not_post_again(wired, monkeypatch):
+    # 2026-11-18: "price for a tattoo please" went to Carmen; the picture five seconds later posted again, for Jess.
+    monkeypatch.setattr(handler, "MODE", "live")
+    monkeypatch.setattr(brain, "ask", lambda *a, **k: brain.BotReply(
+        reply="", escalate=True, escalation_reason="Tattoo price", escalate_to="carmen", area="tattoos", escalation_kind="quote"))
+    store = MemoryStore()
+    handler.process_message(inbound("price for a tattoo please", mid="m1"), store)
+    assert wired["escalated"] == [("psid1", "Tattoo price", "carmen")]
+    handler.process_message(inbound(text="", mid="m2", attachments=1), store)
+    assert len(wired["escalated"]) == 1 and wired["sent"] == []
+    assert (store.items["psid1"].handed_to, store.items["psid1"].handed_area) == ("carmen", "tattoos")
+    # A picture that is plainly for another area still moves the thread and says so.
+    monkeypatch.setattr(brain, "picture_area", lambda *a, **k: "nails")
+    handler.process_message(inbound(text="", mid="m3", attachments=1), store)
+    assert wired["escalated"][-1][2] == "jess" and wired["areas"][-1] == "nails"
+
+
 def test_a_bare_picture_is_handed_over_with_the_area_it_is_for(wired, monkeypatch):
     # 2026-11-10: a picture sent while booking acrylics reached the team as "General". Now the thread and the picture say.
     monkeypatch.setattr(handler, "MODE", "live")

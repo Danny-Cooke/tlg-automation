@@ -36,6 +36,13 @@ class InboundMessage:
     timestamp_ms: int
     attachments: int = 0  # pictures, videos, files that came with it; the bot cannot see them
     image_urls: tuple[str, ...] = ()  # Meta's links to the pictures among them, read only to name the area for the team
+    kinds: tuple[str, ...] = ()  # Meta's type for each attachment: image, video, share, story_mention...
+
+    @property
+    def story_mention_only(self) -> bool:
+        """The client tagged the salon in their own story and wrote nothing:
+        Instagram delivers that as a message, but nobody is asking anything."""
+        return not self.text and bool(self.kinds) and all(k == "story_mention" for k in self.kinds)
 
 
 def verify_challenge(query: dict, verify_token: str) -> str | None:
@@ -95,6 +102,7 @@ def parse_events(body: dict) -> list[InboundMessage]:
                         str(a["payload"]["url"]) for a in (msg.get("attachments") or [])
                         if isinstance(a, dict) and a.get("type") == "image" and (a.get("payload") or {}).get("url")
                     ),
+                    kinds=tuple(str(a.get("type") or "") for a in (msg.get("attachments") or []) if isinstance(a, dict)),
                 )
             )
     return out
