@@ -16,6 +16,18 @@ def courses() -> dict[str, dict]:
     return {c["id"]: c for c in data["courses"]}
 
 
+@lru_cache(maxsize=1)
+def bundles() -> dict[str, dict]:
+    """Combined courses sold at one price (top-level "bundles" in courses.json): id, title, courses, price_pence, on_sale."""
+    data = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
+    return {b["id"]: b for b in data.get("bundles", [])}
+
+
+def shop_terms() -> str:
+    """The booking terms shown above Stripe's pay button (top-level "shop_terms" in courses.json)."""
+    return str(json.loads(CONTENT_PATH.read_text(encoding="utf-8")).get("shop_terms") or "")
+
+
 def course(course_id: str) -> dict | None:
     return courses().get(course_id)
 

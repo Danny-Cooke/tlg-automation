@@ -149,3 +149,103 @@ on the website lands somewhere real while the subdomain propagates.
 
 Order of work and estimates are on the plan job. Nothing starts until the
 user says so.
+
+## The shop: buy a course, pay, choose a date (plan job 21, built 2026-11-20)
+
+Not part of the student portal (user, 2026-11-20: "we just want it on the
+simple academy page we have ... pick a course and purchase it from there.
+no portal login for anyone"). The pages are three HTML snippets on the main
+WordPress site; this stack supplies only the API and the table behind them.
+
+| Page on tlg-beauty.co.uk | Snippet in `website/academy/` | Who |
+|---|---|---|
+| `/academy/` (page 595, Elementor HTML widget) | `courses-section.html` | anyone: course cards; a course on sale shows its price and "Book this course" |
+| `/academy/booking/?order=<token>` (new page) | `pages/booking.html` | the buyer, from Stripe or their email: choose a date, see the booking |
+| `/academy/course-dates/#key=<key>` (new page, in no menu, noindex) | `pages/course-dates.html` | the owners: the calendar |
+
+Each snippet has the API address written into it (`API = "https://...execute-api..."`).
+
+**Flow.** On a course card, "Book this course" opens a panel: the open
+dates with places left, a box to tick for the entry requirements, "Pay £X
+and book". That asks the API for a Stripe Checkout session and sends the
+buyer to Stripe's own payment page (card, Apple Pay, Google Pay, Klarna and
+whatever else is switched on in the Stripe dashboard; the code names no
+payment methods). Stripe returns them to the booking page with
+`?order=<token>&cs=<checkout id>`, where they choose a date. The token is
+random, is the order's key, and is the only thing that opens that page: the
+link is the booking. If the API cannot be reached the cards simply stay as
+they were.
+
+**When an order exists.** Only when Stripe says the Checkout session is
+paid. Two routes say so: Stripe's webhook (`POST /shop/stripe/webhook`,
+signature checked against the signing secret, five-minute tolerance), and
+the buyer's browser arriving back with the checkout id, which the Lambda
+looks up at Stripe and matches to the token. The first to arrive writes the
+order with a conditional put; the second finds it. Emails go once.
+
+**Places.** A date is `PK=SESSION, SK=<course>#<date>#<HHMM>` with
+`capacity`, `taken`, `status` (open, closed, cancelled) and a note learners
+see. Booking is one DynamoDB transaction: `taken + 1` on the date if it is
+open and not full, and the date onto the order if it has none. The last
+place cannot go twice; an order cannot hold two places. A learner chooses
+once; moving them is "Take off this date" on the course-dates page, after
+which they (from their own link) or the owners ("Put on this date") choose
+again.
+
+**Course dates page.** Add a date (course, day, times, places, note),
+change places (never below the number booked), close to new bookings,
+reopen, cancel; who is on each date with email and phone; paid orders with
+no date yet at the top; mark an order cancelled after refunding it in
+Stripe. Refunds are not made from here. No login: the page sends the key
+from its own address (`#key=`, which browsers do not send to the web
+server) as the `x-admin-key` header, and the Lambda compares it with
+`admin_key` in the shop's secret. Anyone with the link can see learners'
+names, emails and phone numbers and change the calendar, so it is for the
+owners only; `python scripts/academy_admin_link.py` prints it and `--new`
+replaces the key (the old link dies within five minutes).
+
+**On sale.** `academy/content/courses.json`: `"shop": {"on_sale": true,
+"price_pence": 35000, "places": 4}` on the course; top-level `"shop_terms"`
+is the line shown under the pay button and above Stripe's. No price, or
+`on_sale` false: the card is unchanged and the checkout route refuses.
+Changing a price is that file and a push (the Academy workflow).
+
+Prices (Jess, 20 Nov 2026): Gel Polish £300, Acrylic £500, the two together
+£600; E-file £280, BIAB (the Builder Gel course) £200, those two together
+£375. On sale from the start: Acrylic, Gel Polish and their combination
+(both courses approved by The CPD Group). BIAB, E-file and the rest stay
+"Coming soon" (user, same day): priced in the file with `on_sale` false.
+
+**Two courses together.** Top-level `"bundles"` in `courses.json`: id,
+title, the course ids, one price, `on_sale`, a line of text. A bundle is
+offered only while every course in it is on sale, so the BIAB and E-file
+pair appears by itself the day both are switched on. It shows as its own
+card ("Book both courses", with the saving) after the course cards. One
+payment makes one order per course, each with its own token and its own
+date to choose; the buyer's link opens the first and shows the other. The
+price is shared between the two orders in proportion to the courses' own
+prices, for the course-dates page only. The "Academy login" button was
+taken off the academy page the same day (user).
+
+**Keys.** GitHub secret `TLG_ACADEMY_STRIPE_SECRET_KEY` (prod environment).
+The Academy workflow runs `scripts/academy_stripe_setup.py` after the
+apply: it makes the course-dates key once, registers the webhook endpoint
+with Stripe and writes `{"secret_key", "webhook_secret", "webhook_id",
+"admin_key"}` to the Secrets Manager secret `tlg-prod/academy/stripe`,
+which the Lambda reads (kept five minutes). None of it is in Terraform
+state. `sk_test_...` is the sandbox: orders are flagged "test" on every
+page. Going live is swapping the GitHub secret for the live key and running
+the workflow; the script replaces the webhook to match.
+
+**Email.** SES, from `TLG_ACADEMY_SENDER_EMAIL` (GitHub variable), reply-to
+and school copies to `TLG_ACADEMY_CONTACT_EMAIL`. Terraform creates the
+address identity, AWS emails that mailbox a link to click, and the account
+must be out of the SES sandbox before learners can be emailed. Until then
+nothing is sent and nothing breaks: the page after payment is the receipt
+and the booking, and Stripe sends its own receipt in live mode if that is
+switched on in its dashboard.
+
+**Not done.** Deposits; a learner moving their own date; refunds from the
+course-dates page; VAT (Stripe Tax is off; ask whether TLG Beauty Limited is
+VAT registered); invoices beyond Stripe's receipt; buy buttons on the five
+course outline pages (they link back to `/academy/`).

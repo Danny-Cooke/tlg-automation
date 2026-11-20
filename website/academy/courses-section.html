@@ -1,6 +1,7 @@
 <!-- TLG Academy: course list for the public website (Elementor HTML widget on /academy/).
      Written to The CPD Group's pattern: exact course titles, what is covered, entry requirements,
-     hours, assessment. No accreditation claims. Nothing here links to the online academy. -->
+     hours, assessment. No accreditation claims. Nothing here links to the online academy.
+     Courses that are on sale get a price and a "Book this course" button from the script at the foot. -->
 <style>
   .tlg-academy { font-family: inherit; color: #1f2a28; margin: 0 auto; max-width: 1100px; }
   .tlg-academy * { box-sizing: border-box; }
@@ -11,8 +12,6 @@
   .tlg-academy .tlg-btn-gold { background: #c9a24b; border-color: #c9a24b; color: #1f2a28; }
   .tlg-academy .tlg-btn-gold:hover { background: #b38d3b; color: #1f2a28; }
   .tlg-academy .tlg-btn-outline { background: #fff; color: #123d3a; }
-  .tlg-academy .tlg-login-note { display: none; width: 100%; background: #fff8e6; border-left: 4px solid #c9a24b; padding: .8rem 1rem; font-size: 1.05rem; }
-  .tlg-academy .tlg-login-note.on { display: block; }
   .tlg-academy .tlg-intro { font-size: 1.15rem; line-height: 1.6; margin: 0 0 1.5rem; }
   .tlg-academy .tlg-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
   @media (min-width: 760px) { .tlg-academy .tlg-grid { grid-template-columns: 1fr 1fr 1fr; } }
@@ -24,18 +23,42 @@
   .tlg-academy .tlg-meta strong { color: #1f2a28; }
   .tlg-academy .tlg-card .tlg-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: .6rem; padding-top: .6rem; }
   .tlg-academy .tlg-card .tlg-btn { min-height: 42px; padding: .45rem 1.1rem; font-size: 1rem; }
+  /* Booking (plan job 21): filled in by the script below for each course that is on sale. */
+  .tlg-academy .tlg-ribbon.tlg-open { background: #123d3a; color: #fff; }
+  .tlg-academy .tlg-price { font-size: 1.5rem; font-weight: 700; color: #123d3a; }
+  .tlg-academy .tlg-price small { font-size: .9rem; font-weight: 400; color: #5d6b68; }
+  /* Bookable cards share a row: the price is pushed down to one line across all of them, with the same two
+     buttons under it on every card (outline, then book). */
+  .tlg-academy .tlg-card.tlg-live .tlg-price { margin-top: auto; padding-top: .6rem; }
+  .tlg-academy .tlg-card.tlg-live .tlg-actions { margin-top: 0; padding-top: .2rem; }
+  @media (min-width: 760px) {
+    .tlg-academy .tlg-card.tlg-live .tlg-actions { flex-direction: column; align-items: flex-start; }
+  }
+  /* "Coming soon" cards are faded so the bookable ones stand out; their buttons still work, and a card
+     comes back to full strength while someone is pointing at it or tabbing through it. */
+  .tlg-academy .tlg-card:not(.tlg-live) { opacity: .5; background: #f3f1ec; transition: opacity .15s; }
+  .tlg-academy .tlg-card:not(.tlg-live):hover, .tlg-academy .tlg-card:not(.tlg-live):focus-within { opacity: 1; }
+  .tlg-academy .tlg-outlines { display: none; }
+  .tlg-academy .tlg-outlines.on { display: block; }
+  .tlg-academy .tlg-outlines a { display: block; padding: .35rem 0; color: #123d3a; text-decoration: underline; }
+  .tlg-academy .tlg-buy { display: none; border-top: 1px solid #d9dedc; margin-top: .6rem; padding-top: .8rem; }
+  .tlg-academy .tlg-buy.on { display: block; }
+  .tlg-academy .tlg-buy ul { margin: .3rem 0 .6rem; padding-left: 1.1rem; }
+  .tlg-academy .tlg-buy li, .tlg-academy .tlg-buy p { line-height: 1.5; margin: .25rem 0; }
+  .tlg-academy .tlg-check { display: flex; gap: .6rem; align-items: flex-start; margin: .8rem 0; font-size: .98rem; line-height: 1.45; cursor: pointer; }
+  .tlg-academy .tlg-check input { width: 1.35rem; height: 1.35rem; flex: none; margin-top: .1rem; }
+  .tlg-academy .tlg-fine { font-size: .9rem; color: #5d6b68; }
+  .tlg-academy .tlg-btn[disabled] { opacity: .6; cursor: default; }
   .tlg-academy .tlg-foot { margin-top: 1.5rem; font-size: 1rem; color: #5d6b68; line-height: 1.55; }
 </style>
 <div class="tlg-academy" id="tlg-academy-courses">
   <div class="tlg-top">
     <h2 class="tlg-h">Our courses</h2>
-    <button type="button" class="tlg-btn tlg-btn-outline" id="tlg-academy-login" aria-controls="tlg-login-note" aria-expanded="false">Academy login</button>
-    <div class="tlg-login-note" id="tlg-login-note" role="status">Coming soon. The online academy opens with our first course launch; register your interest below and we will tell you the moment it does.</div>
   </div>
-  <p class="tlg-intro">The Looking Glass Beauty School teaches small-group, classroom-based nail and beauty courses in our training room at 4a Roushill, Shrewsbury, written and taught by Jess Preston. Each course is a Continuing Professional Development (CPD) course for qualified professionals, not a regulated qualification. The courses below are being prepared for launch; click a course for the full outline, or register your interest to be told when enrolment opens.</p>
+  <p class="tlg-intro">The Looking Glass Beauty School teaches small-group, classroom-based nail and beauty courses in our training room at 4a Roushill, Shrewsbury, written and taught by Jess Preston. Each course is a Continuing Professional Development (CPD) course for qualified professionals, not a regulated qualification. Courses marked "Book now" are open: book and pay here, then choose your date. The others are being prepared for launch; click a course for the full outline, or register your interest to be told when enrolment opens.</p>
 
   <div class="tlg-grid">
-    <article class="tlg-card">
+    <article class="tlg-card" data-course="builder-gel" data-short="Builder Gel">
       <span class="tlg-ribbon">Coming soon</span>
       <h3>Builder Gel Overlay and Short Extension CPD Course</h3>
       <p>Add builder gel overlays and short extensions to your services: nail anatomy and the conditions that mean adapt, postpone or refuse; how gel cures and how to control the heat spike; preparation, a balanced overlay with a correctly placed apex, short extensions on a tip or form, infills and safe removal.</p>
@@ -43,7 +66,7 @@
       <div class="tlg-actions"><a class="tlg-btn" href="/academy/builder-gel-cpd-course/">Course outline</a><a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>
     </article>
 
-    <article class="tlg-card">
+    <article class="tlg-card" data-course="gel-polish" data-short="Gel Polish">
       <span class="tlg-ribbon">Coming soon</span>
       <h3>Gel Polish Nails CPD Course</h3>
       <p>Professional gel polish on the natural nail: anatomy of the nail and surrounding skin, consultation and contraindications, hygiene and health and safety, product chemistry and lamp use, preparation, application, cure, maintenance, removal and aftercare.</p>
@@ -51,21 +74,21 @@
       <div class="tlg-actions"><a class="tlg-btn" href="/academy/gel-polish-nails-cpd-course/">Course outline</a><a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>
     </article>
 
-    <article class="tlg-card">
+    <article class="tlg-card" data-course="acrylic" data-short="Acrylic">
       <span class="tlg-ribbon">Coming soon</span>
       <h3>Liquid and Powder Acrylic Enhancement CPD Course</h3>
       <p>Liquid-and-powder acrylic overlays and extensions: the chemistry of monomer and polymer, mix ratio and the bead, vapour and dust control, preparation, tips and forms, the three-zone method and a correctly placed apex, infills, rebalance and safe removal.</p>
-      <p class="tlg-meta"><strong>Delivery:</strong> classroom course in the salon training room, with pre-course reading.<br><strong>Hours:</strong> to be confirmed at launch.<br><strong>Entry:</strong> Level 2 Beauty Therapy, Nail Services or equivalent; aged 18 or over; gel experience recommended.<br><strong>Assessment:</strong> theory paper, observed practical, case studies.</p>
+      <p class="tlg-meta"><strong>Delivery:</strong> classroom course in the salon training room, with pre-course reading.<br><strong>Hours:</strong> 12 in total.<br><strong>Entry:</strong> Level 2 Beauty Therapy, Nail Services or equivalent; aged 18 or over; gel experience recommended.<br><strong>Assessment:</strong> theory paper, observed practical, three case studies.</p>
       <div class="tlg-actions"><a class="tlg-btn" href="/academy/acrylic-enhancement-cpd-course/">Course outline</a><a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>
     </article>
-    <article class="tlg-card">
+    <article class="tlg-card" data-course="efile" data-short="E-File">
       <span class="tlg-ribbon">Coming soon</span>
       <h3>Electric File (E-File) Nail Technique CPD Course</h3>
       <p>Safe, controlled use of an electric file on the natural nail and on the coatings and enhancements you already provide: the machine, the bits and grits, friction heat and how to prevent it, natural-nail preparation with a safety bit, reducing and removing gel polish, builder gel, hard gel and acrylic without reaching the plate, shaping and finishing, dust and vibration control.</p>
       <p class="tlg-meta"><strong>Delivery:</strong> one taught day in the salon training room, with pre-course reading.<br><strong>Hours:</strong> 15 in total.<br><strong>Entry:</strong> Level 2 Beauty Therapy, Nail Services or equivalent plus a qualification in at least one coating or enhancement system; aged 18 or over.<br><strong>Assessment:</strong> theory paper, observed practical, three case studies.</p>
       <div class="tlg-actions"><a class="tlg-btn" href="/academy/electric-file-cpd-course/">Course outline</a><a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>
     </article>
-    <article class="tlg-card">
+    <article class="tlg-card" data-course="lash-brow" data-short="Lash and Brow">
       <span class="tlg-ribbon">Coming soon</span>
       <h3>Lash and Brow Tint and Wax CPD Course</h3>
       <p>Eyelash and eyebrow tinting and eyebrow shaping by waxing, tweezing and trimming: the anatomy of the eye area, how tint works and why it sensitises, the patch-test system, mapping the brow, tinting with the eyes protected and closed, hot and strip wax, aftercare and what to do when something goes wrong.</p>
@@ -77,14 +100,101 @@
   <p class="tlg-foot">The Looking Glass Beauty School (TLG Beauty Limited) is an approved provider with The CPD Group, provider number 789824. Approved provider status means the school meets The CPD Group's provider criteria; it does not mean a course is accredited. Each course is assessed individually, and its accreditation status will be shown on its own page once confirmed.</p>
 </div>
 <script>
+  /* Booking (plan job 21). Asks the shop API which courses are on sale; each of those cards gets its price,
+     a "Book this course" button, and a panel with the open dates, the entry requirements to confirm and the
+     button that goes to Stripe's payment page (card, Apple Pay, Google Pay, Klarna). After paying, Stripe sends
+     the buyer to /academy/booking/ to choose a date. Nobody logs in. If the API cannot be reached the cards
+     stay exactly as they are. */
   (function () {
-    var b = document.getElementById('tlg-academy-login'), n = document.getElementById('tlg-login-note');
-    if (!b || !n) return;
-    b.addEventListener('click', function () {
-      var on = !n.classList.contains('on');
-      n.classList.toggle('on', on);
-      b.setAttribute('aria-expanded', on ? 'true' : 'false');
-      if (on) n.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    });
+    var API = "https://r58s7yuqre.execute-api.eu-west-2.amazonaws.com";
+    var root = document.getElementById("tlg-academy-courses");
+    if (!root || !window.fetch) return;
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    function money(p) { return "£" + (p / 100).toLocaleString("en-GB", { minimumFractionDigits: p % 100 ? 2 : 0 }); }
+    function day(iso) { return new Date(iso + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
+    function left(n) { return n === 1 ? "1 place left" : n + " places left"; }
+    function datesOf(c) {
+      return c.sessions.map(function (s) { return "<li><strong>" + esc(day(s.date)) + "</strong>, " + esc(s.start) + " to " + esc(s.end) + " · " + esc(left(s.places_left)) + (s.note ? '<br><span class="tlg-fine">' + esc(s.note) + "</span>" : "") + "</li>"; }).join("");
+    }
+    // The panel under a "Book this course" button, and what its pay button does. `id` is a course or a combination.
+    function wire(card, open, id, price, inner, terms) {
+      var panel = document.createElement("div");
+      panel.className = "tlg-buy";
+      panel.innerHTML = inner + '<button type="button" class="tlg-btn">Pay ' + esc(money(price)) + " and book</button>" +
+        '<p class="tlg-fine">You pay on a secure page run by Stripe; we never see your card details. ' + esc(terms || "") + "</p>";
+      card.appendChild(panel);
+      open.addEventListener("click", function () {
+        var on = !panel.classList.contains("on");
+        panel.classList.toggle("on", on); open.setAttribute("aria-expanded", on ? "true" : "false");
+        if (on) panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
+      var pay = panel.querySelector("button"), tick = panel.querySelector("input");
+      pay.addEventListener("click", function () {
+        if (!tick.checked) { alert("Please tick the box to confirm you meet the entry requirements."); return; }
+        var label = pay.textContent;
+        pay.disabled = true; pay.textContent = "Taking you to the payment page…";
+        fetch(API + "/shop/courses/" + encodeURIComponent(id) + "/checkout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: true }) })
+          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || !j.url) throw new Error(j.error || "Booking is not available right now. Please contact us."); location.href = j.url; }); })
+          .catch(function (e) { alert(e.message); pay.disabled = false; pay.textContent = label; });
+      });
+    }
+    fetch(API + "/shop/courses").then(function (r) { return r.ok ? r.json() : { courses: [] }; }).then(function (data) {
+      var byId = {}, grid = root.querySelector(".tlg-grid"), openCards = [], bothCards = [];
+      (data.courses || []).forEach(function (c) { byId[c.course_id] = c; });
+      // Two courses at one price: a card of its own after the course cards.
+      (data.bundles || []).forEach(function (b) {
+        var parts = b.courses.map(function (id) { return byId[id]; });
+        if (parts.some(function (c) { return !c; })) return;
+        var card = document.createElement("article");
+        card.className = "tlg-card";
+        card.innerHTML = '<span class="tlg-ribbon tlg-open">Book now</span><h3>' + parts.map(function (c) { return esc(c.title); }).join("<br>&amp;<br>") + "</h3><p>" + esc(b.short) + "</p>" +
+          '<p class="tlg-price">' + esc(money(b.price_pence)) + (b.saving_pence > 0 ? " <small>for both, saving " + esc(money(b.saving_pence)) + "</small>" : " <small>for both</small>") + "</p>" +
+          '<div class="tlg-actions"><button type="button" class="tlg-btn tlg-outline-btn" aria-expanded="false">Course outline</button>' +
+          '<button type="button" class="tlg-btn tlg-btn-gold" aria-expanded="false">Book both courses</button></div>' +
+          // One "Course outline" button like every other card; it opens the two courses' own outline pages, taken from their cards.
+          '<p class="tlg-outlines">' + b.courses.map(function (id) {
+            var own = root.querySelector('[data-course="' + id + '"]'), link = own && own.querySelector(".tlg-actions a.tlg-btn");
+            return link ? '<a href="' + esc(link.getAttribute("href")) + '">' + esc(own.querySelector("h3").textContent) + "</a>" : "";
+          }).join("") + "</p>";
+        card.classList.add("tlg-live");
+        grid.appendChild(card);
+        bothCards.push(card);
+        var inner = parts.map(function (c) {
+          var d = datesOf(c);
+          return "<p><strong>" + esc(c.title) + ": dates you can choose from</strong></p>" + (d ? "<ul>" + d + "</ul>" : "<p>No dates are open at the moment; you choose one when new dates are added.</p>");
+        }).join("") +
+          "<p>You pay once now and choose a date for each course straight afterwards. Pay by card, Apple Pay or Google Pay, or spread the cost with Klarna if you are eligible.</p>" +
+          '<label class="tlg-check"><input type="checkbox"><span>I meet the entry requirements for both courses. ' + parts.map(function (c) { return esc(c.title) + ": " + esc(c.prerequisites); }).join(" ") + "</span></label>";
+        var outline = card.querySelector(".tlg-outline-btn"), links = card.querySelector(".tlg-outlines");
+        outline.addEventListener("click", function () {
+          var on = !links.classList.contains("on");
+          links.classList.toggle("on", on); outline.setAttribute("aria-expanded", on ? "true" : "false");
+        });
+        wire(card, card.querySelector(".tlg-btn-gold"), b.id, b.price_pence, inner, data.terms);
+      });
+      (data.courses || []).forEach(function (c) {
+        var card = root.querySelector('[data-course="' + c.course_id + '"]');
+        if (!card) return;
+        openCards.push(card);
+        card.classList.add("tlg-live");
+        var ribbon = card.querySelector(".tlg-ribbon"), actions = card.querySelector(".tlg-actions"), interest = actions.querySelector(".tlg-btn-gold");
+        if (ribbon) { ribbon.textContent = "Book now"; ribbon.classList.add("tlg-open"); }
+        var price = document.createElement("p");
+        price.className = "tlg-price";
+        price.innerHTML = esc(money(c.price_pence)) + " <small>per learner</small>";
+        card.insertBefore(price, actions);
+        var open = document.createElement("button");
+        open.type = "button"; open.className = "tlg-btn tlg-btn-gold"; open.textContent = "Book this course"; open.setAttribute("aria-expanded", "false");
+        if (interest) actions.replaceChild(open, interest); else actions.appendChild(open);
+        var dates = datesOf(c);
+        wire(card, open, c.course_id, c.price_pence, "<p><strong>Dates you can choose from</strong></p>" +
+          (dates ? "<ul>" + dates + "</ul>" : "<p>No dates are open at the moment. You can still book now and choose a date when new ones are added, or contact us first.</p>") +
+          "<p>You pay now and choose your date straight afterwards. Pay by card, Apple Pay or Google Pay, or spread the cost with Klarna if you are eligible.</p>" +
+          '<label class="tlg-check"><input type="checkbox"><span>I meet the entry requirements: ' + esc(c.prerequisites) + "</span></label>", data.terms);
+      });
+      // What can be booked goes first, in the order the cards were written, then the combinations; "Coming soon" follows.
+      openCards.sort(function (a, b) { return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1; });
+      openCards.concat(bothCards).reverse().forEach(function (card) { grid.insertBefore(card, grid.firstChild); });
+    }).catch(function () {});
   })();
 </script>

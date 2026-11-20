@@ -1,0 +1,109 @@
+<!-- TLG Academy: the school's course-dates page (Custom HTML block on a page that is NOT in any menu, set to
+     noindex, e.g. /academy/course-dates/). There is no login: it is opened with the private link
+     /academy/course-dates/#key=<the key>, printed by scripts/academy_admin_link.py. Without the key the
+     page shows nothing and the API refuses. Talks to the shop API (src/academy/shop.py, plan job 21). -->
+<style>
+  .tlg-dates { font-family: inherit; color: #1f2a28; max-width: 980px; margin: 0 auto; }
+  .tlg-dates * { box-sizing: border-box; }
+  .tlg-dates h2 { font-size: 1.8rem; color: #123d3a; margin: 0 0 .4rem; }
+  .tlg-dates h3 { font-size: 1.35rem; color: #123d3a; margin: 1.8rem 0 .6rem; }
+  .tlg-dates h4 { font-size: 1.15rem; margin: 0 0 .3rem; color: #123d3a; }
+  .tlg-dates p, .tlg-dates li, .tlg-dates td { line-height: 1.5; font-size: 1.02rem; }
+  .tlg-dates .tlg-small { font-size: .92rem; color: #5d6b68; }
+  .tlg-dates .tlg-card { background: #fff; border: 1px solid #d9dedc; padding: 1rem 1.1rem; margin: .7rem 0; }
+  .tlg-dates .tlg-off { opacity: .7; }
+  .tlg-dates .tlg-tag { display: inline-block; font-weight: 700; font-size: .78rem; padding: .15rem .6rem; border-radius: 999px; background: #e3f3e8; color: #2e7d4f; vertical-align: middle; }
+  .tlg-dates .tlg-tag.full { background: #fbe9e5; color: #a8584a; }
+  .tlg-dates .tlg-tag.off { background: #eceff0; color: #5d6b68; }
+  .tlg-dates .tlg-tag.test { background: #fff4d6; color: #8a6d1d; }
+  .tlg-dates form.tlg-add { display: grid; gap: .8rem; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .tlg-dates form.tlg-add { grid-template-columns: 2fr 1fr 1fr 1fr 1fr; align-items: end; } .tlg-dates form.tlg-add .wide { grid-column: 1 / -1; } }
+  .tlg-dates label { display: grid; gap: .25rem; font-weight: 700; font-size: .9rem; }
+  .tlg-dates input, .tlg-dates select { min-height: 44px; padding: .4rem .6rem; border: 1px solid #b9c4c1; font: inherit; background: #fff; max-width: 100%; }
+  .tlg-dates form.tlg-add input, .tlg-dates form.tlg-add select { width: 100%; min-width: 0; }
+  .tlg-dates .tlg-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: .4rem 1rem; border: 1px solid #123d3a; background: #fff; color: #123d3a; font-size: .95rem; cursor: pointer; margin: .2rem .3rem .2rem 0; }
+  .tlg-dates .tlg-btn.main { background: #123d3a; color: #fff; min-height: 46px; padding: .6rem 1.4rem; font-size: 1.05rem; }
+  .tlg-dates .tlg-btn.danger { border-color: #a8584a; color: #a8584a; }
+  .tlg-dates table { width: 100%; border-collapse: collapse; }
+  .tlg-dates th, .tlg-dates td { border-bottom: 1px solid #d9dedc; padding: .55rem .4rem; text-align: left; vertical-align: top; }
+  .tlg-dates ul { padding-left: 1.1rem; margin: .4rem 0; }
+  @media (max-width: 700px) { .tlg-dates thead { display: none; } .tlg-dates td { display: block; border: 0; padding: .15rem 0; } .tlg-dates tr { display: block; border-bottom: 1px solid #d9dedc; padding: .6rem 0; } }
+</style>
+<div class="tlg-dates" id="tlg-dates" aria-live="polite"><p>Loading…</p></div>
+<script>
+(function () {
+  var API = "https://r58s7yuqre.execute-api.eu-west-2.amazonaws.com";
+  var box = document.getElementById("tlg-dates");
+  var key = (new URLSearchParams(location.hash.replace(/^#/, "")).get("key") || "").trim();
+  var d = null;
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function money(p) { return "£" + (p / 100).toLocaleString("en-GB", { minimumFractionDigits: p % 100 ? 2 : 0 }); }
+  function day(iso) { return new Date(iso + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
+  function short(iso) { return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); }
+  function call(method, body) {
+    return fetch(API + "/shop/admin", { method: method, headers: body ? { "content-type": "application/json", "x-admin-key": key } : { "x-admin-key": key }, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || "Something went wrong (" + r.status + ")."); return j; }); });
+  }
+  function act(body) { return call("POST", body).then(function (j) { d = j; draw(); }).catch(function (e) { alert(e.message); }); }
+  function title(cid) { var c = d.courses.filter(function (x) { return x.id === cid; })[0]; return c ? c.title : cid; }
+  function person(o, canMove) {
+    return "<li>" + esc(o.name || "No name") + ' · <a href="mailto:' + esc(o.email) + '">' + esc(o.email) + "</a>" + (o.phone ? " · " + esc(o.phone) : "") + " · " + esc(money(o.amount)) +
+      (o.test ? ' <span class="tlg-tag test">test</span>' : "") + (o.bundle_title ? ' <span class="tlg-small">(booked with another course)</span>' : "") +
+      (canMove ? ' <button type="button" class="tlg-btn" data-act="release" data-token="' + esc(o.token) + '" data-confirm="Take ' + esc(o.name) + ' off this date? Their payment stands and they can choose another date from their own link.">Take off this date</button>' : "") + "</li>";
+  }
+  function card(s) {
+    var full = s.taken >= s.capacity, tag = s.status !== "open" ? '<span class="tlg-tag off">' + esc(s.status) + "</span>" : full ? '<span class="tlg-tag full">full</span>' : '<span class="tlg-tag">open</span>';
+    return '<div class="tlg-card' + (s.status !== "open" ? " tlg-off" : "") + '"><h4>' + esc(day(s.date)) + " " + tag + "</h4><p>" + esc(title(s.course_id)) + "<br>" + esc(s.start) + " to " + esc(s.end) +
+      " · <strong>" + s.taken + " of " + s.capacity + "</strong> places taken" + (s.note ? '<br><span class="tlg-small">Note learners see: ' + esc(s.note) + "</span>" : "") + "</p>" +
+      (s.learners.length ? "<ul>" + s.learners.map(function (o) { return person(o, !s.past); }).join("") + "</ul>" : '<p class="tlg-small">Nobody booked yet.</p>') +
+      (s.past ? "" : '<div><button type="button" class="tlg-btn" data-act="capacity" data-key="' + esc(s.key) + '" data-now="' + s.capacity + '">Change places</button>' +
+        (s.status === "open" ? '<button type="button" class="tlg-btn" data-act="status" data-key="' + esc(s.key) + '" data-status="closed">Close to new bookings</button>'
+                             : '<button type="button" class="tlg-btn" data-act="status" data-key="' + esc(s.key) + '" data-status="open">Reopen</button>') +
+        (s.status !== "cancelled" ? '<button type="button" class="tlg-btn danger" data-act="status" data-key="' + esc(s.key) + '" data-status="cancelled" data-confirm="Cancel this date? Learners booked on it stay listed and see that it is cancelled; move or refund each one.">Cancel date</button>' : "") + "</div>") + "</div>";
+  }
+  function draw() {
+    var waiting = d.orders.filter(function (o) { return o.status === "paid"; });
+    var upcoming = d.sessions.filter(function (s) { return !s.past; }), past = d.sessions.filter(function (s) { return s.past; }).reverse();
+    var rows = waiting.map(function (o) {
+      var opts = upcoming.filter(function (s) { return s.course_id === o.course_id && s.status === "open" && s.taken < s.capacity; })
+        .map(function (s) { return '<option value="' + esc(s.key) + '">' + esc(day(s.date)) + " " + esc(s.start) + "</option>"; }).join("");
+      return "<tr><td>" + esc(o.name) + (o.test ? ' <span class="tlg-tag test">test</span>' : "") + '<br><span class="tlg-small"><a href="mailto:' + esc(o.email) + '">' + esc(o.email) + "</a>" + (o.phone ? " · " + esc(o.phone) : "") + "</span></td><td>" +
+        esc(title(o.course_id)) + (o.bundle_title ? '<br><span class="tlg-small">' + esc(o.bundle_title) + "</span>" : "") + "</td><td>" + esc(money(o.amount)) + '<br><span class="tlg-small">' + esc(short(o.paid_at)) + "</span></td><td>" +
+        (opts ? '<select aria-label="Date for ' + esc(o.name) + '" data-pick="' + esc(o.token) + '">' + opts + '</select> <button type="button" class="tlg-btn" data-act="book" data-token="' + esc(o.token) + '">Put on this date</button>'
+              : '<span class="tlg-small">No open date for this course</span> ') +
+        '<button type="button" class="tlg-btn danger" data-act="cancel_order" data-token="' + esc(o.token) + '" data-confirm="Mark this order cancelled? Do this after refunding it in Stripe; it does not refund by itself.">Cancel order</button></td></tr>';
+    }).join("");
+    var courseOpts = d.courses.map(function (c) { return '<option value="' + esc(c.id) + '" data-places="' + esc(c.places) + '">' + esc(c.title) + (c.on_sale ? " (" + money(c.price_pence) + ")" : " (not on sale yet)") + "</option>"; }).join("");
+    box.innerHTML = "<h2>Course dates</h2><p class=\"tlg-small\">Add the days each course runs. Learners who have paid choose from the open dates with places left; a date that fills up or is closed drops off their list. Refunds are made in Stripe, then the order is marked cancelled here. Keep this page's link private: anyone who has it can see and change everything on it.</p>" +
+      '<div class="tlg-card"><h4>Add a date</h4><form class="tlg-add" id="tlg-add"><label>Course<select name="course_id" required>' + courseOpts + '</select></label>' +
+      '<label>Date<input type="date" name="date" min="' + esc(d.today) + '" required></label><label>Starts<input type="time" name="start" value="09:00" required></label>' +
+      '<label>Ends<input type="time" name="end" value="18:00" required></label><label>Places<input type="number" name="capacity" min="1" max="30" value="' + esc((d.courses[0] || {}).places || 4) + '" required></label>' +
+      '<label class="wide">Note learners see (optional)<input type="text" name="note" maxlength="300" placeholder="e.g. Bring a model for 1pm"></label><div class="wide"><button type="submit" class="tlg-btn main">Add date</button></div></form></div>' +
+      "<h3>Paid, no date chosen yet (" + waiting.length + ")</h3>" + (rows ? "<table><thead><tr><th>Learner</th><th>Course</th><th>Paid</th><th>Action</th></tr></thead><tbody>" + rows + "</tbody></table>" : "<p>Nobody is waiting.</p>") +
+      "<h3>Upcoming dates (" + upcoming.length + ")</h3>" + (upcoming.map(card).join("") || "<p>No dates yet. Add the first one above.</p>") +
+      (past.length ? "<details><summary>Past dates (" + past.length + ")</summary>" + past.map(card).join("") + "</details>" : "");
+  }
+  box.addEventListener("click", function (ev) {
+    var t = ev.target.closest("button[data-act]");
+    if (!t) return;
+    if (t.dataset.confirm && !confirm(t.dataset.confirm)) return;
+    var a = t.dataset.act;
+    if (a === "status") return act({ action: "update_date", key: t.dataset.key, status: t.dataset.status });
+    if (a === "capacity") { var n = prompt("How many places on this date?", t.dataset.now); if (n === null) return; return act({ action: "update_date", key: t.dataset.key, capacity: Number(n) }); }
+    if (a === "book") return act({ action: "book", token: t.dataset.token, key: box.querySelector('[data-pick="' + t.dataset.token + '"]').value });
+    act({ action: a, token: t.dataset.token });
+  });
+  box.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    if (ev.target.id !== "tlg-add") return;
+    var v = {}; new FormData(ev.target).forEach(function (val, k) { v[k] = val; });
+    v.action = "add_date"; v.capacity = Number(v.capacity);
+    act(v);
+  });
+  box.addEventListener("change", function (ev) {
+    if (ev.target.name === "course_id") ev.target.form.capacity.value = ev.target.selectedOptions[0].dataset.places || 4;
+  });
+  if (!key) { box.innerHTML = "<h2>Course dates</h2><p>This page is for the school. Open it with the private link you were given.</p>"; return; }
+  call("GET").then(function (j) { d = j; draw(); }).catch(function (e) { box.innerHTML = "<h2>Course dates</h2><p>" + esc(e.message) + "</p>"; });
+})();
+</script>

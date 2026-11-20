@@ -165,7 +165,12 @@
           "youtube_id": "",
           "file": "builder-gel/08-before-the-day.md"
         }
-      ]
+      ],
+      "shop": {
+        "on_sale": false,
+        "price_pence": 20000,
+        "places": 4
+      }
     },
     {
       "id": "gel-polish",
@@ -246,7 +251,12 @@
           "youtube_id": "",
           "file": "gel-polish/01-coming-soon.md"
         }
-      ]
+      ],
+      "shop": {
+        "on_sale": true,
+        "price_pence": 30000,
+        "places": 4
+      }
     },
     {
       "id": "acrylic",
@@ -257,8 +267,8 @@
       "short": "Liquid-and-powder acrylic overlays and extensions on tips and forms. A classroom course for qualified nail professionals, assessed by a theory paper, an observed practical and post-course case studies.",
       "description": "A practical course for existing nail professionals who want to offer liquid-and-powder acrylic enhancements. You will understand the chemistry of monomer liquid and polymer powder, the mix ratio and how the bead sets; prepare the natural nail; fit tips and forms; build a balanced enhancement with a correctly placed apex using the three-zone method; infill, rebalance and remove safely; and work within the health and safety controls that acrylic systems demand, including ventilation, dust extraction and allergy prevention. Consultation, UK legislation, aftercare and honest advertising are covered throughout.",
       "delivery": "Classroom course at The Looking Glass Beauty School, 4a Roushill, Shrewsbury, with pre-course reading and support materials on this academy.",
-      "hours": 19.5,
-      "hours_breakdown": "3 hours of pre-course reading, 7.5 guided learning hours on the taught day, and about 9 hours for three post-course case studies.",
+      "hours": 12,
+      "hours_breakdown": "2 hours of pre-course reading, 8 guided learning hours on the taught day, and 2 hours for the written records, reflection and feedback of three post-course case studies.",
       "prerequisites": "Aged 18 or over, with a Level 2 Beauty Therapy, Nail Services or equivalent qualification covering manicure, nail structure and safe salon practice. Experience with gel polish or builder gel is strongly recommended. Not open to anyone with a known acrylate or methacrylate sensitivity.",
       "outcomes": [
         "Explain the chemistry of liquid-and-powder acrylic, the mix ratio and how the product sets, and compare it with gel systems.",
@@ -327,7 +337,12 @@
           "youtube_id": "",
           "file": "acrylic/01-coming-soon.md"
         }
-      ]
+      ],
+      "shop": {
+        "on_sale": true,
+        "price_pence": 50000,
+        "places": 4
+      }
     },
     {
       "id": "efile",
@@ -435,7 +450,12 @@
           "youtube_id": "",
           "file": "efile/01-coming-soon.md"
         }
-      ]
+      ],
+      "shop": {
+        "on_sale": false,
+        "price_pence": 28000,
+        "places": 4
+      }
     },
     {
       "id": "lash-brow",
@@ -544,6 +564,31 @@
           "file": "lash-brow/01-coming-soon.md"
         }
       ]
+    }
+  ],
+  "shop_terms": "",
+  "bundles": [
+    {
+      "id": "acrylic-and-gel-polish",
+      "title": "Liquid and Powder Acrylic Enhancement CPD Course and Gel Polish Nails CPD Course",
+      "courses": [
+        "acrylic",
+        "gel-polish"
+      ],
+      "price_pence": 60000,
+      "on_sale": true,
+      "short": "Book the Liquid and Powder Acrylic Enhancement CPD Course and the Gel Polish Nails CPD Course together. Two separate taught days; you choose a date for each after paying."
+    },
+    {
+      "id": "builder-gel-and-efile",
+      "title": "Builder Gel Overlay and Short Extension CPD Course and Electric File (E-File) Nail Technique CPD Course",
+      "courses": [
+        "builder-gel",
+        "efile"
+      ],
+      "price_pence": 37500,
+      "on_sale": true,
+      "short": "Book the Builder Gel Overlay and Short Extension CPD Course and the Electric File (E-File) Nail Technique CPD Course together. Two separate taught days; you choose a date for each after paying."
     }
   ]
 }

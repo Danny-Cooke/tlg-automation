@@ -62,6 +62,11 @@ Fresha's hours because those are the bookable ones. See open-questions.
   Instagram @lookingglassbeautysalons. Neither is readable without a login.
 - Jess is Jess Preston: nail artist, academy trainer, salon director.
 - Fresha rating 5.0 from 232 reviews at the time of reading.
+  On 19 Nov 2026 Fresha changed where ratings sit in the public venue page's
+  data: `location.rating`, `location.reviewsCount` and each team member's
+  `rating` went, and each team member gained `ratingV2` (`value`,
+  `valueFormatted`). The Fresha watch texted "something has changed" at 12:30.
+  Nothing of ours reads those fields; all four watch checks passed afterwards.
 - Fresha has no public API or webhooks. It does have native Google Calendar
   sync per team member (see `docs/calendar-sync.md`). The partner dashboard
   runs on an internal GraphQL gateway that can create and cancel appointments;

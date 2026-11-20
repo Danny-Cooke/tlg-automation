@@ -1,0 +1,85 @@
+<!-- TLG Academy: "your booking" page for the public website (Custom HTML block on /academy/booking/).
+     A buyer lands here from Stripe after paying, as /academy/booking/?order=<token>&cs=<checkout id>,
+     and chooses the date of their taught day. The order token in the address is the booking: there is
+     no login. Talks to the shop API (src/academy/shop.py, plan job 21). -->
+<style>
+  .tlg-booking { font-family: inherit; color: #1f2a28; max-width: 760px; margin: 0 auto; }
+  .tlg-booking * { box-sizing: border-box; }
+  .tlg-booking h2 { font-size: 1.8rem; color: #123d3a; margin: 0 0 .6rem; }
+  .tlg-booking h3 { font-size: 1.3rem; color: #123d3a; margin: 1.6rem 0 .5rem; }
+  .tlg-booking p, .tlg-booking li { line-height: 1.6; font-size: 1.1rem; }
+  .tlg-booking .tlg-note { border-left: 4px solid #c9a24b; background: #fff8e6; padding: .8rem 1rem; margin: 1rem 0; }
+  .tlg-booking .tlg-ok { border-color: #2e7d4f; background: #eef8f1; }
+  .tlg-booking .tlg-bad { border-color: #a8584a; background: #fdf1ee; }
+  .tlg-booking .tlg-small { font-size: .95rem; color: #5d6b68; }
+  .tlg-booking .tlg-tag { display: inline-block; background: #fff4d6; color: #8a6d1d; font-weight: 700; font-size: .8rem; padding: .15rem .6rem; border-radius: 999px; }
+  .tlg-booking .tlg-date { display: flex; gap: .8rem; align-items: flex-start; border: 1px solid #d9dedc; background: #fff; padding: .9rem 1rem; margin: .5rem 0; cursor: pointer; min-height: 48px; }
+  .tlg-booking .tlg-date input { width: 1.3rem; height: 1.3rem; flex: none; margin-top: .25rem; }
+  .tlg-booking .tlg-date.on { border-color: #123d3a; box-shadow: 0 0 0 2px #123d3a inset; }
+  .tlg-booking .tlg-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: .6rem 1.4rem; border: 1px solid #123d3a; background: #123d3a; color: #fff; text-decoration: none; font-size: 1.05rem; letter-spacing: .03em; cursor: pointer; margin-top: .8rem; }
+  .tlg-booking .tlg-btn[disabled] { opacity: .6; cursor: default; }
+</style>
+<div class="tlg-booking" id="tlg-booking" aria-live="polite"><p>Loading your booking…</p></div>
+<script>
+(function () {
+  var API = "https://r58s7yuqre.execute-api.eu-west-2.amazonaws.com";
+  var box = document.getElementById("tlg-booking");
+  var q = new URLSearchParams(location.search), token = q.get("order") || "", cs = q.get("cs") || "";
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function money(p) { return "£" + (p / 100).toLocaleString("en-GB", { minimumFractionDigits: p % 100 ? 2 : 0 }); }
+  function day(iso) { return new Date(iso + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
+  function left(n) { return n === 1 ? "1 place left" : n + " places left"; }
+  function call(method, path, body) {
+    return fetch(API + path, { method: method, headers: body ? { "content-type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.error || "Something went wrong (" + r.status + ")."); return d; }); });
+  }
+  function fail(msg) {
+    box.innerHTML = '<h2>Your booking</h2><div class="tlg-note tlg-bad"><p>' + esc(msg) + '</p></div><p>If you have paid and this page will not load, contact the school and we will sort it out: your payment is safe.</p><button type="button" class="tlg-btn" id="tlg-again">Try again</button>';
+    document.getElementById("tlg-again").onclick = load;
+  }
+  function show(o) {
+    if (cs) { history.replaceState(null, "", location.pathname + "?order=" + encodeURIComponent(token)); cs = ""; }
+    // Bought with another course: its date is chosen from its own half of the same booking.
+    var others = (o.others || []).map(function (x) {
+      var where = "?order=" + encodeURIComponent(x.token);
+      return '<div class="tlg-note"><p><strong>Also in this booking: ' + esc(x.course_title) + ".</strong><br>" +
+        (x.status === "booked" ? "Booked for " + esc(day(x.date)) + ", " + esc(x.start) + " to " + esc(x.end) + '. <a href="' + where + '">See it</a>'
+          : x.status === "paid" ? '<a class="tlg-btn" href="' + where + '">Choose your date for this course</a>' : "Cancelled.") + "</p></div>";
+    }).join("");
+    var head = "<h2>" + esc(o.course_title) + "</h2>" + (o.test ? '<p><span class="tlg-tag">Test payment</span> <span class="tlg-small">Made in the payment sandbox; no money moved.</span></p>' : "") +
+      "<p>Booked by " + esc(o.name) + (o.email ? " (" + esc(o.email) + ")" : "") + (o.bundle_title ? ". Part of: " + esc(o.bundle_title) + ".</p>" : ". Paid " + esc(money(o.amount)) + ".</p>");
+    if (o.status === "booked" && o.session) {
+      var s = o.session;
+      box.innerHTML = head + '<div class="tlg-note tlg-ok"><p><strong>You are booked.</strong><br>' + esc(day(s.date)) + ", " + esc(s.start) + " to " + esc(s.end) +
+        "<br>The Looking Glass Beauty School, 4a Roushill, Shrewsbury SY1 1PQ</p>" + (s.note ? "<p>" + esc(s.note) + "</p>" : "") +
+        (s.status === "cancelled" ? "<p><strong>The school has cancelled this date.</strong> We will be in touch to move you.</p>" : "") + "</div>" +
+        others + "<p>Save this page's address or bookmark it: it is your booking. To change your date, contact the school.</p>";
+      return;
+    }
+    if (o.status !== "paid") { box.innerHTML = head + '<div class="tlg-note tlg-bad"><p><strong>This booking has been cancelled.</strong> Contact the school if that is not what you expected.</p></div>'; return; }
+    var list = (o.sessions || []).map(function (s, i) {
+      return '<label class="tlg-date' + (i === 0 ? " on" : "") + '"><input type="radio" name="tlg-session" value="' + esc(s.key) + '"' + (i === 0 ? " checked" : "") + "><span><strong>" + esc(day(s.date)) + "</strong><br>" +
+        esc(s.start) + " to " + esc(s.end) + " · " + esc(left(s.places_left)) + (s.note ? '<br><span class="tlg-small">' + esc(s.note) + "</span>" : "") + "</span></label>";
+    }).join("");
+    box.innerHTML = head + '<div class="tlg-note tlg-ok"><p><strong>Thank you, your payment has been received.</strong> Now choose the date of your taught day.</p></div><h3>Choose your date</h3>' +
+      (list ? '<form id="tlg-book">' + list + '<button type="submit" class="tlg-btn">Book this date</button></form><p class="tlg-small">Not sure yet? Save this page\'s address and come back: your place on the course is paid for. Dates fill up, so the sooner the better.</p>'
+            : "<p>There are no open dates at the moment. Your payment is safe: save this page's address and come back, or contact the school and we will arrange a date with you.</p>") + others;
+    var form = document.getElementById("tlg-book");
+    if (!form) return;
+    form.onchange = function () { form.querySelectorAll(".tlg-date").forEach(function (l) { l.classList.toggle("on", l.querySelector("input").checked); }); };
+    form.onsubmit = function (ev) {
+      ev.preventDefault();
+      var btn = form.querySelector("button"), pick = form.querySelector("input:checked");
+      if (!pick) return;
+      btn.disabled = true; btn.textContent = "Booking…";
+      call("POST", "/shop/orders/" + encodeURIComponent(token) + "/book", { session: pick.value }).then(show).catch(function (e) { alert(e.message); load(); });
+    };
+  }
+  function load() {
+    if (!token) { box.innerHTML = "<h2>Your booking</h2><p>This page opens from the link you were given when you paid for a course. If you have lost it, contact the school.</p>"; return; }
+    box.innerHTML = "<p>Loading your booking…</p>";
+    call("GET", "/shop/orders/" + encodeURIComponent(token) + (cs ? "?cs=" + encodeURIComponent(cs) : "")).then(show).catch(function (e) { fail(e.message); });
+  }
+  load();
+})();
+</script>

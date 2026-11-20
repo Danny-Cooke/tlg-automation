@@ -57,3 +57,13 @@ output "web_config" {
     supportPhone         = var.academy_support_phone
   }
 }
+
+output "stripe_secret_arn" {
+  description = "Where scripts/academy_stripe_setup.py writes the Stripe secret key and the webhook signing secret."
+  value       = aws_secretsmanager_secret.stripe.arn
+}
+
+output "stripe_webhook_url" {
+  description = "The endpoint Stripe sends payment events to; registered with Stripe by scripts/academy_stripe_setup.py."
+  value       = "${aws_apigatewayv2_api.academy.api_endpoint}/shop/stripe/webhook"
+}

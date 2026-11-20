@@ -27,11 +27,12 @@ locals {
     local.has_domain ? "https://${var.academy_domain}/" : "",
     var.academy_local_dev_url != "" ? "${var.academy_local_dev_url}/" : "",
   ])
-  cors_origins = compact([
+  # The shop's pages are on the main website, so its origins may call the API too.
+  cors_origins = compact(concat([
     "https://${aws_cloudfront_distribution.site.domain_name}",
     local.has_domain ? "https://${var.academy_domain}" : "",
     var.academy_local_dev_url,
-  ])
+  ], var.academy_shop_origins))
 }
 
 data "aws_caller_identity" "current" {}
@@ -385,6 +386,37 @@ data "aws_iam_policy_document" "api" {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.files.arn}/*"]
   }
+  statement {
+    sid       = "StripeKeys"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [aws_secretsmanager_secret.stripe.arn]
+  }
+  statement {
+    sid       = "ShopEmail"
+    actions   = ["ses:SendEmail"]
+    resources = ["*"]
+  }
+}
+
+# ---------------------------------------------------------------------------
+# The shop (plan job 21). Stripe's secret key, the webhook signing secret and
+# the key that opens the school's course-dates page sit in this secret as
+# {"secret_key", "webhook_secret", "webhook_id", "admin_key"}. Terraform makes
+# the container only; scripts/academy_stripe_setup.py writes the value in the
+# deploy workflow, so none of them is ever in state.
+# ---------------------------------------------------------------------------
+
+resource "aws_secretsmanager_secret" "stripe" {
+  name        = "${local.name}/academy/stripe"
+  description = "TLG Academy shop: Stripe secret key, webhook signing secret and the course-dates page key (written by the Academy workflow)"
+}
+
+# Receipts and booking confirmations come from this address. Creating the
+# identity sends a verification email to the mailbox; until the link in it is
+# clicked, and the account is out of the SES sandbox, the shop sends nothing.
+resource "aws_sesv2_email_identity" "sender" {
+  count          = var.academy_sender_email != "" ? 1 : 0
+  email_identity = var.academy_sender_email
 }
 
 resource "aws_iam_role_policy" "api" {
@@ -395,7 +427,7 @@ resource "aws_iam_role_policy" "api" {
 
 resource "aws_lambda_function" "api" {
   function_name    = "${local.name}-academy-api"
-  description      = "TLG Academy API: profiles, course access requests, approvals, lesson progress, file links"
+  description      = "TLG Academy API: profiles, course access, approvals, lesson progress, file links, and the shop (Stripe checkout, course dates)"
   role             = aws_iam_role.api.arn
   runtime          = "python3.12"
   handler          = "academy.handler.lambda_handler"
@@ -407,10 +439,15 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      TABLE_NAME   = aws_dynamodb_table.academy.name
-      FILES_BUCKET = aws_s3_bucket.files.bucket
-      ADMIN_EMAILS = var.academy_admin_emails
-      LOG_LEVEL    = "INFO"
+      TABLE_NAME        = aws_dynamodb_table.academy.name
+      FILES_BUCKET      = aws_s3_bucket.files.bucket
+      ADMIN_EMAILS      = var.academy_admin_emails
+      STRIPE_SECRET_ARN = aws_secretsmanager_secret.stripe.arn
+      SHOP_BOOKING_URL  = var.academy_shop_booking_url
+      SHOP_COURSES_URL  = var.academy_shop_courses_url
+      SENDER_EMAIL      = var.academy_sender_email
+      CONTACT_EMAIL     = var.academy_contact_email
+      LOG_LEVEL         = "INFO"
     }
   }
 
@@ -484,7 +521,7 @@ resource "aws_apigatewayv2_api" "academy" {
   cors_configuration {
     allow_origins = local.cors_origins
     allow_methods = ["GET", "POST", "OPTIONS"]
-    allow_headers = ["authorization", "content-type"]
+    allow_headers = ["authorization", "content-type", "x-admin-key"]
     max_age       = 3600
   }
 }
@@ -533,6 +570,26 @@ resource "aws_apigatewayv2_route" "api" {
   target             = "integrations/${aws_apigatewayv2_integration.api.id}"
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# The shop has no logins (user, 2026-11-20). The buyer's routes are open, the
+# order token in the link is the booking; Stripe's webhook is checked by its
+# signature and the school's course-dates routes by the x-admin-key header,
+# both in the Lambda.
+resource "aws_apigatewayv2_route" "shop" {
+  for_each = toset([
+    "GET /shop/courses",
+    "POST /shop/courses/{course_id}/checkout",
+    "GET /shop/orders/{token}",
+    "POST /shop/orders/{token}/book",
+    "POST /shop/stripe/webhook",
+    "GET /shop/admin",
+    "POST /shop/admin",
+  ])
+  api_id             = aws_apigatewayv2_api.academy.id
+  route_key          = each.value
+  target             = "integrations/${aws_apigatewayv2_integration.api.id}"
+  authorization_type = "NONE"
 }
 
 resource "aws_lambda_permission" "api_apigw" {

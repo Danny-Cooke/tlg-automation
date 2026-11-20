@@ -1023,6 +1023,97 @@ group gets the one-liner ending ", no reply sent"; a thread that is
 already talking and then asks for a refund still gets the "let me check
 with Jess" line.
 
+### 21. Academy shop: buy a course online, pay (card or Klarna), then pick a date; a course calendar the owners keep (BUILT 2026-11-20 against Stripe's sandbox, not committed or deployed; no course is on sale until it has a price; design in `docs/academy.md`, "The shop")
+
+**Redirected by the user the same day:** "we dont want it as part of the
+academy school, we just want it on the simple academy page we have ... pick
+a course and purchase it from there. no portal login for anyone". So the
+first build (buy panel, booking and course-dates pages inside the student
+portal at academy.tlg-beauty.co.uk, admins by Cognito login, a purchase
+approving a portal enrolment) was taken out again the same afternoon. What
+stands: the buy buttons are on the course cards of the main website's
+academy page (`website/academy/courses-section.html`), the buyer chooses a
+date on `/academy/booking/?order=<token>` (`website/academy/pages/booking.html`),
+and the owners keep the calendar on `/academy/course-dates/#key=<key>`
+(`pages/course-dates.html`), opened by a private link from
+`scripts/academy_admin_link.py`. The API is still the academy stack's Lambda
+and table (`/shop/...` routes, CORS open to tlg-beauty.co.uk); the student
+portal is untouched. Publishing the three snippets needs the WordPress login:
+replace the HTML widget on page 595, and make two new pages (booking;
+course-dates, out of every menu and set to noindex). The paragraph below
+describes the first build where it differs.
+
+State on 2026-11-20: the user chose Stripe, opened a sandbox account ("tlg
+beauty limited sandbox", GB, GBP, Klarna already on in the default payment
+method configuration) and gave sandbox keys. Built: `src/academy/shop.py`,
+`stripe_api.py`, `mailer.py`, `ShopStore` in `store.py`, the buy panel,
+`#/booking/<token>` and `#/dates` pages in `academy/web/`, Terraform for the
+secret, routes and SES identity, `scripts/academy_stripe_setup.py` and its
+workflow step, `tests/test_academy_shop.py`. Proved locally: a real sandbox
+Checkout session offers card, Klarna, Link, Revolut Pay and Amazon Pay; the
+buy button on a local copy of the site reaches Stripe's payment page; the
+course-dates page adds and lists dates. Not yet proved: a completed test
+payment coming back to the choose-your-date page (Claude in Chrome has no
+permission on checkout.stripe.com, so the user pays with the test card),
+the webhook and the emails (need the deploy), and `terraform validate`
+(the laptop has Terraform 1.7.5, the stack needs 1.10; the workflow's plan
+is the check). Still owed by the user: the two prices, places per date if
+not four, refund and date-change terms (`shop_terms` in `courses.json`),
+the GitHub secret `TLG_ACADEMY_STRIPE_SECRET_KEY`, a sender address
+(`TLG_ACADEMY_SENDER_EMAIL`) and SES production access, and whether the
+academy goes public. Defaults taken meanwhile: full payment only; a learner
+picks a date once and changes go through the school; refunds are made in
+Stripe and the order then marked cancelled on the course-dates page.
+
+Original proposal, 2026-11-19:
+
+The user, 19 Nov 2026, with the Acrylic and Gel Polish courses approved:
+"a way of people purchasing courses on our website. they should buy, pay
+for it and have an option there to buy with Klarna if they so wish and
+once purchased, be shown available dates to book in with. we will need a
+calendar on the back end that people like me and jess can update to show
+what courses are available when".
+
+Proposed shape (academy stack, `terraform/academy/`, `src/academy/`,
+`academy/web/`; nothing in the bot stack):
+
+- **Payment: Stripe Checkout**, the page hosted by Stripe. Card, Apple Pay
+  and Google Pay by default; Klarna is a payment method switched on in the
+  Stripe dashboard and then appears on the same page for eligible buyers.
+  Stripe pays the school in full and Klarna carries the credit. No card
+  data touches AWS. Needs a Stripe account for TLG Beauty Limited (the
+  owners open it; bank details and identity checks are theirs).
+- **Buy:** the "Book this course" button on a course page (the WordPress
+  course page and the academy course page) calls a public API route that
+  creates a Checkout session for that course's price and sends the buyer to
+  Stripe. No login is needed to pay.
+- **After paying:** Stripe's signed webhook hits a Lambda, which writes
+  `ORDER#<id>` (course, name, email, amount, Stripe ids, status paid, a
+  random booking token) and emails the buyer a receipt with a "choose your
+  date" link carrying the token. Stripe also redirects them straight to that
+  page. The page lists that course's sessions with places left; choosing one
+  takes a place with a conditional write so the last place cannot be sold
+  twice, and emails a confirmation to the learner and to the school.
+- **Calendar:** `SESSION#<course>#<date>` rows (date, start and end time,
+  places, places taken, open or closed, note). A "Course dates" page in the
+  academy admin area, for everyone in the `admins` group, to add, edit,
+  close and cancel sessions and to see who is on each, with paid orders
+  that have not picked a date yet listed at the top. Upcoming dates also
+  show on the course page before purchase, so nobody buys blind.
+- **Access to the online material:** a paid order approves that learner's
+  enrolment for the course automatically when they register with the same
+  email, replacing Jess's manual approval for buyers.
+- **Email:** SES from an academy address (the Cognito default sender will
+  not do for receipts).
+
+Decisions needed from the user before anything is built: Stripe or
+something else; prices; full payment or a deposit; places per date; moving
+and refund terms; who else is an admin; whether buying lives on
+tlg-beauty.co.uk course pages, the academy subdomain, or both. Related,
+already owed: the two courses' activity numbers and badges, the academy
+going public now that courses are accredited, and the WordPress login for
+the course pages.
+
 ## Open questions for the user
 
 1. Prod only, or a dev stack as well?

@@ -7,6 +7,8 @@ every request arrives with verified claims. Routes:
   GET  /courses/{course_id}/files/{file_id}            presigned link, approved learners only
   GET  /admin/requests?status=pending                  admins only
   POST /admin/requests/{user_id}/{course_id}           admins only: {"decision": "approved"|"rejected", "note": ""}
+  /shop/...                                            no login: buying a course, choosing a date, and the
+                                                       school's course-dates page behind its own key (shop.py)
 
 The browser never decides who may see a lesson: the file link and the
 completion write both check the enrolment status here."""
@@ -19,8 +21,8 @@ from functools import lru_cache
 
 import boto3
 
-from . import content
-from .store import Store
+from . import content, shop
+from .store import ShopStore, Store
 
 log = logging.getLogger("academy")
 log.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -53,6 +55,8 @@ def _s3():
 
 
 def lambda_handler(event: dict, context=None, store: Store | None = None, s3=None) -> dict:
+    if (event.get("routeKey") or "").split(" ")[-1].startswith("/shop/"):
+        return shop.handle(event, ShopStore(store.table) if store else None)
     claims = _claims(event)
     sub = claims.get("sub")
     if not sub:
