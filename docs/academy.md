@@ -167,10 +167,15 @@ State on 23 Nov 2026: the API is deployed (commit `6ab6789`, 20 Nov) with
 no Stripe key yet, so checkout answers "not switched on". The booking page
 (WordPress page 3517) and the course-dates page (3519) were published on 23
 Nov as children of Academy (595), each one Custom HTML block, both set to
-noindex in Yoast and absent from the sitemap. The academy page itself (595)
-still carries the old section: the new `courses-section.html` goes on when
-the live Stripe key is in, so visitors never see buy buttons that only take
-test cards. WordPress admin is reached without a password through Krystal's
+noindex in Yoast and absent from the sitemap. The new `courses-section.html`
+went onto the academy page (595, Elementor HTML widget `7a1f3ca0`) the same
+day, because the user found the page out of date; the previous version is in
+Elementor's revision history. So that visitors never meet a pay button that
+does not take money, `/shop/courses` reports `payments` (off: no key; test:
+sandbox key; live), and the page shows its pay buttons to everyone only when
+that is `live`. Until then the open courses sit first with their prices, a
+"Now enrolling" ribbon and "Register interest"; with the sandbox key the pay
+buttons appear only at `/academy/?test=1`. WordPress admin is reached without a password through Krystal's
 Onyx portal (portal.onyx.io, the site, "Login to WordPress Admin"); pages
 are written through the REST API from that logged-in tab.
 
