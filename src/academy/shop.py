@@ -226,6 +226,13 @@ def _book(store: ShopStore, token: str, key: str, by: str = "") -> dict:
 
 
 # ---------------------------------------------------------------- public routes
+def payments_mode() -> str:
+    """live: real money. test: Stripe's sandbox key is in, nothing is charged. off: no key yet.
+    The website shows its pay buttons to everyone only when this says live."""
+    key = str(stripe_api.shop_secret().get("secret_key") or "")
+    return "live" if key.startswith(("sk_live_", "rk_live_")) else "test" if key else "off"
+
+
 def is_admin(event: dict) -> bool:
     headers = {k.lower(): v for k, v in (event.get("headers") or {}).items()}
     given, held = headers.get("x-admin-key", ""), stripe_api.shop_secret().get("admin_key", "")
@@ -249,7 +256,7 @@ def handle(event: dict, store: ShopStore | None = None) -> dict:
         if route == "GET /shop/courses":
             on_sale = [c for c in content.courses().values() if shop_of(c)]
             both = [product(b) for b in content.bundles()]
-            return _json(200, {"terms": content.shop_terms(), "courses": [
+            return _json(200, {"payments": payments_mode(), "terms": content.shop_terms(), "courses": [
                 {"course_id": c["id"], "title": c["title"], "price_pence": shop_of(c)["price_pence"],
                  "prerequisites": c.get("prerequisites", ""), "sessions": open_sessions(store, c["id"])} for c in on_sale],
                 "bundles": [{"id": b["id"], "title": b["title"], "price_pence": b["price_pence"], "courses": b["courses"],

@@ -55,7 +55,7 @@
   <div class="tlg-top">
     <h2 class="tlg-h">Our courses</h2>
   </div>
-  <p class="tlg-intro">The Looking Glass Beauty School teaches small-group, classroom-based nail and beauty courses in our training room at 4a Roushill, Shrewsbury, written and taught by Jess Preston. Each course is a Continuing Professional Development (CPD) course for qualified professionals, not a regulated qualification. Courses marked "Book now" are open: book and pay here, then choose your date. The others are being prepared for launch; click a course for the full outline, or register your interest to be told when enrolment opens.</p>
+  <p class="tlg-intro">The Looking Glass Beauty School teaches small-group, classroom-based nail and beauty courses in our training room at 4a Roushill, Shrewsbury, written and taught by Jess Preston. Each course is a Continuing Professional Development (CPD) course for qualified professionals, not a regulated qualification. Courses at the top of the list are open for enrolment. The others are being prepared for launch; click a course for the full outline, or register your interest to be told when enrolment opens.</p>
 
   <div class="tlg-grid">
     <article class="tlg-card" data-course="builder-gel" data-short="Builder Gel">
@@ -140,6 +140,10 @@
     }
     fetch(API + "/shop/courses").then(function (r) { return r.ok ? r.json() : { courses: [] }; }).then(function (data) {
       var byId = {}, grid = root.querySelector(".tlg-grid"), openCards = [], bothCards = [];
+      // Pay buttons are for everyone once payments are live. With the sandbox key they show only when the address
+      // ends ?test=1 (for the school's own test run); otherwise the open courses keep "Register interest".
+      var canPay = data.payments === "live" || (data.payments === "test" && /[?&]test=1(&|$)/.test(location.search));
+      var ribbonText = canPay ? "Book now" : "Now enrolling";
       (data.courses || []).forEach(function (c) { byId[c.course_id] = c; });
       // Two courses at one price: a card of its own after the course cards.
       (data.bundles || []).forEach(function (b) {
@@ -147,10 +151,11 @@
         if (parts.some(function (c) { return !c; })) return;
         var card = document.createElement("article");
         card.className = "tlg-card";
-        card.innerHTML = '<span class="tlg-ribbon tlg-open">Book now</span><h3>' + parts.map(function (c) { return esc(c.title); }).join("<br>&amp;<br>") + "</h3><p>" + esc(b.short) + "</p>" +
+        card.innerHTML = '<span class="tlg-ribbon tlg-open">' + ribbonText + "</span><h3>" + parts.map(function (c) { return esc(c.title); }).join("<br>&amp;<br>") + "</h3><p>" + esc(b.short) + "</p>" +
           '<p class="tlg-price">' + esc(money(b.price_pence)) + (b.saving_pence > 0 ? " <small>for both, saving " + esc(money(b.saving_pence)) + "</small>" : " <small>for both</small>") + "</p>" +
           '<div class="tlg-actions"><button type="button" class="tlg-btn tlg-outline-btn" aria-expanded="false">Course outline</button>' +
-          '<button type="button" class="tlg-btn tlg-btn-gold" aria-expanded="false">Book both courses</button></div>' +
+          (canPay ? '<button type="button" class="tlg-btn tlg-btn-gold" aria-expanded="false">Book both courses</button></div>'
+                  : '<a class="tlg-btn tlg-btn-gold" href="/academy/register-interest/">Register interest</a></div>') +
           // One "Course outline" button like every other card; it opens the two courses' own outline pages, taken from their cards.
           '<p class="tlg-outlines">' + b.courses.map(function (id) {
             var own = root.querySelector('[data-course="' + id + '"]'), link = own && own.querySelector(".tlg-actions a.tlg-btn");
@@ -170,7 +175,7 @@
           var on = !links.classList.contains("on");
           links.classList.toggle("on", on); outline.setAttribute("aria-expanded", on ? "true" : "false");
         });
-        wire(card, card.querySelector(".tlg-btn-gold"), b.id, b.price_pence, inner, data.terms);
+        if (canPay) wire(card, card.querySelector(".tlg-btn-gold"), b.id, b.price_pence, inner, data.terms);
       });
       (data.courses || []).forEach(function (c) {
         var card = root.querySelector('[data-course="' + c.course_id + '"]');
@@ -178,11 +183,12 @@
         openCards.push(card);
         card.classList.add("tlg-live");
         var ribbon = card.querySelector(".tlg-ribbon"), actions = card.querySelector(".tlg-actions"), interest = actions.querySelector(".tlg-btn-gold");
-        if (ribbon) { ribbon.textContent = "Book now"; ribbon.classList.add("tlg-open"); }
+        if (ribbon) { ribbon.textContent = ribbonText; ribbon.classList.add("tlg-open"); }
         var price = document.createElement("p");
         price.className = "tlg-price";
         price.innerHTML = esc(money(c.price_pence)) + " <small>per learner</small>";
         card.insertBefore(price, actions);
+        if (!canPay) return;
         var open = document.createElement("button");
         open.type = "button"; open.className = "tlg-btn tlg-btn-gold"; open.textContent = "Book this course"; open.setAttribute("aria-expanded", "false");
         if (interest) actions.replaceChild(open, interest); else actions.appendChild(open);

@@ -106,13 +106,17 @@ def signed(payload: dict, secret=WHSEC, when=None):
     return raw, {"Stripe-Signature": f"t={t},v1={sig}"}
 
 
-def test_course_page_shows_price_and_open_dates_without_a_login(world):
+def test_course_page_shows_price_and_open_dates_without_a_login(world, monkeypatch):
     w = world
     assert add_date(w)[0] == 200
     assert add_date(w, date="2027-03-01")[0] == 200
     call(w, "POST /shop/admin", body={"action": "update_date", "key": f"{COURSE}#2027-03-01#0900", "status": "closed"}, **ADMIN)
     code, body = call(w, "GET /shop/courses")
     assert code == 200 and sorted(c["course_id"] for c in body["courses"]) == [COURSE, "builder-gel", "gel-polish"]  # only what is on sale
+    assert body["payments"] == "off"  # no Stripe key in the secret: the website keeps "Register interest"
+    for key, mode in (("sk_test_x", "test"), ("sk_live_x", "live")):
+        monkeypatch.setattr(stripe_api, "shop_secret", lambda key=key: {"admin_key": ADMIN_KEY, "secret_key": key})
+        assert call(w, "GET /shop/courses")[1]["payments"] == mode
     c = [c for c in body["courses"] if c["course_id"] == COURSE][0]
     assert c["price_pence"] == 35000 and "Level 2" in c["prerequisites"]
     assert [(s["date"], s["places_left"]) for s in c["sessions"]] == [("2027-02-01", 4)]  # the closed date is not offered

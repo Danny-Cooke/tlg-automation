@@ -163,6 +163,17 @@ WordPress site; this stack supplies only the API and the table behind them.
 | `/academy/booking/?order=<token>` (new page) | `pages/booking.html` | the buyer, from Stripe or their email: choose a date, see the booking |
 | `/academy/course-dates/#key=<key>` (new page, in no menu, noindex) | `pages/course-dates.html` | the owners: the calendar |
 
+State on 23 Nov 2026: the API is deployed (commit `6ab6789`, 20 Nov) with
+no Stripe key yet, so checkout answers "not switched on". The booking page
+(WordPress page 3517) and the course-dates page (3519) were published on 23
+Nov as children of Academy (595), each one Custom HTML block, both set to
+noindex in Yoast and absent from the sitemap. The academy page itself (595)
+still carries the old section: the new `courses-section.html` goes on when
+the live Stripe key is in, so visitors never see buy buttons that only take
+test cards. WordPress admin is reached without a password through Krystal's
+Onyx portal (portal.onyx.io, the site, "Login to WordPress Admin"); pages
+are written through the REST API from that logged-in tab.
+
 Each snippet has the API address written into it (`API = "https://...execute-api..."`).
 
 **Flow.** On a course card, "Book this course" opens a panel: the open
