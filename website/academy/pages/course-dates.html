@@ -3,13 +3,16 @@
      /academy/course-dates/#key=<the key>, printed by scripts/academy_admin_link.py. Without the key the
      page shows nothing and the API refuses. Talks to the shop API (src/academy/shop.py, plan job 21). -->
 <style>
-  .tlg-dates { font-family: inherit; color: #1f2a28; max-width: 980px; margin: 0 auto; }
+  /* A working page for the owners: a plain font at a readable size, not the website's fine serif (the course
+     list in the drop-down was too small to read, user 2026-11-23). Sizes in px so the theme cannot shrink them. */
+  .tlg-dates { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 17px; color: #1f2a28; max-width: 980px; margin: 0 auto; }
+  .tlg-dates, .tlg-dates * { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important; }
   .tlg-dates * { box-sizing: border-box; }
   .tlg-dates h2 { font-size: 1.8rem; color: #123d3a; margin: 0 0 .4rem; }
   .tlg-dates h3 { font-size: 1.35rem; color: #123d3a; margin: 1.8rem 0 .6rem; }
   .tlg-dates h4 { font-size: 1.15rem; margin: 0 0 .3rem; color: #123d3a; }
-  .tlg-dates p, .tlg-dates li, .tlg-dates td { line-height: 1.5; font-size: 1.02rem; }
-  .tlg-dates .tlg-small { font-size: .92rem; color: #5d6b68; }
+  .tlg-dates p, .tlg-dates li, .tlg-dates td, .tlg-dates th { line-height: 1.5; font-size: 17px; }
+  .tlg-dates .tlg-small { font-size: 15px; color: #5d6b68; }
   .tlg-dates .tlg-card { background: #fff; border: 1px solid #d9dedc; padding: 1rem 1.1rem; margin: .7rem 0; }
   .tlg-dates .tlg-off { opacity: .7; }
   .tlg-dates .tlg-tag { display: inline-block; font-weight: 700; font-size: .78rem; padding: .15rem .6rem; border-radius: 999px; background: #e3f3e8; color: #2e7d4f; vertical-align: middle; }
@@ -17,12 +20,13 @@
   .tlg-dates .tlg-tag.off { background: #eceff0; color: #5d6b68; }
   .tlg-dates .tlg-tag.test { background: #fff4d6; color: #8a6d1d; }
   .tlg-dates form.tlg-add { display: grid; gap: .8rem; grid-template-columns: 1fr; }
-  @media (min-width: 760px) { .tlg-dates form.tlg-add { grid-template-columns: 2fr 1fr 1fr 1fr 1fr; align-items: end; } .tlg-dates form.tlg-add .wide { grid-column: 1 / -1; } }
-  .tlg-dates label { display: grid; gap: .25rem; font-weight: 700; font-size: .9rem; }
-  .tlg-dates input, .tlg-dates select { min-height: 44px; padding: .4rem .6rem; border: 1px solid #b9c4c1; font: inherit; background: #fff; max-width: 100%; }
+  @media (min-width: 760px) { .tlg-dates form.tlg-add { grid-template-columns: 1fr 1fr 1fr 1fr; align-items: end; } .tlg-dates form.tlg-add .wide { grid-column: 1 / -1; } }
+  .tlg-dates label { display: grid; gap: .25rem; font-weight: 700; font-size: 15px; }
+  .tlg-dates input, .tlg-dates select { min-height: 44px; padding: .4rem .6rem; border: 1px solid #b9c4c1; font-family: inherit; font-size: 17px; font-weight: 400; color: #1f2a28; background: #fff; max-width: 100%; }
+  .tlg-dates select option { font-size: 17px; font-family: inherit; color: #1f2a28; }
   .tlg-dates form.tlg-add input, .tlg-dates form.tlg-add select { width: 100%; min-width: 0; }
-  .tlg-dates .tlg-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: .4rem 1rem; border: 1px solid #123d3a; background: #fff; color: #123d3a; font-size: .95rem; cursor: pointer; margin: .2rem .3rem .2rem 0; }
-  .tlg-dates .tlg-btn.main { background: #123d3a; color: #fff; min-height: 46px; padding: .6rem 1.4rem; font-size: 1.05rem; }
+  .tlg-dates .tlg-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: .4rem 1rem; border: 1px solid #123d3a; background: #fff; color: #123d3a; font-family: inherit; font-size: 16px; cursor: pointer; margin: .2rem .3rem .2rem 0; }
+  .tlg-dates .tlg-btn.main { background: #123d3a; color: #fff; min-height: 46px; padding: .6rem 1.4rem; font-size: 17px; }
   .tlg-dates .tlg-btn.danger { border-color: #a8584a; color: #a8584a; }
   .tlg-dates table { width: 100%; border-collapse: collapse; }
   .tlg-dates th, .tlg-dates td { border-bottom: 1px solid #d9dedc; padding: .55rem .4rem; text-align: left; vertical-align: top; }
@@ -73,11 +77,13 @@
               : '<span class="tlg-small">No open date for this course</span> ') +
         '<button type="button" class="tlg-btn danger" data-act="cancel_order" data-token="' + esc(o.token) + '" data-confirm="Mark this order cancelled? Do this after refunding it in Stripe; it does not refund by itself.">Cancel order</button></td></tr>';
     }).join("");
-    var courseOpts = d.courses.map(function (c) { return '<option value="' + esc(c.id) + '" data-places="' + esc(c.places) + '">' + esc(c.title) + (c.on_sale ? " (" + money(c.price_pence) + ")" : " (not on sale yet)") + "</option>"; }).join("");
+    // Courses that can be booked come first, so the box opens on one of them.
+    var listed = d.courses.filter(function (c) { return c.on_sale; }).concat(d.courses.filter(function (c) { return !c.on_sale; }));
+    var courseOpts = listed.map(function (c) { return '<option value="' + esc(c.id) + '" data-places="' + esc(c.places) + '">' + esc(c.title) + (c.on_sale ? " (" + money(c.price_pence) + ")" : " (not on sale yet)") + "</option>"; }).join("");
     box.innerHTML = "<h2>Course dates</h2><p class=\"tlg-small\">Add the days each course runs. Learners who have paid choose from the open dates with places left; a date that fills up or is closed drops off their list. Refunds are made in Stripe, then the order is marked cancelled here. Keep this page's link private: anyone who has it can see and change everything on it.</p>" +
-      '<div class="tlg-card"><h4>Add a date</h4><form class="tlg-add" id="tlg-add"><label>Course<select name="course_id" required>' + courseOpts + '</select></label>' +
+      '<div class="tlg-card"><h4>Add a date</h4><form class="tlg-add" id="tlg-add"><label class="wide">Course<select name="course_id" required>' + courseOpts + '</select></label>' +
       '<label>Date<input type="date" name="date" min="' + esc(d.today) + '" required></label><label>Starts<input type="time" name="start" value="09:00" required></label>' +
-      '<label>Ends<input type="time" name="end" value="18:00" required></label><label>Places<input type="number" name="capacity" min="1" max="30" value="' + esc((d.courses[0] || {}).places || 4) + '" required></label>' +
+      '<label>Ends<input type="time" name="end" value="18:00" required></label><label>Places<input type="number" name="capacity" min="1" max="30" value="' + esc((listed[0] || {}).places || 4) + '" required></label>' +
       '<label class="wide">Note learners see (optional)<input type="text" name="note" maxlength="300" placeholder="e.g. Bring a model for 1pm"></label><div class="wide"><button type="submit" class="tlg-btn main">Add date</button></div></form></div>' +
       "<h3>Paid, no date chosen yet (" + waiting.length + ")</h3>" + (rows ? "<table><thead><tr><th>Learner</th><th>Course</th><th>Paid</th><th>Action</th></tr></thead><tbody>" + rows + "</tbody></table>" : "<p>Nobody is waiting.</p>") +
       "<h3>Upcoming dates (" + upcoming.length + ")</h3>" + (upcoming.map(card).join("") || "<p>No dates yet. Add the first one above.</p>") +
