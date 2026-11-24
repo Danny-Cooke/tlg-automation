@@ -78,7 +78,8 @@
         '<button type="button" class="tlg-btn danger" data-act="cancel_order" data-token="' + esc(o.token) + '" data-confirm="Mark this order cancelled? Do this after refunding it in Stripe; it does not refund by itself.">Cancel order</button></td></tr>';
     }).join("");
     // Courses that can be booked come first, so the box opens on one of them.
-    var listed = d.courses.filter(function (c) { return c.on_sale; }).concat(d.courses.filter(function (c) { return !c.on_sale; }));
+    // Only the courses people can buy on the academy page (user 2026-11-24); a course joins the list when it goes on sale.
+    var listed = d.courses.filter(function (c) { return c.on_sale; });
     var courseOpts = listed.map(function (c) { return '<option value="' + esc(c.id) + '" data-places="' + esc(c.places) + '">' + esc(c.title) + (c.on_sale ? " (" + money(c.price_pence) + ")" : " (not on sale yet)") + "</option>"; }).join("");
     box.innerHTML = "<h2>Course dates</h2><p class=\"tlg-small\">Add the days each course runs. Learners who have paid choose from the open dates with places left; a date that fills up or is closed drops off their list. Refunds are made in Stripe, then the order is marked cancelled here. Keep this page's link private: anyone who has it can see and change everything on it.</p>" +
       '<div class="tlg-card"><h4>Add a date</h4><form class="tlg-add" id="tlg-add"><label class="wide">Course<select name="course_id" required>' + courseOpts + '</select></label>' +
