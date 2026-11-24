@@ -267,38 +267,34 @@ def test_buying_changes_nothing_in_the_student_portal(world):
     assert me["enrolments"] == {} and "orders" not in me
 
 
-def test_two_courses_bought_together_are_one_payment_and_a_date_each(world):
+def test_a_combined_course_is_one_order_with_its_own_dates(world):
     w = world
-    add_date(w)
-    call(w, "POST /shop/admin", body={"action": "add_date", "course_id": "gel-polish", "date": "2027-02-10", "start": "09:00", "end": "17:30"}, **ADMIN)
-    # Listed with its saving; a combination with a course that is not on sale is not offered and cannot be bought.
+    add_date(w)  # a date for the single course: not for combined buyers
+    assert call(w, "POST /shop/admin", body={"action": "add_date", "course_id": BUNDLE, "date": "2027-02-10", "start": "09:00", "end": "17:30", "note": "Day two is 11 February"}, **ADMIN)[0] == 200
+    # Listed with its saving and its own dates; a combination with a course that is not on sale is not offered and cannot be bought.
     body = call(w, "GET /shop/courses")[1]
     assert [(b["id"], b["price_pence"], b["saving_pence"], b["courses"]) for b in body["bundles"]] == [(BUNDLE, 60000, 5000, ["acrylic", "gel-polish"])]
+    assert [s["date"] for s in body["bundles"][0]["sessions"]] == ["2027-02-10"]
     assert call(w, "POST /shop/courses/{course_id}/checkout", params={"course_id": "builder-gel-and-efile"}, body={"confirm": True})[0] == 409
     token, cs = buy(w, what=BUNDLE)
-    kw = w["checkouts"][cs]["_kw"]
-    assert kw["amount_pence"] == 60000 and kw["places"] == 2 and kw["title"].startswith("Acrylic and Gel Polish")
+    assert w["checkouts"][cs]["_kw"]["amount_pence"] == 60000
     code, order = call(w, "GET /shop/orders/{token}", params={"token": token}, query={"cs": cs})
-    assert code == 200 and order["course_id"] == "acrylic" and order["status"] == "paid" and order["bundle_title"]
-    assert [o["course_title"] for o in order["others"]] == ["Gel Polish Nails CPD Course"] and order["others"][0]["status"] == "paid"
+    assert code == 200 and order["course_id"] == BUNDLE and order["status"] == "paid" and order["others"] == []
+    assert order["course_title"].startswith("Acrylic and Gel Polish") and [s["date"] for s in order["sessions"]] == ["2027-02-10"]
     orders = w["shop"].orders()
-    assert sorted((o["course_id"], int(o["amount"])) for o in orders) == [("acrylic", 32307), ("gel-polish", 27693)]  # £600 shared 350:300
-    assert sum(int(o["amount"]) for o in orders) == 60000
-    # One email to the learner and one to the school, not one per course; the webhook after it adds nothing.
-    assert len(w["emails"]) == 2 and "a date for each" in w["emails"][0][2] and "£600" in w["emails"][0][2]
+    assert [(o["course_id"], int(o["amount"])) for o in orders] == [(BUNDLE, 60000)]
+    # One email to the learner and one to the school; the webhook after it adds nothing.
+    assert len(w["emails"]) == 2 and "£600" in w["emails"][0][2]
     raw, headers = signed({"type": "checkout.session.completed", "data": {"object": {k: v for k, v in w["checkouts"][cs].items() if k != "_kw"}}})
     call(w, "POST /shop/stripe/webhook", raw=raw, headers=headers)
-    assert len(w["shop"].orders()) == 2 and len(w["emails"]) == 2
-    # A date for each, from the one link.
-    other = order["others"][0]["token"]
-    assert call(w, "POST /shop/orders/{token}/book", params={"token": token}, body={"session": "gel-polish#2027-02-10#0900"})[0] == 409  # wrong course for this half
-    assert call(w, "POST /shop/orders/{token}/book", params={"token": token}, body={"session": f"{COURSE}#2027-02-01#0900"})[0] == 200
-    code, second = call(w, "POST /shop/orders/{token}/book", params={"token": other}, body={"session": "gel-polish#2027-02-10#0900"})
-    assert code == 200 and second["status"] == "booked" and second["others"][0]["date"] == "2027-02-01"
-    assert call(w, "GET /shop/orders/{token}", params={"token": token})[1]["others"][0]["date"] == "2027-02-10"
+    assert len(w["shop"].orders()) == 1 and len(w["emails"]) == 2
+    # Only a combined date will do.
+    assert call(w, "POST /shop/orders/{token}/book", params={"token": token}, body={"session": f"{COURSE}#2027-02-01#0900"})[0] == 409
+    code, booked = call(w, "POST /shop/orders/{token}/book", params={"token": token}, body={"session": f"{BUNDLE}#2027-02-10#0900"})
+    assert code == 200 and booked["status"] == "booked" and booked["session"]["note"] == "Day two is 11 February"
     view = call(w, "GET /shop/admin", **ADMIN)[1]
-    assert sorted((s["course_id"], s["taken"]) for s in view["sessions"]) == [("acrylic", 1), ("gel-polish", 1)]
-    assert all(o["bundle_title"] for o in view["orders"])
+    assert sorted((s["course_id"], s["taken"]) for s in view["sessions"]) == [("acrylic", 0), (BUNDLE, 1)]
+    assert BUNDLE in [c["id"] for c in view["courses"] if c["on_sale"]]
 
 
 def test_stripe_form_encoding_and_signature_helper():

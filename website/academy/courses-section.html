@@ -168,7 +168,7 @@
           var d = datesOf(c);
           return "<p><strong>" + esc(c.title) + ": dates you can choose from</strong></p>" + (d ? "<ul>" + d + "</ul>" : "<p>No dates are open at the moment; you choose one when new dates are added.</p>");
         }).join("") +
-          "<p>You pay once now and choose a date for each course straight afterwards. Pay by card, Apple Pay or Google Pay, or spread the cost with Klarna if you are eligible.</p>" +
+          "<p>You pay once now and choose your course date straight afterwards. Pay by card, Apple Pay or Google Pay, or spread the cost with Klarna if you are eligible.</p>" +
           '<label class="tlg-check"><input type="checkbox"><span>I meet the entry requirements for both courses. ' + parts.map(function (c) { return esc(c.title) + ": " + esc(c.prerequisites); }).join(" ") + "</span></label>";
         var outline = card.querySelector(".tlg-outline-btn"), links = card.querySelector(".tlg-outlines");
         outline.addEventListener("click", function () {

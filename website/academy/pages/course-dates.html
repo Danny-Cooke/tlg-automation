@@ -77,15 +77,14 @@
               : '<span class="tlg-small">No open date for this course</span> ') +
         '<button type="button" class="tlg-btn danger" data-act="cancel_order" data-token="' + esc(o.token) + '" data-confirm="Mark this order cancelled? Do this after refunding it in Stripe; it does not refund by itself.">Cancel order</button></td></tr>';
     }).join("");
-    // Courses that can be booked come first, so the box opens on one of them.
-    // Only the courses people can buy on the academy page (user 2026-11-24); a course joins the list when it goes on sale.
+    // Only what people can buy on the academy page, the combined course included: it has its own dates (user 2026-11-24).
     var listed = d.courses.filter(function (c) { return c.on_sale; });
     var courseOpts = listed.map(function (c) { return '<option value="' + esc(c.id) + '" data-places="' + esc(c.places) + '">' + esc(c.title) + (c.on_sale ? " (" + money(c.price_pence) + ")" : " (not on sale yet)") + "</option>"; }).join("");
     box.innerHTML = "<h2>Course dates</h2><p class=\"tlg-small\">Add the days each course runs. Learners who have paid choose from the open dates with places left; a date that fills up or is closed drops off their list. Refunds are made in Stripe, then the order is marked cancelled here. Keep this page's link private: anyone who has it can see and change everything on it.</p>" +
       '<div class="tlg-card"><h4>Add a date</h4><form class="tlg-add" id="tlg-add"><label class="wide">Course<select name="course_id" required>' + courseOpts + '</select></label>' +
       '<label>Date<input type="date" name="date" min="' + esc(d.today) + '" required></label><label>Starts<input type="time" name="start" value="09:00" required></label>' +
       '<label>Ends<input type="time" name="end" value="18:00" required></label><label>Places<input type="number" name="capacity" min="1" max="30" value="' + esc((listed[0] || {}).places || 4) + '" required></label>' +
-      '<label class="wide">Note learners see (optional)<input type="text" name="note" maxlength="300" placeholder="e.g. Bring a model for 1pm"></label><div class="wide"><button type="submit" class="tlg-btn main">Add date</button></div></form></div>' +
+      '<label class="wide">Note learners see (optional)<input type="text" name="note" maxlength="300" placeholder="e.g. Bring a model for 1pm, or: Day two is Tuesday 12 January"></label><div class="wide"><button type="submit" class="tlg-btn main">Add date</button></div></form></div>' +
       "<h3>Paid, no date chosen yet (" + waiting.length + ")</h3>" + (rows ? "<table><thead><tr><th>Learner</th><th>Course</th><th>Paid</th><th>Action</th></tr></thead><tbody>" + rows + "</tbody></table>" : "<p>Nobody is waiting.</p>") +
       "<h3>Upcoming dates (" + upcoming.length + ")</h3>" + (upcoming.map(card).join("") || "<p>No dates yet. Add the first one above.</p>") +
       (past.length ? "<details><summary>Past dates (" + past.length + ")</summary>" + past.map(card).join("") + "</details>" : "");

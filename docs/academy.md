@@ -236,11 +236,12 @@ Prices (Jess, 20 Nov 2026): Gel Polish £300, Acrylic £500, the two together
 title, the course ids, one price, `on_sale`, a line of text. A bundle is
 offered only while every course in it is on sale, so the BIAB and E-file
 pair appears by itself the day both are switched on. It shows as its own
-card ("Book both courses", with the saving) after the course cards. One
-payment makes one order per course, each with its own token and its own
-date to choose; the buyer's link opens the first and shows the other. The
-price is shared between the two orders in proportion to the courses' own
-prices, for the course-dates page only. The "Academy login" button was
+card ("Book both courses", with the saving) after the course cards. From
+24 Nov (user: the combined course runs on its own dates) it is booked as
+one thing: one order under the bundle's id, and the owners add dates for
+it on the course-dates page, where it is listed beside the courses on
+sale. Combined buyers see only combined dates. A date holds one day; a
+second day goes in the note learners see. The "Academy login" button was
 taken off the academy page the same day (user).
 
 **Keys.** GitHub secret `TLG_ACADEMY_STRIPE_SECRET_KEY` (prod environment).

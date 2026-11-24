@@ -28,9 +28,10 @@ A course is on sale when courses.json gives it "shop": {"on_sale": true,
 "price_pence": N}. "places" there is the default size of a new date.
 
 Combined courses ("bundles" in courses.json) are one payment for two courses
-at one price. A bundle is on sale only while every course in it is. Paying
-for one makes an order per course, each with its own token and its own date
-to choose; the buyer's link opens the first and shows the others."""
+at one price. A bundle is on sale only while every course in it is. It is
+booked as one thing (user, 2026-11-24: the combined course runs on its own
+dates): one order, and the school adds dates under the bundle itself, apart
+from the dates of the single courses."""
 from __future__ import annotations
 
 import base64
@@ -113,19 +114,9 @@ def exists(pid: str) -> bool:
     return bool(content.course(pid) or content.bundles().get(pid))
 
 
-def order_tokens(token: str, courses: list[str]) -> list[str]:
-    """One order per course. The first keeps the token in the buyer's link; the
-    rest are derived from it, so a second delivery of the same payment lands on
-    the same orders and nobody can guess one from a course name."""
-    return [token] + [base64.urlsafe_b64encode(hashlib.sha256(f"{token}:{c}".encode()).digest()).decode().rstrip("=") for c in courses[1:]]
-
-
-def split_amount(total: int, courses: list[str]) -> list[int]:
-    """Share a bundle's price between its courses in proportion to their own prices; the pennies left over go on the last."""
-    own = [int(((content.course(c) or {}).get("shop") or {}).get("price_pence") or 0) or 1 for c in courses]
-    parts = [total * o // sum(own) for o in own]
-    parts[-1] += total - sum(parts)
-    return parts
+def title_of(pid: str) -> str:
+    """The name of what was bought: a course, or a combined course."""
+    return (content.course(pid) or content.bundles().get(pid) or {}).get("title", pid)
 
 
 def money(pence: int) -> str:
@@ -148,9 +139,8 @@ def open_sessions(store: ShopStore, course_id: str) -> list[dict]:
 
 
 def public_order(store: ShopStore, order: dict) -> dict:
-    course = content.course(order["course_id"]) or {}
     session = store.get_session(order["session_key"]) if order.get("session_key") else None
-    out = {"course_id": order["course_id"], "course_title": course.get("title", order["course_id"]), "name": order.get("name", ""),
+    out = {"course_id": order["course_id"], "course_title": title_of(order["course_id"]), "name": order.get("name", ""),
            "email": order.get("email", ""), "amount": int(order["amount"]), "status": order["status"], "paid_at": order["created_at"],
            "test": not order.get("livemode", False), "bundle_title": order.get("bundle_title", ""),
            "session": public_session(session) | {"status": session["status"]} if session else None}
@@ -179,24 +169,19 @@ def fulfil(store: ShopStore, checkout: dict) -> dict | None:
         return None
     who = checkout.get("customer_details") or {}
     total = int(checkout.get("amount_total") or 0)
-    courses = bought["courses"]
-    tokens = order_tokens(token, courses)
-    first, any_new = None, False
-    for cid, tok, amount in zip(courses, tokens, split_amount(total, courses) if len(courses) > 1 else [total]):
-        order, created = store.create_order(
-            tok, course_id=cid, email=who.get("email") or "", name=who.get("name") or "", phone=who.get("phone") or "",
-            amount=amount, currency=checkout.get("currency") or "gbp", checkout_id=checkout.get("id", ""),
-            payment_intent=str(checkout.get("payment_intent") or ""), livemode=bool(checkout.get("livemode")),
-            siblings=[t for t in tokens if t != tok], bundle_title=bought["title"] if len(courses) > 1 else "")
-        first, any_new = first or order, any_new or created
-    if any_new:
+    # One order for whatever was bought. A combined course is one order under the bundle's own id.
+    first, created = store.create_order(
+        token, course_id=bought["id"], email=who.get("email") or "", name=who.get("name") or "", phone=who.get("phone") or "",
+        amount=total, currency=checkout.get("currency") or "gbp", checkout_id=checkout.get("id", ""),
+        payment_intent=str(checkout.get("payment_intent") or ""), livemode=bool(checkout.get("livemode")),
+        siblings=[], bundle_title="")
+    if created:
         title = bought["title"]
-        days = "the date of your taught day" if len(courses) == 1 else "a date for each of your taught days"
         log.info("SHOP paid: %s for %s (%s)", title, first["email"], money(total))
         mailer.send(first["email"], f"Your booking: {title}", "\n".join([
             f"Hi {first['name'].split(' ')[0] if first['name'] else 'there'},", "",
             f"Thank you for booking with The Looking Glass Beauty School: {title}. We have received your payment of {money(total)}.", "",
-            f"Choose {days} here (keep this link, it is yours alone):", booking_url(token), "",
+            "Choose your course date here (keep this link, it is yours alone):", booking_url(token), "",
             "If none of the dates suit, reply to this email and we will help.", "", "The Looking Glass Beauty School", "4a Roushill, Shrewsbury SY1 1PQ"]))
         mailer.school(f"Course sold: {title}", "\n".join([
             f"{first['name']} ({first['email']}, {first['phone'] or 'no phone given'}) has paid {money(total)} for: {title}.",
@@ -210,7 +195,7 @@ def _book(store: ShopStore, token: str, key: str, by: str = "") -> dict:
     session = store.get_session(key) or {}
     if before.get("session_key") == key:
         return order  # asked twice for the date they already have: nothing new to say
-    title = (content.course(order["course_id"]) or {}).get("title", order["course_id"])
+    title = title_of(order["course_id"])
     when = f"{nice_date(session['date'])}, {session['start']} to {session['end']}"
     log.info("SHOP booked: %s on %s for %s%s", order["course_id"], session.get("date"), order.get("email"), f" by {by}" if by else "")
     mailer.send(order.get("email", ""), f"You are booked: {title}, {nice_date(session['date'])}", "\n".join([
@@ -260,6 +245,7 @@ def handle(event: dict, store: ShopStore | None = None) -> dict:
                 {"course_id": c["id"], "title": c["title"], "price_pence": shop_of(c)["price_pence"],
                  "prerequisites": c.get("prerequisites", ""), "sessions": open_sessions(store, c["id"])} for c in on_sale],
                 "bundles": [{"id": b["id"], "title": b["title"], "price_pence": b["price_pence"], "courses": b["courses"],
+                             "sessions": open_sessions(store, b["id"]),
                              "short": content.bundles()[b["id"]].get("short", ""),
                              "saving_pence": sum(shop_of(content.course(c))["price_pence"] for c in b["courses"]) - b["price_pence"]}
                             for b in both if b]})
@@ -352,6 +338,9 @@ def admin_view(store: ShopStore) -> dict:
                 for s in store.sessions()]
     courses = [{"id": c["id"], "title": c["title"], "on_sale": bool(shop_of(c)), "price_pence": (c.get("shop") or {}).get("price_pence"),
                 "places": (c.get("shop") or {}).get("places", DEFAULT_PLACES)} for c in content.courses().values()]
+    # A combined course has its own dates, so it is on the list beside the single courses.
+    courses += [{"id": bid, "title": b["title"], "on_sale": bool(product(bid)), "price_pence": b.get("price_pence"),
+                 "places": b.get("places", DEFAULT_PLACES)} for bid, b in content.bundles().items()]
     return {"today": today(), "courses": courses, "sessions": sessions, "orders": [person(o) for o in orders]}
 
 
@@ -365,7 +354,7 @@ def handle_admin(route: str, event: dict, store: ShopStore) -> dict:
         if action == "add_date":
             cid, date, start, end = (str(body.get(k, "")) for k in ("course_id", "date", "start", "end"))
             course = content.course(cid)
-            if not course:
+            if not course and not content.bundles().get(cid):
                 return _json(400, {"error": "choose a course"})
             if not _DATE.match(date) or not _TIME.match(start) or not _TIME.match(end) or end <= start:
                 return _json(400, {"error": "give a date, a start time and a later end time"})
@@ -376,7 +365,8 @@ def handle_admin(route: str, event: dict, store: ShopStore) -> dict:
             if date < today():
                 return _json(400, {"error": "that date has passed"})
             places = body.get("capacity")
-            places = int((course.get("shop") or {}).get("places") or DEFAULT_PLACES) if places in (None, "") else int(places)
+            default = ((course.get("shop") or {}) if course else content.bundles()[cid]).get("places") or DEFAULT_PLACES
+            places = int(default) if places in (None, "") else int(places)
             if not 1 <= places <= 30:
                 return _json(400, {"error": "places must be between 1 and 30"})
             store.put_session(cid, date, start, end, places, str(body.get("note", "")))
