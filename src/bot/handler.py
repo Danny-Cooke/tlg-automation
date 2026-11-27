@@ -82,7 +82,11 @@ LOCKING_KINDS = frozenset({"complaint", "cancellation fee", "quote", "can't assi
 # Areas that always lock, whatever the kind: a hair thread is Lori-Dee's to
 # deal with completely in the inbox, or has been sent to Sophie's WhatsApp
 # (user, 2026-10-24). Complaints about hair still go to Jess, and lock anyway.
-LOCKING_AREAS = frozenset({"hair"})
+LOCKING_AREAS = frozenset({"hair", "tattoos"})
+# Areas the bot never answers, first message or mid-thread (user, 2026-11-27):
+# a tattoo message gets no reply at all, only the post to the team's Telegram
+# group, and the thread is Carmen's.
+SILENT_AREAS = frozenset({"tattoos"})
 
 
 def locks(kind: str, area: str) -> bool:
@@ -362,6 +366,8 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         to, area = "jess", _picture_area(convo, msg) or "general"
         if handed and area in ("general", convo.handed_area):
             to, area = convo.handed_to, convo.handed_area
+        elif area in SILENT_AREAS:
+            to = "carmen"  # a tattoo picture: Carmen's, and no holding line (user, 2026-11-27)
         reply = brain.BotReply(
             reply=brain.SAFE_REPLY, escalate=True, escalation_reason="Non-text message (picture or attachment)",
             escalate_to=to, area=area, escalation_kind="quote",
@@ -388,7 +394,12 @@ def process_message(msg: meta.InboundMessage, store: ConversationStore) -> None:
         store.save(convo)
         return
 
-    if MODE == "live" and reply.escalate and locks(reply.escalation_kind, reply.area) and not has_replied(convo):
+    if reply.escalate and reply.area in SILENT_AREAS:
+        # A tattoo message is never answered, wherever it comes in the thread
+        # (user, 2026-11-27): the team's Telegram group is told and that is all.
+        log.info("Message from %s is about %s; no reply, straight to the team", msg.sender_id, reply.area)
+        reply = dataclasses.replace(reply, reply="")
+    elif MODE == "live" and reply.escalate and locks(reply.escalation_kind, reply.area) and not has_replied(convo):
         # The opening message is something the bot cannot help with at all: no
         # holding line, nothing at all, just the Telegram post, and Jess answers
         # first (user, 2026-10-29). Mid-thread the bot still says it will speak

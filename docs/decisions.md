@@ -1034,3 +1034,37 @@ hand-over anyone needed:
 
 Unchanged: one post per hand-over, the "waiting on you" nudge after 12 hours
 of silence, the once-a-day Fresha login warning.
+
+## 2026-11-27: a tattoo message gets no reply, only the Telegram post
+
+The user: if a message comes in about a tattoo, do not reply, just send a
+notification to the Telegram group. This supersedes both 2026-10-21 tattoo
+rulings: the bot no longer asks "discuss it or book a free consultation?",
+no longer books Carmen's consultation and no longer sends her WhatsApp
+line. Any tattoo message (a price, a booking, a consultation, a design, a
+picture, Tiny Tattoo Tuesday, "do you do tattoos?") is handed to Carmen
+with an empty reply; a tattoo complaint goes to Jess as every complaint
+does, also with no reply. It holds mid-thread as well as on an opening
+message, unlike the 2026-10-29 rule for everything else.
+
+Done in three places. The prompt and persona tell the model to send
+nothing and hand over with `area` tattoos. `handler.py` enforces it:
+`SILENT_AREAS` blanks the reply of any escalation whose area is tattoos,
+in every mode, and tattoos joined `LOCKING_AREAS`, so the thread becomes
+Carmen's whatever the kind. A picture-only message that the area call
+reads as a tattoo goes the same way, to Carmen with no holding line.
+`booking.py` refuses the whole tattoo category, the consultation
+included (`ONLY_THESE` is gone).
+
+What did not change: the Telegram line reads "Tattoos: quote: <name>: FB,
+no reply sent" and is posted once, when the thread is handed over. After
+that the thread is Carmen's under the 2026-11-16 rules: further tattoo
+messages are stored without another post (bar the 12-hour "waiting on
+you" nudge), and the bot still answers the same client about nails or
+beauty. A tattoo message on a thread someone else already has moves it
+to Carmen with a post; while a person on the team has replied in the
+last 30 minutes nothing is posted, as for any message. A message that mixes a tattoo with
+something else gets no reply either; the other part is in the reason.
+`CARMEN_PHONE` / `CARMEN_WHATSAPP` is now unused but still wired through
+the deploy workflow and Terraform. The bot diagram
+(`scripts/make_bot_drawio.py`) still shows the old tattoo card.

@@ -69,9 +69,9 @@ def test_one_voice_three_shapes(persona_text):
     """Decision 2026-10-20: Jess is the only persona; hair and tattoo threads shift register
     and hand over by name, the bot never claims to be Lori or Carmen."""
     assert "Your register shifts with the treatment" in persona_text
-    assert "Hair: Lori-Dee's shape" in persona_text and "Tattoos: Carmen's shape" in persona_text
+    assert "Hair: Lori-Dee's shape" in persona_text and "Tattoos: not yours at all" in persona_text
     assert "natural daylight" in persona_text  # what Lori needs before quoting colour
-    assert "roughly how big" in persona_text  # what Carmen needs before quoting a tattoo
+    assert "roughly how big" not in persona_text  # user, 2026-11-27: the bot asks nothing about a tattoo, it does not answer
     assert 'Never say "it\'s Lori" or "Carmen here"' in persona_text
 
 

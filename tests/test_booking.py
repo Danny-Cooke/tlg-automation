@@ -184,19 +184,17 @@ def test_everything_but_a_tattoo_itself_is_booked(cfg):
     assert posted == ["beauty", "aesthetics"]
     booking.forget_catalog()
     out, f, _ = run(cfg, args={"service": "Small tattoo", "person": "Carmen"}, f=FakeFresha(services=[TATTOO]))
-    assert "only tattoo appointment the bot books is the free consultation with Carmen" in out and f.created == []
+    assert "is tattoos, which the bot never books, the free consultation included" in out and f.created == []
     out, f, _ = run(cfg, args={"service": "Unicorn wash"})
     assert "not a service in the salon details" in out
 
 
-def test_tattoo_consultation_is_booked_with_carmen(cfg):
-    posted = []
+def test_tattoo_consultation_is_not_booked_either(cfg):
+    """User, 2026-11-27: a tattoo message is never answered, so nothing of Carmen's tattoo menu is booked in chat."""
     booking.forget_catalog()
-    out, f, _ = run(cfg, args={"service": "consultation", "person": "Carmen"}, f=FakeFresha(services=[CONSULT]),
-                    notify=lambda convo, summary, appointment_id, **kw: posted.append(kw))
-    assert out.startswith("Booked: consultation with Carmen, Thu 29 Oct 10am, for Danny Cooke")
-    assert f.created[0]["employee_id"] == "3440872" and f.created[0]["price"] == "0"
-    assert posted[0]["area"] == "tattoos"
+    out, f, _ = run(cfg, args={"service": "consultation", "person": "Carmen"}, f=FakeFresha(services=[CONSULT]))
+    assert "which the bot never books, the free consultation included" in out and "hand over to carmen" in out
+    assert f.created == [] and not booking.bookable("Tattoos by Skin deep canvas", "consultation")
 
 
 def test_hair_is_never_booked_in_chat_with_either_stylist(cfg):
@@ -418,24 +416,13 @@ def test_prompt_and_persona_carry_the_booking_rules(persona_text, salon_config_j
     assert "cancel it with `cancel_appointment`, book the new time" in prompt
     assert "# Jobs, competitions and people selling things" in prompt and "I'll get this over to Jess for you x" in prompt and "enquiry)" in prompt
     assert "# Pictures and quotes" in prompt and "give me a little time to have a think" in prompt and "quote;" in prompt
-    assert "# Tattoos" in prompt and "consultation" in prompt
-    assert "Judged on the client's latest message only" in prompt
-    assert "Do you want to discuss it, or book a free consultation with Carmen? x" in prompt
+    # User, 2026-11-27: a tattoo message gets no reply, only the hand-over to Carmen.
+    tattoos = prompt.split("# Tattoos")[1].split("# Hair")[0]
+    assert "You do not answer tattoo messages at all" in tattoos and "`reply` to an empty string" in tattoos
+    assert "`escalate_to` carmen" in tattoos and "Judged on the client's latest message only" in tattoos
+    assert "book a free consultation with Carmen? x" not in prompt and "WhatsApp" not in tattoos
     assert "card details" in prompt
     assert "Only say \"all booked" in persona_text
-
-
-def test_tattoo_questions_go_to_carmens_whatsapp_when_configured(persona_text, salon_config_json, monkeypatch):
-    from bot.prompt import build_system_prompt
-
-    cfg = SalonConfig.from_json(salon_config_json)
-    monkeypatch.delenv("CARMEN_WHATSAPP", raising=False)
-    without = build_system_prompt(persona_text, cfg)
-    assert "WhatsApp number is not configured" in without and "07" not in without.split("# Tattoos")[1].split("# Pictures")[0]
-    monkeypatch.setenv("CARMEN_WHATSAPP", "07700 900123")
-    with_number = build_system_prompt(persona_text, cfg)
-    assert ("\"Hey lovely, to discuss this further you can talk to me directly on WhatsApp, I can "
-            "respond much quicker on there if that's ok? 07700 900123 x\"") in with_number
 
 
 # -- cancelling ---------------------------------------------------------------

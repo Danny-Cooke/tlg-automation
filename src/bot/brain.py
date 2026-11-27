@@ -103,8 +103,9 @@ BOOKING_TOOL = {
         "person, date and time that you confirmed back to them in one message. It answers "
         "'Booked: ...' when the appointment is in, or says why it could not book and what to "
         "do instead; never tell the client it is booked unless the answer starts with 'Booked'. "
-        "Nails, beauty, lashes, aesthetics, and for tattoos only Carmen's free consultation. Never hair: "
-        "Sophie's clients go to her WhatsApp, Lori-Dee's to her booking link or a hand-over. A tattoo itself is not booked here."
+        "Nails, beauty, lashes and aesthetics. Never hair: "
+        "Sophie's clients go to her WhatsApp, Lori-Dee's to her booking link or a hand-over. Never anything tattoo, "
+        "the consultation included: a tattoo message is handed to Carmen with no reply."
     ),
     "input_schema": {
         "type": "object",

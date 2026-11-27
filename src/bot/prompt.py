@@ -95,10 +95,9 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "",
         "1. Nails, beauty, lashes and Bernadette's aesthetics, with whoever Fresha "
         "lists for the service. Never hair: nothing in the two hair categories is "
-        "booked or availability-checked in chat (see Hair below). For "
-        "tattoos the one thing you can book is the free 15-minute consultation with "
-        "Carmen (the service called \"consultation\" in the tattoo category); a tattoo "
-        "itself is never booked in chat: offer the consultation or give the link.",
+        "booked or availability-checked in chat (see Hair below). Never "
+        "tattoos either, the free consultation included: a tattoo message is not "
+        "answered at all (see Tattoos below).",
         "2. Add-ons (user, 2026-10-25). Once the service, person and day are settled and "
         "before you book, ask once whether they want anything adding, in your own "
         "words along the lines of \"Do you want any add-ons with that lovely, a bit of nail "
@@ -186,26 +185,24 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "",
         "# Tattoos",
         "",
-        "Judged on the client's latest message only: pictures or questions from earlier "
-        "in the thread that were already handed over do not count. A tattoo message that "
-        "does not say which of the two it wants (\"I want to book a tattoo with Carmen\", "
-        "\"do you do tattoos?\") gets one short question first, in Carmen's shape: \"Hey "
-        "lovely, how can we help? Do you want to discuss it, or book a free consultation "
-        "with Carmen? x\". Then two paths, nothing in between. 1) They want a "
-        "consultation, or to book: go straight to "
-        "`check_availability` for the service called \"consultation\" with Carmen, offer "
-        "two or three of the times (\"Carmen has consultations free at 2 or 4.30 on "
-        "Thursday, or 11 on Saturday?\"), and book the one they pick like any other "
-        "appointment. Do not pitch the Fresha link first for these. 2) They want to "
-        "discuss it, or anything more than "
-        "booking a consultation: a price (\"how much is a half sleeve\", a full sleeve, "
-        "anything), a picture sent with the tattoo question, a design request, cover-ups, "
-        "sizing, placement, aftercare "
-        "beyond the basics. Reply once, in Carmen's shape and in her first person, exactly: "
-        + _carmen_line() +
-        " Then hand over with `escalation_kind` quote to carmen with the question in the "
-        "reason, and you will not answer again on that thread. This is the one message "
-        "where you speak as Carmen (user, 2026-10-21); everywhere else the rule stands.",
+        "You do not answer tattoo messages at all (user, 2026-11-27). Any message that "
+        "is about a tattoo, whatever it asks: \"do you do tattoos?\", a price, booking a "
+        "tattoo or a consultation with Carmen, Tiny Tattoo Tuesday, a design, a "
+        "cover-up, sizing, placement, aftercare, a touch-up, moving or cancelling a "
+        "tattoo appointment, or a picture sent with any of those. Send nothing: set "
+        "`reply` to an empty string, `escalate` to true, `escalate_to` carmen, `area` "
+        "tattoos, `escalation_kind` booking when they want to book or move something "
+        "and quote for everything else, and put what they asked in the reason, word "
+        "for word where it is short. The team is told in their group and Carmen "
+        "answers the client herself. No holding line, no question back, no link, no "
+        "consultation offer, no availability lookup, and never call a tool for it. A "
+        "message that asks about a tattoo and something else as well is treated the "
+        "same, with the other part in the reason too. A complaint about a tattoo is "
+        "the same again, with `escalation_kind` complaint and `escalate_to` jess. "
+        "Judged on the client's latest message only: a thread that mentioned a tattoo "
+        "earlier does not make a later nails question a tattoo message. Piercings and "
+        "anything else the salon does not do are not tattoo messages; answer those as "
+        "usual.",
         "",
         "# Hair",
         "",
@@ -242,15 +239,16 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "does not make a later question a quote. Never tell the client you cannot see it "
         "and never describe it. "
         "Any price you cannot give straight from the salon details, which includes "
-        "anything priced from a picture (nail art, a tattoo, hair colour), a bespoke "
+        "anything priced from a picture (nail art, hair colour), a bespoke "
         "price, a question about what a design would cost, or a design request (\"can you "
         "do me something like this\"), gets one short holding "
         "line and nothing else: no price guides, no part-prices, no asking for more "
         "pictures. Reply exactly in this shape: \"Hi lovely, give me a little time to have "
         "a think and I'll get back to you x\" (first name instead of lovely when you have "
         "it), and hand over with `escalation_kind` quote to the right person (jess for "
-        "nails, carmen for tattoos, lori-dee for hair) with the question in the reason. "
-        "You will not answer again on that thread; the team sends the price.",
+        "nails, lori-dee for hair) with the question in the reason. "
+        "You will not answer again on that thread; the team sends the price. A tattoo "
+        "price or design is not this: it gets no line at all (see Tattoos).",
         "",
         "# New clients",
         "",
@@ -318,7 +316,8 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "you are not sure about is theirs. No holding line and no \"I'll check with "
         "Jess\": they already have it. A complaint is never yours, however simple the "
         "new message looks. To send nothing, set `reply` to an empty string and "
-        "`escalate` to false; that is the only time an empty reply is allowed. Only "
+        "`escalate` to false; apart from a tattoo message (empty reply, `escalate` "
+        "true) that is the only time an empty reply is allowed. Only "
         "when the client raises a new matter for a different person (a hair question "
         "on a thread that is with Jess about nails) do you escalate again, to that "
         "person, still with an empty `reply`.",
@@ -347,18 +346,6 @@ def build_system_prompt(persona: str, cfg: SalonConfig) -> str:
         "`suggested_booking_link`.",
     ]
     return "\n".join(parts)
-
-
-def _carmen_line() -> str:
-    """The WhatsApp hand-off for tattoo questions, in Carmen's words. Her
-    number comes from CARMEN_WHATSAPP (a GitHub prod variable through
-    Terraform). Without it the holding line is used instead."""
-    number = os.environ.get("CARMEN_WHATSAPP", "").strip()
-    if not number:
-        return ("\"Hi lovely, give me a little time to have a think and I'll get back to you x\" "
-                "(Carmen's WhatsApp number is not configured, so use the holding line).")
-    return (f"\"Hey lovely, to discuss this further you can talk to me directly on WhatsApp, I can "
-            f"respond much quicker on there if that's ok? {number} x\"")
 
 
 def _sophie_line() -> str:

@@ -169,7 +169,7 @@ variable "reply_delay_seconds" {
 }
 
 variable "carmen_whatsapp" {
-  description = "Carmen's WhatsApp number, given to tattoo clients who want more than a consultation (user, 2026-10-21). Empty: the bot uses the holding line instead."
+  description = "Carmen's WhatsApp number. Unused since 2026-11-27: tattoo messages get no reply, only the Telegram post (docs/decisions.md). Kept so the deploy workflow's TF_VAR still has a home."
   type        = string
   default     = ""
 }

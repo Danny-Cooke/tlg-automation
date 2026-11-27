@@ -166,9 +166,9 @@ Variables: `MESSAGE_TEST_MODE` (`true`: only messages starting with the
 trigger word are answered, so only the tester hears from the bots; `false`:
 everyone is answered), `BOT_MODE` (`simple`, the default, then `shadow`,
 then `live`), `ESCALATION_EMAILS` (JSON list, Jess, from shadow mode on) and
-`CARMEN_PHONE` (her WhatsApp number as clients should dial it; tattoo questions
-beyond a consultation are sent there in her words; empty means the bot uses
-the holding line instead) and `SOPHIE_PHONE` (her WhatsApp number; clients
+`CARMEN_PHONE` (her WhatsApp number; unused since 2026-11-27, when tattoo
+messages stopped being answered at all, see `docs/decisions.md`; the variable
+is still passed through Terraform as `CARMEN_WHATSAPP`) and `SOPHIE_PHONE` (her WhatsApp number; clients
 who want to book hair with Sophie are sent there in Jess's voice, because
 hair is never booked in chat; empty means the bot says Sophie will message
 them and hands over).

@@ -482,6 +482,66 @@ def test_a_bare_picture_is_handed_over_with_the_area_it_is_for(wired, monkeypatc
     assert wired["areas"][-1] == "general" and wired["escalated"][-1][0] == "psid3"
 
 
+def test_a_tattoo_message_gets_no_reply_only_the_telegram_post(wired, monkeypatch):
+    """User, 2026-11-27: a message about a tattoo is never answered, first message or
+    mid-thread. The team's group is told, the thread is Carmen's, and the bot
+    carries on with what is its own."""
+    monkeypatch.setattr(handler, "MODE", "live")
+    posted = []
+    monkeypatch.setattr(
+        escalation, "notify",
+        lambda convo, reason, text, to="", **kw: posted.append((to, kw.get("area"), kw.get("kind"), kw.get("no_reply"), kw.get("bot_quiet"))),
+    )
+
+    def ask(system, history, text, **kw):
+        if "tattoo" in text.lower():  # even if the model writes a line, none is sent
+            return brain.BotReply(reply="Hey lovely, how can we help? x", escalate=True, escalation_reason="Asked the price of a half sleeve",
+                                  escalate_to="carmen", area="tattoos", escalation_kind="quote")
+        if "thanks" in text.lower():
+            return brain.BotReply(reply="", escalate=False)  # a reply to Carmen: send nothing
+        return brain.BotReply(reply="Gel polish is from £34 xx", escalate=False)
+
+    monkeypatch.setattr(brain, "ask", ask)
+    store = MemoryStore()
+    handler.process_message(inbound("how much is gel polish?", mid="m1"), store)
+    assert wired["sent"] == [("psid1", "Gel polish is from £34 xx")]
+
+    handler.process_message(inbound("and how much is a half sleeve tattoo?", mid="m2"), store)  # mid-thread: still nothing
+    assert len(wired["sent"]) == 1
+    assert posted == [("carmen", "tattoos", "quote", True, True)]
+    convo = store.items["psid1"]
+    assert convo.handed_to == "carmen" and convo.handed_area == "tattoos"
+    last = convo.history[-1]
+    assert (last["role"], last["content"]) == ("user", "and how much is a half sleeve tattoo?")  # no bot turn recorded
+
+    handler.process_message(inbound("it's a rose tattoo on my forearm", mid="m3"), store)  # Carmen's thread: quiet, one post only
+    handler.process_message(inbound("thanks", mid="m4"), store)
+    assert len(wired["sent"]) == 1 and len(posted) == 1
+
+    handler.process_message(inbound("can I get my nails done too?", mid="m5"), store)  # ours: answered
+    assert wired["sent"][-1] == ("psid1", "Gel polish is from £34 xx") and convo.handed_to == "carmen"
+
+    # A thread that is with Lori-Dee for hair: a tattoo message still reaches the team, with no reply.
+    other = Conversation(sender_id="psid2", channel="messenger", client_name="Amy Jones")
+    other.hand_over("lori-dee", "hair")
+    store.save(other)
+    monkeypatch.setattr(brain, "ask", lambda *a, **kw: brain.BotReply(
+        reply="", escalate=True, escalation_reason="Wants a tattoo consultation", escalate_to="carmen", area="tattoos", escalation_kind="booking"))
+    handler.process_message(inbound("can I book a tattoo consultation", mid="m6", sender="psid2"), store)
+    assert posted[-1][:3] == ("carmen", "tattoos", "booking") and store.items["psid2"].handed_to == "carmen"
+    assert all(rid != "psid2" for rid, _ in wired["sent"])
+
+
+def test_a_bare_tattoo_picture_gets_no_reply(wired, monkeypatch):
+    """User, 2026-11-27: a picture the thread or the image says is a tattoo goes to Carmen with no holding line."""
+    monkeypatch.setattr(handler, "MODE", "live")
+    monkeypatch.setattr(brain, "picture_area", lambda *a, **k: "tattoos")
+    store = MemoryStore()
+    handler.process_message(inbound(text="", mid="m1"), store)
+    assert wired["sent"] == [] and wired["escalated"] == [("psid1", "Non-text message (picture or attachment)", "carmen")]
+    assert wired["areas"] == ["tattoos"] and store.items["psid1"].handed_to == "carmen"
+
+
 def test_a_picture_with_text_is_flagged_to_the_model(wired, monkeypatch):
     monkeypatch.setattr(handler, "MODE", "live")
     store = MemoryStore()

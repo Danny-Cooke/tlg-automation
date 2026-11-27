@@ -140,7 +140,10 @@ redirects `/stop/*` to the API. Rows that leave Fresha are flagged `in_fresha=fa
 
 ### Escalation
 
-A hand-over records who has the thread and for what. With Jess the bot
+A hand-over records who has the thread and for what. A tattoo message is
+never answered, wherever it falls in a thread: the reply is blanked in
+`handler.py` (`SILENT_AREAS`), the team's Telegram group is told and the
+thread goes to Carmen (decision 2026-11-27). With Jess the bot
 goes silent. With Lori-Dee (hair) or Carmen (tattoos) it keeps reading and
 answers only what is its own (nails, beauty, lashes, aesthetics, the
 salon), leaving their area and any reply to them alone; the thread stays

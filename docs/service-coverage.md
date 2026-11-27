@@ -48,7 +48,7 @@ quoted as "from". "Quote" means the holding line and a quiet hand-over.
 | Beauty - TLG | 10 | beauty | yes | yes, whoever Fresha lists; lash and brow treatments only once the patch-test column says tested or a patch test is booked first (job 12) | health or skin questions: Jess; patch test booked: Jess told | booking tool, `patch_tests` guard |
 | Lashes by Amber | 5 | beauty | yes (makeup "from £25") | yes, Amber, lashes behind the patch-test guard | Jess | booking tool, `patch_tests` guard |
 | Bernadettes ReFresh aethetics | 60 | aesthetics | yes, from the list | yes, Bernadette | suitability, what to have, anything medical: hand-over (lands with Jess, see gap 6) | persona |
-| Tattoos by Skin deep canvas | 3 | tattoos | Tiny Tattoo prices are listed; everything else is a quote | the free consultation only | Carmen's WhatsApp line, then Carmen | `booking.ONLY_THESE`, prompt |
+| Tattoos by Skin deep canvas | 3 | tattoos | nothing: a tattoo message gets no reply (decision 2026-11-27) | nothing | Telegram post, then Carmen | `booking.ONLY_THESE`, prompt |
 
 Once a thread is with Lori-Dee or Carmen the bot still reads it and answers
 anything that is its own (nails, beauty, lashes, aesthetics); since

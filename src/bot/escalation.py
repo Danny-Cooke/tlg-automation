@@ -48,7 +48,7 @@ def format_alert(
                    "else it can (a price, a booking), and it says nothing for half an hour after one of you replies.") if bot_quiet
               else "The bot is still answering on this thread; it has told the client you will sort this."]
     if no_reply:
-        lines.append("The client has had no reply at all: this was their first message and it is not the bot's to answer.")
+        lines.append("The client has had no reply to this message: it is not the bot's to answer.")
     return subject, "\n".join(lines)
 
 
